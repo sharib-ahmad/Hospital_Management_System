@@ -1,0 +1,25 @@
+# Auto detect text files and enforce LF
+* text=auto eol=lf
+
+# Python files
+*.py text eol=lf
+
+# Shell scripts (important for WSL)
+*.sh text eol=lf
+
+# JS/TS/Vue
+*.js text eol=lf
+*.ts text eol=lf
+*.vue text eol=lf
+
+# JSON/YAML
+*.json text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+
+# Markdown
+*.md text eol=lf
+
+# Windows scripts (if any)
+*.bat text eol=crlf
+*.cmd text eol=crlf
