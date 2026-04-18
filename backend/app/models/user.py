@@ -2,9 +2,8 @@ from ..extensions import db
 from werkzeug.security import generate_password_hash, check_password_hash
 from app.utils.security import hash_password, verify_password
 from app.utils.time import utc_now
-from datetime import datetime, timezone
 import uuid
-from ..utils.userRole import UserRole
+from ..utils.enum import UserRole
 
 
 class User(db.Model):
@@ -35,6 +34,11 @@ class User(db.Model):
                            default=utc_now,
                            onupdate=utc_now,
                            nullable=False)
+
+    # Relationships
+    doctor = db.relationship('Doctor', back_populates='user', uselist=False)
+    patient = db.relationship('Patient', back_populates='user', uselist=False)
+    token_blocklist = db.relationship('TokenBlocklist', back_populates='user', lazy=True)
 
     @property
     def password(self):

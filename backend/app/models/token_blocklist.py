@@ -10,5 +10,8 @@ class TokenBlocklist(db.Model):
     user_id = db.Column(db.UUID, db.ForeignKey('users.id'), nullable=False)
     created_at = db.Column(db.DateTime, default=utc_now)
 
+    # Relationships
+    user = db.relationship('User', back_populates='token_blocklist')
+
     def __repr__(self):
         return f"<TokenBlocklist {self.jti}>"
