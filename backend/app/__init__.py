@@ -16,4 +16,7 @@ def create_app(config_name="development"):
     from .routes import register_routes
     register_routes(api)
     
+    from .adminCommands import register_commands
+    register_commands(app)
+    
     return app
