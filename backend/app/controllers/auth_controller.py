@@ -39,3 +39,11 @@ def login_controller(request):
         return error_response(errors=e.errors())
 
     return AuthService.login_user(validated)
+
+
+def logout_controller():
+    return AuthService.logout_user()
+
+
+def refresh_controller():
+    return AuthService.refresh_token()

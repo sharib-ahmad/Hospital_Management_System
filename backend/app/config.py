@@ -8,8 +8,8 @@ class BaseConfig:
     # --- Base JWT Configuration ---
     JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "dev-secret-key-change-me")
     JWT_TOKEN_LOCATION = ["headers", "cookies"]
-    JWT_ACCESS_TOKEN_EXPIRES = timedelta(minutes=60) # Increased for dev convenience
-    JWT_REFRESH_TOKEN_EXPIRES = timedelta(days=7)
+    JWT_ACCESS_TOKEN_EXPIRES = timedelta(minutes=5)
+    JWT_REFRESH_TOKEN_EXPIRES = timedelta(days=30)
     JWT_COOKIE_CSRF_PROTECT = True
 
     # --- Base SQLAlchemy Configuration ---

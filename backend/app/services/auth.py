@@ -1,8 +1,8 @@
 # app/services/auth.py
-from ..models import User
+from ..models import User, TokenBlocklist
 from ..extensions import db
 from sqlalchemy.exc import IntegrityError
-from flask_jwt_extended import create_access_token, create_refresh_token
+from flask_jwt_extended import create_access_token, create_refresh_token, get_jwt, current_user
 from ..utils.response import success_response, error_response
 from ..utils.userRole import UserRole
 class AuthService:
@@ -57,3 +57,31 @@ class AuthService:
             )
 
         return error_response(message="Invalid username or password", status=401)
+
+    @staticmethod
+    def logout_user():
+        token = get_jwt()
+        jti = token["jti"]
+        ttype = token["type"]
+        user_id = token["sub"]
+
+        new_blocked_token = TokenBlocklist(
+            jti=jti,
+            type=ttype,
+            user_id=user_id
+        )
+
+        db.session.add(new_blocked_token)
+        db.session.commit()
+
+        return success_response(message="Successfully logged out")
+
+    @staticmethod
+    def refresh_token():
+        # current_user is available if we use @jwt_required(refresh=True)
+        # and user_lookup_loader is configured in security.py
+        access_token = create_access_token(identity=current_user)
+        return success_response(
+            data={"access_token": access_token},
+            message="Token refreshed successfully"
+        )
