@@ -1,4 +1,3 @@
-
 import enum
 from flask_restx import fields
 
@@ -9,12 +8,12 @@ class UserRole(enum.Enum):
     RECEPTIONIST = "receptionist"
     PATIENT = "patient"
     
-    
 class AppointmentStatus(enum.Enum):
     PENDING = 'pending'
     CONFIRMED = 'confirmed'
     CANCELLED = 'cancelled'
     COMPLETED = 'completed'
+    
     
 class EnumField(fields.String):
     def __init__(self, enum_cls, **kwargs):

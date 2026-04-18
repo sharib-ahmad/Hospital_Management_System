@@ -1,6 +1,6 @@
 # app/api_models/auth_models.py
 from flask_restx import fields
-from ..utils.userRole import UserRole, EnumField
+from ..utils.enum import UserRole, EnumField
 
 class AuthModels:
     def __init__(self, api):

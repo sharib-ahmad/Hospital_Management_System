@@ -4,7 +4,7 @@ from ..extensions import db
 from sqlalchemy.exc import IntegrityError
 from flask_jwt_extended import create_access_token, create_refresh_token, get_jwt, current_user
 from ..utils.response import success_response, error_response
-from ..utils.userRole import UserRole
+from ..utils.enum import UserRole
 class AuthService:
 
     @staticmethod
