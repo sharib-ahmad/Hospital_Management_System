@@ -1,6 +1,8 @@
 # =========================
 # 🔹 General
 # =========================
+GEMINI.md
+output.txt
 .DS_Store
 *.log
 *.local
