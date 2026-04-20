@@ -30,9 +30,17 @@ class AuthModels:
             'pincode': fields.String,
             'role': EnumField(UserRole)
         })
+
+        self.error_detail = api.model('ErrorDetail', {
+            'loc': fields.List(fields.Raw, description="Location of the error"),
+            'msg': fields.String(description="Error message"),
+            'type': fields.String(description="Error type"),
+            'url': fields.String(description="Error help URL")
+        })
         
         self.response_model = api.model('UserResponse', {
             'success': fields.Boolean,
             'message': fields.String,
-            'data': fields.Nested(self.user)
+            'data': fields.Nested(self.user, skip_none=True),
+            'errors': fields.List(fields.Nested(self.error_detail), skip_none=True)
         })

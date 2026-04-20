@@ -26,7 +26,7 @@ class AuthService:
             db.session.commit()
         except IntegrityError:
             db.session.rollback()
-            return error_response(message="Username or email already exists")
+            return error_response(message="Username, email or phone number already exists")
 
         return success_response(
             data=user,

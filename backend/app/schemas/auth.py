@@ -22,6 +22,14 @@ class UserRegisterSchema(BaseModel):
     def normalize_email(cls, v):
         return v.lower()
 
+    @field_validator("phone_number")
+    def validate_phone_unique(cls, v):
+        if v:
+            from app.models.user import User
+            if User.query.filter_by(phone_number=v).first():
+                raise ValueError("Phone number already registered")
+        return v
+
 
 class UserLoginSchema(BaseModel):
     username: str = Field(..., min_length=3)

@@ -18,7 +18,7 @@ class User(db.Model):
     password_hash = db.Column(db.String(255), nullable=False)
 
     address = db.Column(db.String(255))
-    phone_number = db.Column(db.String(15))
+    phone_number = db.Column(db.String(15), unique=True)
     pincode = db.Column(db.String(10))
 
     role = db.Column(db.Enum(UserRole, name="user_roles"),
