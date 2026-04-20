@@ -5,7 +5,7 @@ class UserRole(enum.Enum):
     ADMIN = "admin"
     DOCTOR = "doctor"
     NURSE = "nurse"
-    RECEPTIONIST = "receptionist"
+    USER = "user"
     PATIENT = "patient"
     
 class AppointmentStatus(enum.Enum):

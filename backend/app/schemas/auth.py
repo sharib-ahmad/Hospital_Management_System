@@ -12,7 +12,6 @@ class UserRegisterSchema(BaseModel):
 
     password: str = Field(..., min_length=6, max_length=128)
 
-    role: Literal["admin", "doctor", "receptionist", "nurse", "patient"] = "patient"
 
     @field_validator("username")
     def normalize_username(cls, v):

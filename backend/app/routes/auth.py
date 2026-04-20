@@ -5,7 +5,7 @@ from http import HTTPStatus
 from flask_restx import Namespace, Resource
 from flask_jwt_extended import jwt_required
 from ..api_models import AuthModels
-from ..controllers.auth_controller import register_controller, login_controller, logout_controller, refresh_controller
+from ..controllers.auth_controller import AuthController
 
 auth_ns = Namespace('auth', description='Authentication related operations')
 
@@ -19,7 +19,7 @@ class Register(Resource):
     @auth_ns.marshal_with(models.response_model, code=HTTPStatus.CREATED, description="User registered successfully")
     @auth_ns.doc(description="Register a new user")
     def post(self):
-        return register_controller(request)
+        return AuthController.register()
 
 
 @auth_ns.route('/login')
@@ -28,7 +28,7 @@ class Login(Resource):
     @auth_ns.expect(models.login)
     @auth_ns.doc(description="User login")
     def post(self):
-        return login_controller(request)
+        return AuthController.login()
 
 
 @auth_ns.route('/logout')
@@ -37,7 +37,7 @@ class Logout(Resource):
     @auth_ns.doc(description="User logout (revokes current token)")
     @jwt_required()
     def post(self):
-        return logout_controller()
+        return AuthController.logout()
 
 
 @auth_ns.route('/refresh')
@@ -46,4 +46,4 @@ class Refresh(Resource):
     @auth_ns.doc(description="Refresh access token using refresh token")
     @jwt_required(refresh=True)
     def post(self):
-        return refresh_controller()
+        return AuthController.refresh()

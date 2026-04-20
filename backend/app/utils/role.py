@@ -1,15 +1,16 @@
 from functools import wraps
-from flask_jwt_extended import get_jwt, verify_jwt_in_request
-from .response import error_response
+from flask_jwt_extended import get_jwt, verify_jwt_in_request, jwt_required
+from .response import handle_response
 from ..models import UserRole
 
-def role_required(required_role):
+def role_required(*required_roles):
     """
-    Decorator to restrict access to a single specific role.
-    Usage: @role_required(UserRole.ADMIN)
+    Decorator to restrict access to one or more specific roles.
+    Usage: @role_required(UserRole.ADMIN) or @role_required(UserRole.ADMIN, UserRole.DOCTOR)
     """
     def decorator(fn):
         @wraps(fn)
+        @jwt_required()
         def wrapper(*args, **kwargs):
             # Ensure JWT is valid and present
             verify_jwt_in_request()
@@ -17,17 +18,20 @@ def role_required(required_role):
             claims = get_jwt()
             user_role = claims.get("role")
             
-            # Resolve the required role value
-            if isinstance(required_role, UserRole):
-                target_role = required_role.value
-            else:
-                target_role = str(required_role)
+            # Resolve the required role values
+            allowed_roles = []
+            for role in required_roles:
+                if isinstance(role, UserRole):
+                    allowed_roles.append(role.value)
+                else:
+                    allowed_roles.append(str(role))
             
-            if user_role == target_role:
+            if user_role in allowed_roles:
                 return fn(*args, **kwargs)
             
-            return error_response(
-                message=f"Access denied. This route is restricted to {target_role} only.",
+            allowed_roles_str = ", ".join(allowed_roles)
+            return handle_response(
+                message=f"Access denied. This route is restricted to {allowed_roles_str} only.",
                 status=403
             )
         return wrapper

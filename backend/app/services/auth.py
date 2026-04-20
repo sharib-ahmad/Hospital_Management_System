@@ -17,8 +17,7 @@ class AuthService:
             address=user_data.address,
             phone_number=user_data.phone_number,
             password = user_data.password,
-            pincode=user_data.pincode,
-            role=UserRole(user_data.role)
+            pincode=user_data.pincode
         )
 
         try:

@@ -22,7 +22,7 @@ class User(db.Model):
     pincode = db.Column(db.String(10))
 
     role = db.Column(db.Enum(UserRole, name="user_roles"),
-                     nullable=False, default=UserRole.PATIENT)
+                     nullable=False, default=UserRole.USER)
 
     is_active = db.Column(db.Boolean, default=True)
 

@@ -13,7 +13,6 @@ class AuthModels:
             'address': fields.String(required=False),
             'phone_number': fields.String(required=False),
             'pincode': fields.String(required=False),
-            'role': EnumField(UserRole, required=True, description='Role')
         })
 
         self.login = api.model('Login', {
