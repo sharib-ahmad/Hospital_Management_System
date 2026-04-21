@@ -7,9 +7,11 @@ class Department(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), unique=True, nullable=False)
     description = db.Column(db.Text)
+    doctor_limit = db.Column(db.Integer, default=3)  # Optional: limit number of doctors in a department
+    nurse_limit = db.Column(db.Integer, default=5)  # Optional: limit number of nurses in a department
     
     created_at = db.Column(db.DateTime, default=utc_now)
-    
+    updated_at = db.Column(db.DateTime, default=utc_now, onupdate=utc_now)
     # Relationships
     doctors = db.relationship('Doctor', back_populates='department', lazy=True)
 
