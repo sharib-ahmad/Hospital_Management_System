@@ -1,7 +1,7 @@
-from .user import User, UserRole
+from .user import User
 from .token_blocklist import TokenBlocklist
 from .department import Department
 from .doctor import Doctor
 from .patient import Patient
-from .appointment import Appointment, AppointmentStatus
+from .appointment import Appointment
 from .medical_record import MedicalRecord

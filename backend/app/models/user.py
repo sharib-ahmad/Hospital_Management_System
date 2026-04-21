@@ -1,9 +1,8 @@
 from ..extensions import db
-from werkzeug.security import generate_password_hash, check_password_hash
-from app.utils.security import hash_password, verify_password
-from app.utils.time import utc_now
-import uuid
+from ..utils.security import hash_password, verify_password
+from ..utils.time import utc_now
 from ..utils.enum import UserRole
+import uuid
 
 
 class User(db.Model):
@@ -18,7 +17,7 @@ class User(db.Model):
     password_hash = db.Column(db.String(255), nullable=False)
 
     address = db.Column(db.String(255))
-    phone_number = db.Column(db.String(15), unique=True)
+    phone_number = db.Column(db.String(15), unique=True, nullable=False)
     pincode = db.Column(db.String(10))
 
     role = db.Column(db.Enum(UserRole, name="user_roles"),
@@ -38,6 +37,8 @@ class User(db.Model):
     # Relationships
     doctor = db.relationship('Doctor', back_populates='user', uselist=False)
     patient = db.relationship('Patient', back_populates='user', uselist=False)
+    nurse = db.relationship('Nurse', back_populates='user', uselist=False)
+    applications = db.relationship('Application', back_populates='user', lazy=True)
     token_blocklist = db.relationship('TokenBlocklist', back_populates='user', lazy=True)
 
     @property

@@ -7,7 +7,7 @@ class TokenBlocklist(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     jti = db.Column(db.String(36), nullable=False, index=True)
     type = db.Column(db.String(16), nullable=False)
-    user_id = db.Column(db.UUID, db.ForeignKey('users.id'), nullable=False)
+    user_id = db.Column(db.UUID(as_uuid=True), db.ForeignKey('users.id'), nullable=False)
     created_at = db.Column(db.DateTime, default=utc_now)
 
     # Relationships
