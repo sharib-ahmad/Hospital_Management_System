@@ -2,17 +2,38 @@ import enum
 from flask_restx import fields
 
 class UserRole(enum.Enum):
+    PATIENT = "patient"
     ADMIN = "admin"
     DOCTOR = "doctor"
     NURSE = "nurse"
     USER = "user"
-    PATIENT = "patient"
     
 class AppointmentStatus(enum.Enum):
     PENDING = 'pending'
     CONFIRMED = 'confirmed'
     CANCELLED = 'cancelled'
     COMPLETED = 'completed'
+
+class ApplicationStatus(enum.Enum):
+    PENDING = 'pending'
+    APPROVED = 'approved'
+    REJECTED = 'rejected'
+    CANCELLED = 'cancelled'
+
+class Gender(enum.Enum):
+    MALE = "male"
+    FEMALE = "female"
+    OTHER = "other"
+
+class BloodGroup(enum.Enum):
+    A_POSITIVE = "A+"
+    A_NEGATIVE = "A-"
+    B_POSITIVE = "B+"
+    B_NEGATIVE = "B-"
+    O_POSITIVE = "O+"
+    O_NEGATIVE = "O-"
+    AB_POSITIVE = "AB+"
+    AB_NEGATIVE = "AB-"
     
     
 class EnumField(fields.String):

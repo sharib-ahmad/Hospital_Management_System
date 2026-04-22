@@ -1,5 +1,6 @@
 from ..extensions import db
 from ..utils.time import utc_now
+from ..utils.enum import Gender, BloodGroup
 
 class Doctor(db.Model):
     __tablename__ = 'doctors'
@@ -10,8 +11,8 @@ class Doctor(db.Model):
       
     shift = db.Column(db.String(20), nullable=False)  # e.g., "Day", "Night", "Rotating"
     date_of_birth = db.Column(db.Date, nullable=False)
-    gender = db.Column(db.String(10), nullable=False)
-    blood_group = db.Column(db.String(5), nullable=False)
+    gender = db.Column(db.Enum(Gender, name="gender_types"), nullable=False)
+    blood_group = db.Column(db.Enum(BloodGroup, name="blood_groups"), nullable=False)
     emergency_contact_number = db.Column(db.String(15), nullable=False)
     
     license_number = db.Column(db.String(20), unique=True, nullable=False)
