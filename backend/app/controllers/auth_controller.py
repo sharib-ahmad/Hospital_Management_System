@@ -5,18 +5,14 @@ from pydantic import ValidationError
 from ..schemas.auth import UserRegisterSchema, UserLoginSchema
 from ..services.auth import AuthService
 from ..utils.response import handle_response
+from ..utils.request import validate_json
 
 class AuthController:
     @staticmethod
     def register():
-        
-        
-        if not request.is_json:
-            return handle_response(success=False, message="Content-Type must be application/json", status_code=400)
-
-        data = request.get_json()
-        if not data:
-            return handle_response(success=False, message="Invalid JSON body", status_code=400)
+        data, error = validate_json()
+        if error:
+            return error
 
         try:
             validated = UserRegisterSchema(**data)
@@ -26,12 +22,9 @@ class AuthController:
 
     @staticmethod
     def login():
-        if not request.is_json:
-            return handle_response(success=False, message="Content-Type must be application/json", status_code=400)
-
-        data = request.get_json()
-        if not data:
-            return handle_response(success=False, message="Invalid JSON body", status_code=400)
+        data, error = validate_json()
+        if error:
+            return error
 
         try:
             validated = UserLoginSchema(**data)
