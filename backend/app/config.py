@@ -14,6 +14,19 @@ class BaseConfig:
 
     # --- Base SQLAlchemy Configuration ---
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    RESTX_MASK_SWAGGER = False
+    
+    # --- Email Server Configuration ---
+    SMTP_SERVER_HOST = os.getenv("SMTP_SERVER_HOST", "localhost")
+    SMTP_SERVER_PORT = int(os.getenv("SMTP_SERVER_PORT", 1025))
+    SMTP_USERNAME = os.getenv("SMTP_USERNAME")
+    SENDER_PASSWORD = os.getenv("SENDER_PASSWORD")
+    SENDER_ADDRESS = os.getenv("SENDER_ADDRESS")
+
+    # --- Caching Configuration ---
+    CACHE_TYPE = "RedisCache"
+    CACHE_REDIS_URL = os.getenv("CACHE_REDIS_URL", "redis://localhost:6379/0")
+    CACHE_DEFAULT_TIMEOUT = 300 # Default cache timeout in seconds (5 minutes)
 
 class DevelopmentConfig(BaseConfig):
     DEBUG = True

@@ -1,7 +1,7 @@
 from flask import Flask
 from flask_cors import CORS
 from .config import config_dict
-from .extensions import db, jwt, api
+from .extensions import db, jwt, api, celery, cache
 from . import security
 
 def create_app(config_name="development"):
@@ -12,6 +12,19 @@ def create_app(config_name="development"):
     db.init_app(app)
     jwt.init_app(app)
     api.init_app(app)
+    cache.init_app(app)
+    
+    
+    # Initialize Celery
+    celery.config_from_object('app.celeryConfig')
+    
+    class ContextTask(celery.Task):
+        def __call__(self, *args, **kwargs):
+            with app.app_context():
+                return self.run(*args, **kwargs)
+    
+    celery.Task = ContextTask
+    celery.autodiscover_tasks(['app.tasks'])
 
     from .routes import register_routes
     register_routes(api)

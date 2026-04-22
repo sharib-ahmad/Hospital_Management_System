@@ -12,25 +12,33 @@ case "$1" in
         uv run python run.py > output.txt 2>&1
         ;;
     create-admin)
-        if [ "$#" -ne 4 ]; then
-            echo "Usage: ./manage.sh create-admin <username> <email> <password>"
+        if [ "$#" -lt 6 ]; then
+            echo "Usage: ./manage.sh create-admin <username> <email> <password> <full_name> <phone_number> [address] [pincode]"
             exit 1
         fi
         echo "Creating Admin User: $2..."
-        # Using the Flask CLI command we integrated earlier
-        uv run flask --app app:create_app create-admin "$2" "$3" "$4"
+        # Shift command name and pass all remaining arguments
+        shift
+        uv run flask --app app:create_app create-admin "$@"
         ;;
-    # worker)
-    #     echo "Starting Celery Worker..."
-    #     uv run python worker.py
-    #     ;;
-    # beat)
-    #     echo "Starting Celery Beat..."
-    #     uv run python beat.py
-    #     ;;
+    worker)
+        echo "Starting Celery Worker..."
+        uv run celery -A worker.celery worker --loglevel=info
+        ;;
+    beat)
+        echo "Starting Celery Beat..."
+        uv run celery -A worker.celery beat --loglevel=info
+        ;;
+    shell)
+        echo "Starting Flask Shell..."
+        uv run flask --app app:create_app shell
+        ;;
     *)
-        echo "Usage: ./manage.sh {run|create-admin}"
+        echo "Usage: ./manage.sh {run|create-admin|worker|beat|shell}"
         echo "  run: Starts the server and redirects output to output.txt"
-        echo "  create-admin <username> <email> <password>: Creates a new admin user"
+        echo "  create-admin <username> <email> <password> <full_name> <phone_number> [address] [pincode]: Creates a new admin user"
+        echo "  worker: Starts the Celery worker"
+        echo "  beat: Starts the Celery beat scheduler"
+        echo "  shell: Starts the Flask interactive shell"
         ;;
 esac

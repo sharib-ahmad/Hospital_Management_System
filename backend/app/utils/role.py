@@ -1,7 +1,7 @@
 from functools import wraps
 from flask_jwt_extended import get_jwt, verify_jwt_in_request, jwt_required
 from .response import handle_response
-from ..models import UserRole
+from .enum import UserRole
 
 def role_required(*required_roles):
     """
@@ -32,7 +32,7 @@ def role_required(*required_roles):
             allowed_roles_str = ", ".join(allowed_roles)
             return handle_response(
                 message=f"Access denied. This route is restricted to {allowed_roles_str} only.",
-                status=403
+                status_code=403
             )
         return wrapper
     return decorator

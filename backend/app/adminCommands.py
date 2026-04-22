@@ -8,9 +8,13 @@ from .utils.enum import UserRole
 @click.argument('username')
 @click.argument('email')
 @click.argument('password')
+@click.argument('full_name')
+@click.argument('phone_number')
+@click.argument('address', required=False)
+@click.argument('pincode', required=False)
 @with_appcontext
-def create_admin_command(username, email, password):
-    """Create a new admin user."""
+def create_admin_command(username, email, password, full_name, phone_number, address, pincode):
+    """Create a new admin user with all profile details."""
     # Check if user already exists
     user = User.query.filter((User.username == username) | (User.email == email)).first()
     if user:
@@ -21,8 +25,11 @@ def create_admin_command(username, email, password):
     admin = User(
         username=username,
         email=email,
-        full_name="System Administrator",
-        password=password,  # This uses the setter which hashes it
+        full_name=full_name,
+        password=password,
+        phone_number=phone_number,
+        address=address,
+        pincode=pincode,
         role=UserRole.ADMIN,
         is_active=True
     )
