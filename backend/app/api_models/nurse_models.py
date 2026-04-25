@@ -29,9 +29,17 @@ class NurseModels:
             'message': fields.String,
             'data': fields.Nested(self.nurse_detail)
         })
+        
+        self.error_details = api.model('ErrorDetails', {
+            'loc': fields.List(fields.Raw, description="Location of the error"),
+            'msg': fields.String(description="Error message"),
+            'type': fields.String(description="Error type"),
+            'url': fields.String(description="Error URL")
+        })
 
         self.nurse_list_response = api.model('NurseListResponse', {
             'success': fields.Boolean,
             'message': fields.String,
-            'data': fields.List(fields.Nested(self.nurse_detail))
+            'data': fields.List(fields.Nested(self.nurse_detail), skip_none=True),
+            'errors': fields.List(fields.Nested(self.error_details), skip_none=True)
         })

@@ -2,15 +2,14 @@
 from flask import request
 from ..services.doctor import DoctorService
 from ..schemas.doctor import DoctorUpdateSchema
-from pydantic import ValidationError
 from ..utils.response import handle_response
 from ..utils.request import validate_json
+from ..errors import NotFoundError
 
 class DoctorController:
-
     @staticmethod
     def get_doctors():
-        dept_id = request.args.get('department_id', type=str)
+        dept_id = request.args.get('department_id')
         if dept_id:
             doctors = DoctorService.get_doctors_by_department(dept_id)
         else:
@@ -26,11 +25,8 @@ class DoctorController:
     def get_doctor(doctor_code):
         doctor = DoctorService.get_doctor_by_code(doctor_code)
         if not doctor:
-            return handle_response(
-                success=False,
-                message="Doctor not found",
-                status_code=404
-            )
+            raise NotFoundError("Doctor not found")
+            
         return handle_response(
             success=True,
             message="Doctor retrieved successfully",
@@ -42,30 +38,17 @@ class DoctorController:
         data, error = validate_json()
         if error:
             return error
-        try:
-            validated_data = DoctorUpdateSchema(**data)
-            doctor = DoctorService.update_doctor(doctor_code, validated_data)
-            if doctor == "DEPARTMENT_NOT_FOUND":
-                return handle_response(
-                    success=False,
-                    message="Department not found",
-                    status_code=404
-                )
-            if not doctor:
-                return handle_response(
-                    success=False,
-                    message="Doctor not found",
-                    status_code=404
-                )
-            return handle_response(
-                success=True,
-                message="Doctor updated successfully",
-                data=doctor
-            )
-        except ValidationError as e:
-            return handle_response(
-                success=False,
-                message="Validation Error",
-                errors=e.errors(),
-                status_code=400
-            )
+            
+        validated_data = DoctorUpdateSchema(**data)
+        doctor = DoctorService.update_doctor(doctor_code, validated_data)
+        
+        if doctor == "DEPARTMENT_NOT_FOUND":
+            raise NotFoundError("Department not found")
+        if not doctor:
+            raise NotFoundError("Doctor not found")
+            
+        return handle_response(
+            success=True,
+            message="Doctor updated successfully",
+            data=doctor
+        )

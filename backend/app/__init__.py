@@ -29,6 +29,9 @@ def create_app(config_name="development"):
     from .routes import register_routes
     register_routes(api)
     
+    from .errors.handlers import register_error_handlers
+    register_error_handlers(api)
+    
     from .adminCommands import register_commands
     register_commands(app)
     
