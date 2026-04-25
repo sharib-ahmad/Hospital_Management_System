@@ -1,0 +1,37 @@
+# app/api_models/nurse_models.py
+from flask_restx import fields
+from ..utils.enum import EnumField, Gender, BloodGroup
+
+class NurseModels:
+    def __init__(self, api):
+        self.nurse_base = api.model('NurseBase', {
+            'experience_years': fields.Integer,
+            'license_number': fields.String(required=True),
+            'shift': fields.String(required=True),
+            'date_of_birth': fields.Date(required=True),
+            'gender': EnumField(Gender, required=True),
+            'blood_group': EnumField(BloodGroup, required=True),
+            'emergency_contact_number': fields.String(required=True),
+            'is_available': fields.Boolean,
+            'department_id': fields.String(required=True)
+        })
+
+        self.nurse_detail = api.inherit('NurseDetail', self.nurse_base, {
+            'id': fields.String(readOnly=True, description="User UUID"),
+            'nurse_code': fields.String(readOnly=True),
+            'full_name': fields.String(attribute='user.full_name'),
+            'email': fields.String(attribute='user.email'),
+            'department_name': fields.String(attribute='department.name')
+        })
+
+        self.nurse_response = api.model('NurseResponse', {
+            'success': fields.Boolean,
+            'message': fields.String,
+            'data': fields.Nested(self.nurse_detail)
+        })
+
+        self.nurse_list_response = api.model('NurseListResponse', {
+            'success': fields.Boolean,
+            'message': fields.String,
+            'data': fields.List(fields.Nested(self.nurse_detail))
+        })
