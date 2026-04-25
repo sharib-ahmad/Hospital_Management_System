@@ -5,22 +5,8 @@ from ..controllers.doctor_controller import DoctorController
 from ..utils.role import role_required
 from ..utils.enum import UserRole
 
-doctor_ns = Namespace('doctors', description='Doctor and Department related operations')
+doctor_ns = Namespace('doctors', description='Doctor operations')
 doctor_models = DoctorModels(doctor_ns)
-
-@doctor_ns.route('/departments')
-class DepartmentList(Resource):
-    @doctor_ns.marshal_with(doctor_models.department_response)
-    def get(self):
-        """List all departments"""
-        return DoctorController.get_departments()
-
-    @role_required(UserRole.ADMIN)
-    @doctor_ns.expect(doctor_models.department)
-    @doctor_ns.marshal_with(doctor_models.department_response)
-    def post(self):
-        """Create a new department (Admin only)"""
-        return DoctorController.create_department()
 
 @doctor_ns.route('/')
 class DoctorList(Resource):
@@ -30,26 +16,19 @@ class DoctorList(Resource):
         """List all doctors"""
         return DoctorController.get_doctors()
 
-    @role_required(UserRole.ADMIN)
-    @doctor_ns.expect(doctor_models.doctor_base)
-    @doctor_ns.marshal_with(doctor_models.doctor_response)
-    def post(self):
-        """Create a new doctor profile (Admin only)"""
-        return DoctorController.create_doctor()
-
-@doctor_ns.route('/<string:doctor_id>')
-@doctor_ns.param('doctor_id', 'The doctor user UUID')
+@doctor_ns.route('/<string:doctor_code>')
+@doctor_ns.param('doctor_code', 'The doctor code')
 class DoctorDetail(Resource):
     @doctor_ns.marshal_with(doctor_models.doctor_response)
-    def get(self, doctor_id):
+    def get(self, doctor_code):
         """Get doctor details"""
-        return DoctorController.get_doctor(doctor_id)
+        return DoctorController.get_doctor(doctor_code)
 
     @role_required(UserRole.ADMIN, UserRole.DOCTOR)
     @doctor_ns.expect(doctor_models.doctor_base)
     @doctor_ns.marshal_with(doctor_models.doctor_response)
-    def put(self, doctor_id):
+    def put(self, doctor_code):
         """Update doctor details (Admin or own Doctor profile)"""
         # Note: In a real scenario, you'd add a check in the controller 
         # to ensure a doctor can only update their own profile.
-        return DoctorController.update_doctor(doctor_id)
+        return DoctorController.update_doctor(doctor_code)

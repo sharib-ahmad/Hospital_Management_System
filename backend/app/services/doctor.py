@@ -6,47 +6,26 @@ from ..models.user import User
 
 class DoctorService:
     @staticmethod
-    def get_all_departments():
-        return Department.query.all()
-
-    @staticmethod
-    def create_department(data):
-        department = Department(
-            name=data.name,
-            description=data.get('description', None)
-        )
-        db.session.add(department)
-        db.session.commit()
-        return department
-
-    @staticmethod
-    def create_doctor(data):
-        doctor = Doctor(
-            id=data.user_id,
-            specialization=data.specialization,
-            experience_years=data.get('experience_years', 0),
-            consultation_fee=data.consultation_fee,
-            department_id=data.department_id
-        )
-        db.session.add(doctor)
-        db.session.commit()
-        return doctor
-
-    @staticmethod
     def get_all_doctors():
         return Doctor.query.all()
 
     @staticmethod
-    def get_doctor_by_id(doctor_id):
-        return Doctor.query.get(doctor_id)
+    def get_doctor_by_code(doctor_code):
+        return Doctor.query.filter_by(doctor_code=doctor_code).first()
 
     @staticmethod
-    def update_doctor(doctor_id, data):
-        doctor = Doctor.query.get(doctor_id)
+    def update_doctor(doctor_code, data):
+        doctor = Doctor.query.filter_by(doctor_code=doctor_code).first()
         if not doctor:
             return None
         
-        for key, value in data.items():
+        # Validate department if it's being updated
+        if hasattr(data, 'department_id') and data.department_id is not None:
+            department = Department.query.get(data.department_id)
+            if not department:
+                return "DEPARTMENT_NOT_FOUND"
+
+        for key, value in data.dict(exclude_unset=True).items():
             if hasattr(doctor, key) and value is not None:
                 setattr(doctor, key, value)
         
