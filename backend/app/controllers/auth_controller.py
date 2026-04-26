@@ -1,7 +1,8 @@
 # app/controllers/auth_controller.py
 
-from flask import request
+from flask import request, jsonify, make_response
 from pydantic import ValidationError
+from flask_jwt_extended import set_access_cookies, set_refresh_cookies, unset_jwt_cookies
 from ..schemas.auth import UserRegisterSchema, UserLoginSchema
 from ..services.auth import AuthService
 from ..utils.response import handle_response
@@ -28,14 +29,40 @@ class AuthController:
 
         try:
             validated = UserLoginSchema(**data)
-            return AuthService.login_user(validated)
+            # service returns a tuple (dict, status_code)
+            resp_data, status_code = AuthService.login_user(validated)
+            
+            if status_code != 200:
+                return resp_data, status_code
+                
+            # Create a flask response
+            response = make_response(jsonify(resp_data), status_code)
+            
+            # Set cookies
+            access_token = resp_data['data']['access_token']
+            refresh_token = resp_data['data']['refresh_token']
+            set_access_cookies(response, access_token)
+            set_refresh_cookies(response, refresh_token)
+            
+            return response
+            
         except ValidationError as e:
             return handle_response(success=False, message="Validation Error", errors=e.errors(), status_code=400)
 
     @staticmethod
     def logout():
-        return AuthService.logout_user()
+        resp_data, status_code = AuthService.logout_user()
+        response = make_response(jsonify(resp_data), status_code)
+        unset_jwt_cookies(response)
+        return response
 
     @staticmethod
     def refresh():
-        return AuthService.refresh_token()
+        resp_data, status_code = AuthService.refresh_token()
+        if status_code != 200:
+            return resp_data, status_code
+            
+        response = make_response(jsonify(resp_data), status_code)
+        access_token = resp_data['data']['access_token']
+        set_access_cookies(response, access_token)
+        return response
