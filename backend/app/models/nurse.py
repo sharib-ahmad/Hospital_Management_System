@@ -29,6 +29,7 @@ class Nurse(db.Model):
     # Relationships
     user = db.relationship('User', back_populates='nurse')
     department = db.relationship('Department', back_populates='nurses')
+    vitals = db.relationship('PatientVital', back_populates='nurse')
 
     def __repr__(self):
         return f"<Nurse {self.id} - Department: {self.department_id}>"

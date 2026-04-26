@@ -10,6 +10,6 @@ def register_routes(api):
     """
     api.add_namespace(auth_ns, path='/auth')
     api.add_namespace(department_ns, path='/departments')
+    api.add_namespace(application_ns, path='/applications')
     api.add_namespace(doctor_ns, path='/doctors')
     api.add_namespace(nurse_ns, path='/nurses')
-    api.add_namespace(application_ns, path='/applications')

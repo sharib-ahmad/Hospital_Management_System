@@ -7,3 +7,4 @@ from .appointment import Appointment
 from .medical_record import MedicalRecord
 from .nurse import Nurse
 from .applications import Application
+from .patient_vitals import PatientVital
