@@ -1,11 +1,9 @@
-from ..extensions import db, celery
+from ..extensions import db, celery, cache
 from celery import shared_task
 from ..models import User, Application, Doctor, Nurse, Patient
 from ..utils.enum import UserRole, ApplicationStatus
 from ..utils.codes import CodeGenerator
 from ..extensions import logger
-
-
 
 @shared_task(
     name='tasks.process_application_approval',
@@ -48,6 +46,10 @@ def process_application_approval(self, application_id, approver_id=None):
                 emergency_contact_number=application.emergency_contact_number
             )
             db.session.add(new_profile)
+            
+            # Invalidate doctor list cache
+            from ..controllers.doctor_controller import DoctorController
+            cache.delete_memoized(DoctorController._get_doctors_internal)
 
         elif application.role_applied == UserRole.NURSE:
             new_profile = Nurse(
@@ -63,6 +65,10 @@ def process_application_approval(self, application_id, approver_id=None):
                 emergency_contact_number=application.emergency_contact_number
             )
             db.session.add(new_profile)
+            
+            # Invalidate nurse list cache
+            from ..controllers.nurse_controller import NurseController
+            cache.delete_memoized(NurseController._get_nurses_internal)
 
         elif application.role_applied == UserRole.PATIENT:
             new_profile = Patient(

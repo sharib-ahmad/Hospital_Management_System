@@ -5,11 +5,17 @@ from ..schemas.doctor import DoctorUpdateSchema
 from ..utils.response import handle_response
 from ..utils.request import validate_json
 from ..errors import NotFoundError
+from ..extensions import cache
 
 class DoctorController:
     @staticmethod
     def get_doctors():
         dept_id = request.args.get('department_id')
+        return DoctorController._get_doctors_internal(dept_id)
+
+    @staticmethod
+    @cache.memoize(timeout=600)
+    def _get_doctors_internal(dept_id):
         if dept_id:
             doctors = DoctorService.get_doctors_by_department(dept_id)
         else:
@@ -22,6 +28,7 @@ class DoctorController:
         )
 
     @staticmethod
+    @cache.memoize(timeout=600)
     def get_doctor(doctor_code):
         doctor = DoctorService.get_doctor_by_code(doctor_code)
         if not doctor:
@@ -47,6 +54,11 @@ class DoctorController:
         if not doctor:
             raise NotFoundError("Doctor not found")
             
+        # Invalidate doctor caches
+        cache.delete_memoized(DoctorController.get_doctor, doctor_code)
+        # Invalidate all doctor lists
+        cache.delete_memoized(DoctorController._get_doctors_internal)
+        
         return handle_response(
             success=True,
             message="Doctor updated successfully",
