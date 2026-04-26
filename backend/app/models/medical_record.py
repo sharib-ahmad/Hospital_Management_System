@@ -22,7 +22,7 @@ class MedicalRecord(db.Model):
     # Relationships
     patient = db.relationship('Patient', back_populates='medical_records')
     doctor = db.relationship('Doctor', back_populates='medical_records')
-    appointment = db.relationship('Appointment', back_populates='medical_records')
+    appointment = db.relationship('Appointment', back_populates='medical_record')
 
     def __repr__(self):
         return f"<MedicalRecord {self.id} - Patient: {self.patient_id}>"

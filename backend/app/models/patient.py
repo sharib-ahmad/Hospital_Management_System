@@ -18,10 +18,10 @@ class Patient(db.Model):
     updated_at = db.Column(db.DateTime, default=utc_now, onupdate=utc_now)
 
     # Relationships
-    user = db.relationship('User', back_populates='patients')
-    patient_vitals = db.relationship('PatientVital', back_populates='patients')
-    appointments = db.relationship('Appointment', back_populates='patients', lazy=True)
-    medical_records = db.relationship('MedicalRecord', back_populates='patients', lazy=True)
+    user = db.relationship('User', back_populates='patient')
+    patient_vitals = db.relationship('PatientVital', back_populates='patient')
+    appointments = db.relationship('Appointment', back_populates='patient', lazy=True)
+    medical_records = db.relationship('MedicalRecord', back_populates='patient', lazy=True)
     assigned_doctor = db.relationship('Doctor', back_populates='patients')
 
     def __repr__(self):
