@@ -13,6 +13,10 @@ import UserPortal from '../views/portals/UserPortal.vue'
 
 // Admin Pages
 import DepartmentManagement from '../views/admin/DepartmentManagement.vue'
+import ApplicationManagement from '../views/ApplicationManagement.vue'
+
+// Application Pages
+import ApplyForRole from '../views/ApplyForRole.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -46,6 +50,12 @@ const router = createRouter({
       meta: { requiresAuth: true, role: 'admin' },
     },
     {
+      path: '/admin/applications',
+      name: 'admin-applications',
+      component: ApplicationManagement,
+      meta: { requiresAuth: true, role: 'admin' },
+    },
+    {
       path: '/doctor',
       name: 'doctor-portal',
       component: DoctorPortal,
@@ -67,6 +77,12 @@ const router = createRouter({
       path: '/user',
       name: 'user-portal',
       component: UserPortal,
+      meta: { requiresAuth: true, role: 'user' },
+    },
+    {
+      path: '/apply',
+      name: 'apply',
+      component: ApplyForRole,
       meta: { requiresAuth: true, role: 'user' },
     },
   ],
