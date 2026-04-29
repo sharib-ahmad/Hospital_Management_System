@@ -101,7 +101,9 @@ const handleRegister = async () => {
 <template>
   <AuthLayout>
     <div class="mb-8">
-      <h2 class="text-2xl font-bold text-gray-900 dark:text-white transition-colors">Create an account</h2>
+      <h2 class="text-2xl font-bold text-gray-900 dark:text-white transition-colors">
+        Create an account
+      </h2>
       <p class="text-sm text-gray-600 dark:text-slate-400 mt-1 transition-colors">
         Join MediFlow and start managing your health digitally.
       </p>
@@ -195,10 +197,22 @@ const handleRegister = async () => {
           required
           class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 dark:border-slate-600 rounded bg-white dark:bg-slate-700"
         />
-        <label for="terms" class="ml-2 block text-sm text-gray-700 dark:text-slate-400 transition-colors">
+        <label
+          for="terms"
+          class="ml-2 block text-sm text-gray-700 dark:text-slate-400 transition-colors"
+        >
           I agree to the
-          <a href="#" class="text-blue-600 dark:text-blue-400 font-bold hover:text-blue-500 transition-colors">Terms</a> and
-          <a href="#" class="text-blue-600 dark:text-blue-400 font-bold hover:text-blue-500 transition-colors">Privacy Policy</a>
+          <a
+            href="#"
+            class="text-blue-600 dark:text-blue-400 font-bold hover:text-blue-500 transition-colors"
+            >Terms</a
+          >
+          and
+          <a
+            href="#"
+            class="text-blue-600 dark:text-blue-400 font-bold hover:text-blue-500 transition-colors"
+            >Privacy Policy</a
+          >
         </label>
       </div>
 
@@ -237,7 +251,9 @@ const handleRegister = async () => {
     <div class="mt-8 text-center border-t border-gray-100 dark:border-slate-700 pt-6">
       <p class="text-sm text-gray-600 dark:text-slate-400 transition-colors">
         Already have an account?
-        <router-link :to="{ name: 'login' }" class="font-bold text-blue-600 dark:text-blue-400 hover:text-blue-500 transition-colors"
+        <router-link
+          :to="{ name: 'login' }"
+          class="font-bold text-blue-600 dark:text-blue-400 hover:text-blue-500 transition-colors"
           >Sign in instead</router-link
         >
       </p>

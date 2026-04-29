@@ -21,3 +21,26 @@ class DepartmentService:
     @staticmethod
     def get_department_by_id(department_id):
         return Department.query.get(department_id)
+
+    @staticmethod
+    def update_department(department, data):
+        """Update an existing department"""
+        if isinstance(data, dict):
+            if 'name' in data:
+                department.name = data['name']
+            if 'description' in data:
+                department.description = data['description']
+        else:
+            if hasattr(data, 'name'):
+                department.name = data.name
+            if hasattr(data, 'description'):
+                department.description = data.description
+        
+        db.session.commit()
+        return department
+
+    @staticmethod
+    def delete_department(department):
+        """Delete a department"""
+        db.session.delete(department)
+        db.session.commit()

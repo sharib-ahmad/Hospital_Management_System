@@ -21,3 +21,19 @@ class DepartmentList(Resource):
     def post(self):
         """Create a new department (Admin only)"""
         return DepartmentController.create_department()
+
+
+@department_ns.route('/<string:department_id>')
+class DepartmentDetail(Resource):
+    @role_required(UserRole.ADMIN)
+    @department_ns.expect(department_models.department)
+    @department_ns.marshal_with(department_models.department_response)
+    def put(self, department_id):
+        """Update a department (Admin only)"""
+        return DepartmentController.update_department(department_id)
+
+    @role_required(UserRole.ADMIN)
+    @department_ns.marshal_with(department_models.department_response)
+    def delete(self, department_id):
+        """Delete a department (Admin only)"""
+        return DepartmentController.delete_department(department_id)

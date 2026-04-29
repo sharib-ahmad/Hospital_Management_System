@@ -11,6 +11,9 @@ import PatientPortal from '../views/portals/PatientPortal.vue'
 import NursePortal from '../views/portals/NursePortal.vue'
 import UserPortal from '../views/portals/UserPortal.vue'
 
+// Admin Pages
+import DepartmentManagement from '../views/admin/DepartmentManagement.vue'
+
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
@@ -34,6 +37,12 @@ const router = createRouter({
       path: '/admin',
       name: 'admin-portal',
       component: AdminPortal,
+      meta: { requiresAuth: true, role: 'admin' },
+    },
+    {
+      path: '/admin/departments',
+      name: 'admin-departments',
+      component: DepartmentManagement,
       meta: { requiresAuth: true, role: 'admin' },
     },
     {

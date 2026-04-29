@@ -1,17 +1,39 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import ThemeToggle from '../components/ThemeToggle.vue'
 
 const auth = useAuthStore()
 const router = useRouter()
-const isSidebarOpen = ref(true)
+const isSidebarOpen = ref(false) // Default to closed on mobile
+
+const toggleSidebar = () => {
+  isSidebarOpen.value = !isSidebarOpen.value
+}
 
 const handleLogout = () => {
   auth.logout()
   router.push({ name: 'landing' })
 }
+
+// Close sidebar on window resize if it's large enough
+const handleResize = () => {
+  if (window.innerWidth >= 1024) {
+    isSidebarOpen.value = true
+  } else {
+    isSidebarOpen.value = false
+  }
+}
+
+onMounted(() => {
+  handleResize()
+  window.addEventListener('resize', handleResize)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('resize', handleResize)
+})
 
 const navigation = {
   admin: [
@@ -101,15 +123,23 @@ const currentNav = navigation[auth.user?.role as keyof typeof navigation] || nav
 
 <template>
   <div class="min-h-screen bg-gray-50 dark:bg-slate-900 transition-colors duration-300">
+    <!-- Backdrop for mobile -->
+    <div
+      v-if="isSidebarOpen"
+      @click="isSidebarOpen = false"
+      class="fixed inset-0 z-40 bg-gray-900/50 backdrop-blur-sm lg:hidden transition-opacity"
+    ></div>
+
     <!-- Sidebar -->
     <aside
-      class="fixed inset-y-0 left-0 z-50 w-64 bg-white dark:bg-slate-800 border-r border-gray-200 dark:border-slate-700 transition-transform duration-300 transform"
+      class="fixed inset-y-0 left-0 z-50 w-64 bg-white dark:bg-slate-800 border-r border-gray-200 dark:border-slate-700 transition-transform duration-300 transform lg:translate-x-0"
       :class="isSidebarOpen ? 'translate-x-0' : '-translate-x-full'"
     >
       <div class="h-full flex flex-col">
-        <!-- Logo -->
-        <div
-          class="h-16 flex items-center gap-2 px-6 border-b border-gray-100 dark:border-slate-700"
+        <!-- Logo (Always links to landing page) -->
+        <RouterLink
+          :to="{ name: 'landing' }"
+          class="h-16 flex items-center gap-2 px-6 border-b border-gray-100 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors"
         >
           <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
             <svg
@@ -125,14 +155,15 @@ const currentNav = navigation[auth.user?.role as keyof typeof navigation] || nav
             </svg>
           </div>
           <span class="text-lg font-bold text-gray-900 dark:text-white">MediFlow</span>
-        </div>
+        </RouterLink>
 
         <!-- Navigation -->
-        <nav class="flex-1 px-4 py-6 space-y-1">
+        <nav class="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
           <RouterLink
             v-for="item in currentNav"
             :key="item.name"
             :to="item.href"
+            @click="window.innerWidth < 1024 && (isSidebarOpen = false)"
             class="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-xl transition-colors"
             :class="
               $route.path === item.href
@@ -177,14 +208,17 @@ const currentNav = navigation[auth.user?.role as keyof typeof navigation] || nav
     </aside>
 
     <!-- Main Content -->
-    <div class="transition-all duration-300" :class="isSidebarOpen ? 'pl-64' : 'pl-0'">
+    <div
+      class="transition-all duration-300 min-h-screen flex flex-col"
+      :class="isSidebarOpen ? 'lg:pl-64' : 'pl-0'"
+    >
       <!-- Top Bar -->
       <header
         class="h-16 sticky top-0 z-40 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-gray-100 dark:border-slate-800"
       >
-        <div class="h-full px-6 flex items-center justify-between">
+        <div class="h-full px-4 sm:px-6 flex items-center justify-between">
           <button
-            @click="isSidebarOpen = !isSidebarOpen"
+            @click="toggleSidebar"
             class="p-2 text-gray-500 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg"
           >
             <svg
@@ -203,20 +237,22 @@ const currentNav = navigation[auth.user?.role as keyof typeof navigation] || nav
             </svg>
           </button>
 
-          <div class="flex items-center gap-4">
+          <div class="flex items-center gap-2 sm:gap-4">
             <ThemeToggle />
-            <div class="h-8 w-px bg-gray-200 dark:bg-slate-700 mx-2"></div>
-            <div class="flex items-center gap-3">
-              <div class="text-right hidden sm:block">
-                <p class="text-sm font-bold text-gray-900 dark:text-white">
+            <div class="h-8 w-px bg-gray-200 dark:bg-slate-700 mx-1 sm:mx-2"></div>
+            <div class="flex items-center gap-2 sm:gap-3">
+              <div class="text-right hidden xs:block">
+                <p
+                  class="text-xs sm:text-sm font-bold text-gray-900 dark:text-white truncate max-w-[100px]"
+                >
                   {{ auth.user?.username }}
                 </p>
-                <p class="text-xs text-gray-500 dark:text-slate-400 capitalize">
+                <p class="text-[10px] sm:text-xs text-gray-500 dark:text-slate-400 capitalize">
                   {{ auth.user?.role }}
                 </p>
               </div>
               <div
-                class="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center text-blue-600 dark:text-blue-400 font-bold"
+                class="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center text-blue-600 dark:text-blue-400 font-bold text-sm sm:text-base"
               >
                 {{ auth.user?.username?.[0].toUpperCase() }}
               </div>
@@ -226,7 +262,7 @@ const currentNav = navigation[auth.user?.role as keyof typeof navigation] || nav
       </header>
 
       <!-- Page Body -->
-      <main class="p-6">
+      <main class="p-4 sm:p-6 flex-1">
         <slot></slot>
       </main>
     </div>

@@ -33,3 +33,48 @@ class DepartmentController:
             message="Department created successfully",
             data=department
         )
+
+    @staticmethod
+    def update_department(department_id):
+        data, error = validate_json()
+        if error:
+            return error
+        
+        department = DepartmentService.get_department_by_id(department_id)
+        if not department:
+            return handle_response(
+                success=False,
+                message="Department not found",
+                status_code=404
+            )
+        
+        updated_dept = DepartmentService.update_department(department, data)
+        
+        # Invalidate departments cache
+        cache.delete('all_departments')
+        
+        return handle_response(
+            success=True,
+            message="Department updated successfully",
+            data=updated_dept
+        )
+
+    @staticmethod
+    def delete_department(department_id):
+        department = DepartmentService.get_department_by_id(department_id)
+        if not department:
+            return handle_response(
+                success=False,
+                message="Department not found",
+                status_code=404
+            )
+        
+        DepartmentService.delete_department(department)
+        
+        # Invalidate departments cache
+        cache.delete('all_departments')
+        
+        return handle_response(
+            success=True,
+            message="Department deleted successfully"
+        )

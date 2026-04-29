@@ -29,6 +29,8 @@ A comprehensive Hospital Management System (HMS) designed to replace manual regi
 - **API Design:** Use `flask-restx` namespaces. Every endpoint MUST be documented with models for Swagger.
 - **Validation:** Use Pydantic schemas for request validation.
 - **Naming:** PEP 8 compliance.
+- **Caching:** Use `Flask-Caching` with Redis for slow-changing data (Departments, Doctors). Implement cache invalidation upon any state change.
+- **Auth:** Use cookie-based JWT authentication (HttpOnly, Secure). Tokens must not be sent in response bodies.
 
 ### Frontend (Vue/TypeScript)
 - **Components:** `<script setup>` with TypeScript.
@@ -36,6 +38,9 @@ A comprehensive Hospital Management System (HMS) designed to replace manual regi
 - **State:** Pinia for global/shared state.
 - **Formatting:** Use `oxfmt` for formatting (defined in `package.json`).
 - **Theming:** Every frontend page MUST support Light, Dark, and System Default themes using Tailwind CSS dark mode (class or media). A global theme switcher should be available.
+- **Responsiveness:** All pages MUST be fully responsive (Mobile, Tablet, Desktop) following a mobile-first approach. Interactive elements like sidebars and menus must adapt or collapse appropriately on smaller screens.
+- **Auth:** Store access tokens in memory ONLY. Use silent refresh via HttpOnly refresh cookies for persistence.
+- **Forms:** Use the reusable `FormField` component for all inputs to ensure consistent validation, error handling, and theming.
 
 
 ## Operational Mandates

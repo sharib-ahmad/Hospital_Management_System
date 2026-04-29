@@ -45,6 +45,16 @@ const handleInput = (event: Event) => {
   const target = event.target as HTMLInputElement
   emit('update:modelValue', target.value)
 }
+
+const handleFocus = (event: FocusEvent) => {
+  isFocused.value = true
+  emit('focus', event)
+}
+
+const handleBlur = (event: FocusEvent) => {
+  isFocused.value = false
+  emit('blur', event)
+}
 </script>
 
 <template>
@@ -74,8 +84,8 @@ const handleInput = (event: Event) => {
         :type="inputType"
         :value="modelValue"
         @input="handleInput"
-        @focus="isFocused = true; $emit('focus', $event)"
-        @blur="isFocused = false; $emit('blur', $event)"
+        @focus="handleFocus"
+        @blur="handleBlur"
         :placeholder="placeholder"
         :disabled="disabled"
         :required="required"
