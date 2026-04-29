@@ -17,6 +17,12 @@ const handleLogout = () => {
   router.push({ name: 'landing' })
 }
 
+const handleNavClick = () => {
+  if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+    isSidebarOpen.value = false
+  }
+}
+
 // Close sidebar on window resize if it's large enough
 const handleResize = () => {
   if (window.innerWidth >= 1024) {
@@ -49,7 +55,7 @@ const navigation = {
     },
     {
       name: 'Departments',
-      href: '#',
+      href: 'admin-departments',
       icon: 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4',
     },
     {
@@ -162,8 +168,8 @@ const currentNav = navigation[auth.user?.role as keyof typeof navigation] || nav
           <RouterLink
             v-for="item in currentNav"
             :key="item.name"
-            :to="item.href"
-            @click="window.innerWidth < 1024 && (isSidebarOpen = false)"
+            :to="{ name: item.href }"
+            @click="handleNavClick"
             class="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-xl transition-colors"
             :class="
               $route.path === item.href
@@ -254,7 +260,7 @@ const currentNav = navigation[auth.user?.role as keyof typeof navigation] || nav
               <div
                 class="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center text-blue-600 dark:text-blue-400 font-bold text-sm sm:text-base"
               >
-                {{ auth.user?.username?.[0].toUpperCase() }}
+                {{ auth.user?.username ? auth.user.username[0].toUpperCase() : '?' }}
               </div>
             </div>
           </div>
