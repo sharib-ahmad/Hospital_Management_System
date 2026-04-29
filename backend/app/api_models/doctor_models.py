@@ -22,7 +22,9 @@ class DoctorModels:
             'id': fields.String(readOnly=True, description="User UUID"),
             'full_name': fields.String(attribute='user.full_name'),
             'email': fields.String(attribute='user.email'),
-            'department_name': fields.String(attribute='department.name')
+            'department_name': fields.String(attribute='department.name'),
+            'created_at': fields.DateTime(readOnly=True),
+            'updated_at': fields.DateTime(readOnly=True)
         })
 
         self.doctor_response = api.model('DoctorResponse', {
@@ -30,9 +32,17 @@ class DoctorModels:
             'message': fields.String,
             'data': fields.Nested(self.doctor_detail)
         })
+        
+        self.error_details = api.model('ErrorDetails', {
+            'loc': fields.List(fields.Raw, description="Location of the error"),
+            'msg': fields.String(description="Error message"),
+            'type': fields.String(description="Error type"),
+            'url': fields.String(description="Error URL")
+        })
 
         self.doctor_list_response = api.model('DoctorListResponse', {
             'success': fields.Boolean,
             'message': fields.String,
-            'data': fields.List(fields.Nested(self.doctor_detail))
+            'data': fields.List(fields.Nested(self.doctor_detail), skip_none=True),
+            'errors': fields.List(fields.Nested(self.error_details), skip_none=True)
         })

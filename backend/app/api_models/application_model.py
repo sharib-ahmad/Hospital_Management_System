@@ -61,6 +61,8 @@ class ApplicationModels:
             'id': fields.Integer(readOnly=True),
             'role_applied': EnumField(UserRole),
             'status': EnumField(ApplicationStatus),
+            'created_at': fields.DateTime(readOnly=True),
+            'updated_at': fields.DateTime(readOnly=True),
             **self.base_application_fields,
             **self.user_profile_fragment
         })
@@ -85,7 +87,7 @@ class ApplicationModels:
             'shift': fields.String
         })
 
-        # --- UNIFIED RESPONSE WRAPPER (Success & Error in one model) ---
+        # --- UNIFIED RESPONSE WRAPPER ---
 
         def create_unified_response(name, data_model):
             return api.model(name, {

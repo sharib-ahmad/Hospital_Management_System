@@ -13,8 +13,14 @@ class Department(db.Model):
     created_at = db.Column(db.DateTime, default=utc_now)
     updated_at = db.Column(db.DateTime, default=utc_now, onupdate=utc_now)
     # Relationships
-    doctors = db.relationship('Doctor', back_populates='department', lazy=True)
-    nurses = db.relationship('Nurse', back_populates='department', lazy=True)
+    doctors = db.relationship('Doctor', back_populates='department', lazy='selectin')
+    nurses = db.relationship('Nurse', back_populates='department', lazy='selectin')
+    @property
+    def staff(self):
+        return {
+            "doctors": len(self.doctors),
+            "nurses": len(self.nurses)
+        }
 
     def __repr__(self):
         return f"<Department {self.name}>"

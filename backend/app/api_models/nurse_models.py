@@ -21,7 +21,9 @@ class NurseModels:
             'nurse_code': fields.String(readOnly=True),
             'full_name': fields.String(attribute='user.full_name'),
             'email': fields.String(attribute='user.email'),
-            'department_name': fields.String(attribute='department.name')
+            'department_name': fields.String(attribute='department.name'),
+            'created_at': fields.DateTime(readOnly=True),
+            'updated_at': fields.DateTime(readOnly=True)
         })
 
         self.nurse_response = api.model('NurseResponse', {
