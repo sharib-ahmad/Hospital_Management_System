@@ -29,6 +29,10 @@ def process_application_approval(self, application_id, approver_id=None):
         # Update user role
         user.role = application.role_applied
 
+        # We need to invalidate the department cache if a doctor or nurse is added
+        # because the department 'staff' count will change.
+        department_cache_invalidated = False
+
         if application.role_applied == UserRole.DOCTOR:
             # Create Doctor Profile
             new_profile = Doctor(
@@ -50,6 +54,7 @@ def process_application_approval(self, application_id, approver_id=None):
             # Invalidate doctor list cache
             from ..controllers.doctor_controller import DoctorController
             cache.delete_memoized(DoctorController._get_doctors_internal)
+            department_cache_invalidated = True
 
         elif application.role_applied == UserRole.NURSE:
             new_profile = Nurse(
@@ -69,6 +74,7 @@ def process_application_approval(self, application_id, approver_id=None):
             # Invalidate nurse list cache
             from ..controllers.nurse_controller import NurseController
             cache.delete_memoized(NurseController._get_nurses_internal)
+            department_cache_invalidated = True
 
         elif application.role_applied == UserRole.PATIENT:
             new_profile = Patient(
@@ -83,6 +89,12 @@ def process_application_approval(self, application_id, approver_id=None):
             db.session.add(new_profile)
 
         db.session.commit()
+        
+        if department_cache_invalidated:
+            # Clear the department list cache to update staff counts
+            from ..controllers.department_controller import DEPARTMENTS_CACHE_KEY
+            cache.delete(DEPARTMENTS_CACHE_KEY)
+            
         logger.info(f"Successfully processed approval for application {application_id}")
 
     except Exception as e:

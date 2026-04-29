@@ -95,10 +95,26 @@ class ApplicationService:
         can_approve = False
         if application.role_applied == UserRole.DOCTOR:
             if user.role == UserRole.ADMIN:
+                # Check department limit
+                department = Department.query.get(application.department_id)
+                if department and len(department.doctors) >= department.doctor_limit:
+                    return handle_response(
+                        success=False, 
+                        message=f"Department {department.name} has reached its doctor limit ({department.doctor_limit})", 
+                        status_code=400
+                    )
                 can_approve = True
         
         elif application.role_applied == UserRole.NURSE:
             if user.role in [UserRole.ADMIN, UserRole.DOCTOR]:
+                # Check department limit
+                department = Department.query.get(application.department_id)
+                if department and len(department.nurses) >= department.nurse_limit:
+                    return handle_response(
+                        success=False, 
+                        message=f"Department {department.name} has reached its nurse limit ({department.nurse_limit})", 
+                        status_code=400
+                    )
                 can_approve = True
         
         elif application.role_applied == UserRole.PATIENT:

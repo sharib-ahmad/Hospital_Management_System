@@ -1,18 +1,24 @@
 # app/services/department.py
 from ..extensions import db
 from ..models.department import Department
+from sqlalchemy.orm import selectinload
 
 class DepartmentService:
     @staticmethod
     def get_all_departments():
-        return Department.query.all()
+        return Department.query.options(
+            selectinload(Department.doctors),
+            selectinload(Department.nurses)
+        ).all()
 
     @staticmethod
     def create_department(data):
         department = Department(
-            id = data.department_id,
-            name=data.name,
-            description=data.description if hasattr(data, 'description') else data.get('description', None)
+            id = data.id,
+            name = data.name,
+            description = data.description,
+            doctor_limit = data.doctor_limit,
+            nurse_limit = data.nurse_limit
         )
         db.session.add(department)
         db.session.commit()
@@ -20,7 +26,10 @@ class DepartmentService:
 
     @staticmethod
     def get_department_by_id(department_id):
-        return Department.query.get(department_id)
+        return Department.query.options(
+            selectinload(Department.doctors),
+            selectinload(Department.nurses)
+        ).get(department_id)
 
     @staticmethod
     def update_department(department, data):
@@ -30,11 +39,19 @@ class DepartmentService:
                 department.name = data['name']
             if 'description' in data:
                 department.description = data['description']
+            if 'doctor_limit' in data:
+                department.doctor_limit = data['doctor_limit']
+            if 'nurse_limit' in data:
+                department.nurse_limit = data['nurse_limit']
         else:
             if hasattr(data, 'name'):
                 department.name = data.name
             if hasattr(data, 'description'):
                 department.description = data.description
+            if hasattr(data, 'doctor_limit'):
+                department.doctor_limit = data.doctor_limit
+            if hasattr(data, 'nurse_limit'):
+                department.nurse_limit = data.nurse_limit
         
         db.session.commit()
         return department
