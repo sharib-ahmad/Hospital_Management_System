@@ -45,6 +45,21 @@ instance.interceptors.response.use(
     const originalRequest = error.config
     const authStore = useAuthStore()
 
+    // Parse and enhance backend validation errors
+    if (error.response && error.response.data) {
+      const data = error.response.data
+      if (data.errors && Array.isArray(data.errors) && data.errors.length > 0) {
+        // Format backend validation errors into a single readable string
+        const formattedErrors = data.errors.map((err: any) => {
+          const location = err.loc && err.loc.length > 0 ? err.loc.join('.') : 'Field'
+          return `${location}: ${err.msg}`
+        }).join(' | ')
+        
+        // Override the default message with the detailed one
+        error.response.data.message = `${data.message ? data.message + ' - ' : ''}${formattedErrors}`
+      }
+    }
+
     // If error is 401 and we haven't retried yet
     if (error.response?.status === 401 && !originalRequest._retry && !originalRequest._isRetry) {
       if (isRefreshing) {

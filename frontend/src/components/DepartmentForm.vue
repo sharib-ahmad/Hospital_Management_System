@@ -8,6 +8,8 @@ interface Department {
   id?: string
   name: string
   description?: string
+  doctor_limit?: number
+  nurse_limit?: number
 }
 
 interface Props {
@@ -33,13 +35,20 @@ const form = ref({
   id: '',
   name: '',
   description: '',
+  doctor_limit: 3,
+  nurse_limit: 5,
 })
 
 const errors = ref<Record<string, string>>({})
 const isLoading = ref(false)
 
 const isFormValid = computed(() => {
-  return form.value.id.trim().length >= 6 && form.value.name.trim().length >= 2
+  return (
+    form.value.id.trim().length >= 6 &&
+    form.value.name.trim().length >= 2 &&
+    form.value.doctor_limit >= 0 &&
+    form.value.nurse_limit >= 0
+  )
 })
 
 // Initialize form with department data
@@ -51,6 +60,8 @@ watch(
         id: newDept.id || '',
         name: newDept.name,
         description: newDept.description || '',
+        doctor_limit: newDept.doctor_limit ?? 3,
+        nurse_limit: newDept.nurse_limit ?? 5,
       }
     } else {
       resetForm()
@@ -64,6 +75,8 @@ const resetForm = () => {
     id: '',
     name: '',
     description: '',
+    doctor_limit: 3,
+    nurse_limit: 5,
   }
   errors.value = {}
 }
@@ -91,6 +104,14 @@ const validateForm = (): boolean => {
     newErrors.description = 'Description cannot exceed 500 characters'
   }
 
+  if (form.value.doctor_limit < 0) {
+    newErrors.doctor_limit = 'Limit cannot be negative'
+  }
+
+  if (form.value.nurse_limit < 0) {
+    newErrors.nurse_limit = 'Limit cannot be negative'
+  }
+
   errors.value = newErrors
   return Object.keys(newErrors).length === 0
 }
@@ -105,17 +126,17 @@ const handleSubmit = async () => {
 
   try {
     const payload = {
-      department_id: form.value.id,
+      id: form.value.id,
       name: form.value.name,
       description: form.value.description || undefined,
+      doctor_limit: form.value.doctor_limit,
+      nurse_limit: form.value.nurse_limit,
     }
 
     if (props.isEditing) {
-      // Update endpoint (if available in the future)
       await api.put(`/departments/${form.value.id}`, payload)
       notification.success('Department updated successfully')
     } else {
-      // Create new department
       await api.post('/departments', payload)
       notification.success('Department created successfully')
     }
@@ -213,6 +234,34 @@ const handleClose = () => {
             required
             help-text="Name of the department (2-100 characters)"
           />
+
+          <div class="grid grid-cols-2 gap-4">
+            <!-- Doctor Limit -->
+            <FormField
+              id="doctor_limit"
+              label="Doctor Limit"
+              v-model.number="form.doctor_limit"
+              type="number"
+              placeholder="3"
+              min="0"
+              :error="errors.doctor_limit"
+              required
+              help-text="Max doctors allowed"
+            />
+
+            <!-- Nurse Limit -->
+            <FormField
+              id="nurse_limit"
+              label="Nurse Limit"
+              v-model.number="form.nurse_limit"
+              type="number"
+              placeholder="5"
+              min="0"
+              :error="errors.nurse_limit"
+              required
+              help-text="Max nurses allowed"
+            />
+          </div>
 
           <!-- Description -->
           <div class="w-full space-y-1.5">

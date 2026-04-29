@@ -9,8 +9,10 @@ interface Department {
   description?: string
   created_at?: string
   updated_at?: string
-  doctors?: any[]
-  nurses?: any[]
+  staff?: {
+    doctors: number
+    nurses: number
+  }
 }
 
 interface Props {
@@ -47,6 +49,7 @@ const loadDepartments = async () => {
   try {
     const response = await api.get('/departments')
     departments.value = response.data.data || []
+    console.log('Loaded departments:', departments.value)
   } catch (error) {
     notification.error('Failed to load departments')
     console.error(error)
@@ -240,13 +243,13 @@ onMounted(() => {
               <div>
                 <p class="text-xs font-medium text-gray-500 dark:text-slate-400">Doctors</p>
                 <p class="text-lg font-semibold text-gray-900 dark:text-white">
-                  {{ dept.doctors?.length || 0 }}
+                  {{ dept.staff?.doctors || 0 }}
                 </p>
               </div>
               <div>
                 <p class="text-xs font-medium text-gray-500 dark:text-slate-400">Nurses</p>
                 <p class="text-lg font-semibold text-gray-900 dark:text-white">
-                  {{ dept.nurses?.length || 0 }}
+                  {{ dept.staff?.nurses || 0 }}
                 </p>
               </div>
             </div>
