@@ -8,7 +8,7 @@ from ..utils.enum import UserRole
 department_ns = Namespace('departments', description='Department related operations')
 department_models = DepartmentModels(department_ns)
 
-@department_ns.route('/')
+@department_ns.route('')
 class DepartmentList(Resource):
     @department_ns.marshal_with(department_models.department_response)
     def get(self):

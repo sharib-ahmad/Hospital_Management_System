@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import DashboardLayout from '../../layouts/DashboardLayout.vue'
 import DepartmentForm from '../../components/DepartmentForm.vue'
 import DepartmentList from '../../components/DepartmentList.vue'
+import api from '../../utils/axios'
 
 interface Department {
   id?: string
@@ -14,6 +15,31 @@ const isFormOpen = ref(false)
 const isEditing = ref(false)
 const selectedDepartment = ref<Department | null>(null)
 const refreshKey = ref(0)
+
+const stats = ref({
+  departments: 0,
+  doctors: 0,
+  staff: 0,
+})
+
+const loadStats = async () => {
+  try {
+    const [deptRes, docRes, nurseRes] = await Promise.all([
+      api.get('/departments'),
+      api.get('/doctors'),
+      api.get('/nurses'),
+    ])
+    stats.value = {
+      departments: deptRes.data.data?.length || 0,
+      doctors: docRes.data.data?.length || 0,
+      staff: nurseRes.data.data?.length || 0,
+    }
+  } catch (error) {
+    console.error('Failed to load stats', error)
+  }
+}
+
+onMounted(loadStats)
 
 const openCreateForm = () => {
   isEditing.value = false
@@ -35,6 +61,7 @@ const closeForm = () => {
 
 const handleRefresh = () => {
   refreshKey.value += 1
+  loadStats()
   closeForm()
 }
 </script>
@@ -76,7 +103,9 @@ const handleRefresh = () => {
         <div class="flex items-center justify-between">
           <div>
             <p class="text-sm font-medium text-gray-600 dark:text-slate-400">Total Departments</p>
-            <p class="text-3xl font-bold text-gray-900 dark:text-white mt-1">8</p>
+            <p class="text-3xl font-bold text-gray-900 dark:text-white mt-1">
+              {{ stats.departments }}
+            </p>
           </div>
           <div
             class="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center"
@@ -102,7 +131,7 @@ const handleRefresh = () => {
         <div class="flex items-center justify-between">
           <div>
             <p class="text-sm font-medium text-gray-600 dark:text-slate-400">Active Doctors</p>
-            <p class="text-3xl font-bold text-gray-900 dark:text-white mt-1">42</p>
+            <p class="text-3xl font-bold text-gray-900 dark:text-white mt-1">{{ stats.doctors }}</p>
           </div>
           <div
             class="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center"
@@ -128,7 +157,7 @@ const handleRefresh = () => {
         <div class="flex items-center justify-between">
           <div>
             <p class="text-sm font-medium text-gray-600 dark:text-slate-400">Staff Members</p>
-            <p class="text-3xl font-bold text-gray-900 dark:text-white mt-1">87</p>
+            <p class="text-3xl font-bold text-gray-900 dark:text-white mt-1">{{ stats.staff }}</p>
           </div>
           <div
             class="w-12 h-12 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center"
