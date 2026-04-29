@@ -57,6 +57,10 @@ class NurseController:
         cache.delete_memoized(NurseController.get_nurse, nurse_code)
         cache.delete_memoized(NurseController._get_nurses_internal)
 
+        # Invalidate department cache since staff counts might have changed
+        from .department_controller import DEPARTMENTS_CACHE_KEY
+        cache.delete(DEPARTMENTS_CACHE_KEY)
+
         return handle_response(
             success=True,
             message="Nurse updated successfully",

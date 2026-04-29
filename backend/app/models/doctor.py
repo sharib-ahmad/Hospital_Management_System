@@ -31,8 +31,8 @@ class Doctor(db.Model):
     updated_at = db.Column(db.DateTime, default=utc_now, onupdate=utc_now)
 
     # Relationships
-    user = db.relationship('User', back_populates='doctor')
-    department = db.relationship('Department', back_populates='doctors')
+    user = db.relationship('User', back_populates='doctor', lazy='joined')
+    department = db.relationship('Department', back_populates='doctors', lazy='joined')
     appointments = db.relationship('Appointment', back_populates='doctor', lazy=True)
     medical_records = db.relationship('MedicalRecord', back_populates='doctor', lazy=True)
     patients = db.relationship('Patient', back_populates='assigned_doctor', lazy=True)

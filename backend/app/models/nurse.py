@@ -27,8 +27,8 @@ class Nurse(db.Model):
     updated_at = db.Column(db.DateTime, default=utc_now, onupdate=utc_now)
 
     # Relationships
-    user = db.relationship('User', back_populates='nurse')
-    department = db.relationship('Department', back_populates='nurses')
+    user = db.relationship('User', back_populates='nurse', lazy='joined')
+    department = db.relationship('Department', back_populates='nurses', lazy='joined')
     patient_vitals = db.relationship('PatientVital', back_populates='nurse')
 
     def __repr__(self):

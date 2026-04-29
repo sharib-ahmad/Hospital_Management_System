@@ -59,6 +59,10 @@ class DoctorController:
         # Invalidate all doctor lists
         cache.delete_memoized(DoctorController._get_doctors_internal)
         
+        # Invalidate department cache since staff counts might have changed
+        from .department_controller import DEPARTMENTS_CACHE_KEY
+        cache.delete(DEPARTMENTS_CACHE_KEY)
+        
         return handle_response(
             success=True,
             message="Doctor updated successfully",

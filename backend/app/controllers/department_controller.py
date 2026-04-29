@@ -5,9 +5,11 @@ from ..utils.response import handle_response
 from ..utils.request import validate_json
 from ..extensions import cache
 
+DEPARTMENTS_CACHE_KEY = 'all_departments_v4'
+
 class DepartmentController:
     @staticmethod
-    @cache.cached(timeout=600, key_prefix='all_departments')
+    @cache.cached(timeout=600, key_prefix=DEPARTMENTS_CACHE_KEY)
     def get_departments():
         departments = DepartmentService.get_all_departments()
         return handle_response(
@@ -26,7 +28,7 @@ class DepartmentController:
         department = DepartmentService.create_department(validated_data)
         
         # Invalidate departments cache
-        cache.delete('all_departments')
+        cache.delete(DEPARTMENTS_CACHE_KEY)
         
         return handle_response(
             success=True,
@@ -51,7 +53,7 @@ class DepartmentController:
         updated_dept = DepartmentService.update_department(department, data)
         
         # Invalidate departments cache
-        cache.delete('all_departments')
+        cache.delete(DEPARTMENTS_CACHE_KEY)
         
         return handle_response(
             success=True,
@@ -72,7 +74,7 @@ class DepartmentController:
         DepartmentService.delete_department(department)
         
         # Invalidate departments cache
-        cache.delete('all_departments')
+        cache.delete(DEPARTMENTS_CACHE_KEY)
         
         return handle_response(
             success=True,
