@@ -4,6 +4,7 @@ from flask import request
 from http import HTTPStatus
 from flask_restx import Namespace, Resource
 from flask_jwt_extended import jwt_required
+from ..utils.role import role_required, UserRole
 from ..api_models import AuthModels
 from ..controllers.auth_controller import AuthController
 
@@ -29,6 +30,16 @@ class Login(Resource):
     @auth_ns.doc(description="User login")
     def post(self):
         return AuthController.login()
+
+
+@auth_ns.route('/users')
+class UserList(Resource):
+
+    @auth_ns.marshal_with(models.response_list_model)
+    @auth_ns.doc(description="List all users (Admin only)")
+    @role_required(UserRole.ADMIN)
+    def get(self):
+        return AuthController.get_all_users()
 
 
 @auth_ns.route('/logout')

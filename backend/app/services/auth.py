@@ -76,6 +76,11 @@ class AuthService:
         return success_response(message="Successfully logged out")
 
     @staticmethod
+    def get_all_users():
+        users = User.query.all()
+        return success_response(data=users, message="Users retrieved successfully")
+
+    @staticmethod
     def refresh_token():
         # current_user is available if we use @jwt_required(refresh=True)
         # and user_lookup_loader is configured in security.py

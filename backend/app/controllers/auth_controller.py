@@ -50,6 +50,16 @@ class AuthController:
             return handle_response(success=False, message="Validation Error", errors=e.errors(), status_code=400)
 
     @staticmethod
+    def get_all_users():
+        # Invalidate cache to ensure we get fresh credential data
+        from .doctor_controller import DoctorController
+        from ..extensions import cache
+        cache.delete_memoized(DoctorController._get_doctors_internal)
+        
+        resp_data, status_code = AuthService.get_all_users()
+        return resp_data, status_code
+
+    @staticmethod
     def logout():
         resp_data, status_code = AuthService.logout_user()
         response = make_response(jsonify(resp_data), status_code)

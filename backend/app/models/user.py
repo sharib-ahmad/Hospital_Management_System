@@ -52,6 +52,87 @@ class User(db.Model):
     def check_password(self, password):
         return verify_password(password, self.password_hash)
 
+    # Flattened Profile Properties for UI
+    @property
+    def specialization(self):
+        return self.doctor.specialization if self.doctor else None
+
+    @property
+    def experience_years(self):
+        if self.doctor:
+            return self.doctor.experience_years
+        if self.nurse:
+            return self.nurse.experience_years
+        return None
+
+    @property
+    def license_number(self):
+        if self.doctor:
+            return self.doctor.license_number
+        if self.nurse:
+            return self.nurse.license_number
+        return None
+
+    @property
+    def department_id(self):
+        if self.doctor:
+            return self.doctor.department_id
+        if self.nurse:
+            return self.nurse.department_id
+        return None
+
+    @property
+    def shift(self):
+        if self.doctor:
+            return self.doctor.shift
+        if self.nurse:
+            return self.nurse.shift
+        return None
+
+    @property
+    def blood_group(self):
+        if self.doctor:
+            return self.doctor.blood_group.value if self.doctor.blood_group else None
+        if self.nurse:
+            return self.nurse.blood_group.value if self.nurse.blood_group else None
+        if self.patient:
+            return self.patient.blood_group.value if self.patient.blood_group else None
+        return None
+
+    @property
+    def date_of_birth(self):
+        if self.doctor:
+            return self.doctor.date_of_birth.isoformat() if self.doctor.date_of_birth else None
+        if self.nurse:
+            return self.nurse.date_of_birth.isoformat() if self.nurse.date_of_birth else None
+        if self.patient:
+            return self.patient.date_of_birth.isoformat() if self.patient.date_of_birth else None
+        return None
+
+    @property
+    def medical_history(self):
+        return self.patient.medical_history if self.patient else None
+
+    @property
+    def gender(self):
+        if self.doctor:
+            return self.doctor.gender.value if self.doctor.gender else None
+        if self.nurse:
+            return self.nurse.gender.value if self.nurse.gender else None
+        if self.patient:
+            return self.patient.gender.value if self.patient.gender else None
+        return None
+
+    @property
+    def emergency_contact_number(self):
+        if self.doctor:
+            return self.doctor.emergency_contact_number
+        if self.nurse:
+            return self.nurse.emergency_contact_number
+        if self.patient:
+            return self.patient.emergency_contact_number
+        return None
+
     @property
     def role_value(self):
         return self.role.value

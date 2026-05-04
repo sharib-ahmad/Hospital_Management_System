@@ -21,13 +21,26 @@ class AuthModels:
         })
 
         self.user = api.model('User', {
+            'id': fields.String,
             'username': fields.String,
             'full_name': fields.String,
             'email': fields.String,
             'address': fields.String,
             'phone_number': fields.String,
             'pincode': fields.String,
-            'role': EnumField(UserRole)
+            'role': EnumField(UserRole),
+            'created_at': fields.DateTime,
+            # Role-specific fields (flattened)
+            'specialization': fields.String,
+            'experience_years': fields.Integer,
+            'license_number': fields.String,
+            'department_id': fields.String,
+            'shift': fields.String,
+            'blood_group': fields.String,
+            'date_of_birth': fields.String,
+            'medical_history': fields.String,
+            'gender': fields.String,
+            'emergency_contact_number': fields.String
         })
 
         self.error_detail = api.model('ErrorDetail', {
@@ -41,5 +54,12 @@ class AuthModels:
             'success': fields.Boolean,
             'message': fields.String,
             'data': fields.Nested(self.user, skip_none=True),
+            'errors': fields.List(fields.Nested(self.error_detail), skip_none=True)
+        })
+
+        self.response_list_model = api.model('UserListResponse', {
+            'success': fields.Boolean,
+            'message': fields.String,
+            'data': fields.List(fields.Nested(self.user)),
             'errors': fields.List(fields.Nested(self.error_detail), skip_none=True)
         })

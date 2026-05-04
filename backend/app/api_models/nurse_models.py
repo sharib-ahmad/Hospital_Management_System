@@ -19,8 +19,13 @@ class NurseModels:
         self.nurse_detail = api.inherit('NurseDetail', self.nurse_base, {
             'id': fields.String(readOnly=True, description="User UUID"),
             'nurse_code': fields.String(readOnly=True),
+            'username': fields.String(attribute='user.username'),
             'full_name': fields.String(attribute='user.full_name'),
             'email': fields.String(attribute='user.email'),
+            'role': fields.String(attribute='user.role_value'),
+            'address': fields.String(attribute='user.address'),
+            'phone_number': fields.String(attribute='user.phone_number'),
+            'pincode': fields.String(attribute='user.pincode'),
             'department_name': fields.String(attribute='department.name'),
             'created_at': fields.DateTime(readOnly=True),
             'updated_at': fields.DateTime(readOnly=True)
