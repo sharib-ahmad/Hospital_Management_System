@@ -100,21 +100,21 @@ const handleRegister = async () => {
 
 <template>
   <AuthLayout>
-    <div class="mb-8">
-      <h2 class="text-2xl font-bold text-gray-900 dark:text-white transition-colors">
-        Create an account
+    <div class="mb-10">
+      <h2 class="text-3xl font-black text-gray-900 dark:text-white tracking-tight leading-none">
+        Join the Network
       </h2>
-      <p class="text-sm text-gray-600 dark:text-slate-400 mt-1 transition-colors">
-        Join MediFlow and start managing your health digitally.
+      <p class="text-sm text-gray-500 dark:text-slate-400 mt-2 font-medium transition-colors">
+        Create your digital identity and start managing healthcare seamlessly.
       </p>
     </div>
 
-    <form @submit.prevent="handleRegister" class="space-y-1">
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-x-4">
+    <form @submit.prevent="handleRegister" class="space-y-4">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <FormField
           id="full_name"
           v-model="formData.full_name"
-          label="Full Name"
+          label="Display Name"
           placeholder="John Doe"
           :error="errors.full_name"
           required
@@ -122,57 +122,59 @@ const handleRegister = async () => {
         <FormField
           id="username"
           v-model="formData.username"
-          label="Username"
+          label="Unique Handle"
           placeholder="johndoe123"
           :error="errors.username"
           required
         />
       </div>
 
-      <FormField
-        id="email"
-        v-model="formData.email"
-        type="email"
-        label="Email Address"
-        placeholder="john@example.com"
-        :error="errors.email"
-        required
-      />
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <FormField
+          id="email"
+          v-model="formData.email"
+          type="email"
+          label="Email Address"
+          placeholder="john@hospital.com"
+          :error="errors.email"
+          required
+        />
+        <FormField
+          id="phone_number"
+          v-model="formData.phone_number"
+          type="tel"
+          label="Contact Number"
+          placeholder="+1 (555) 000-0000"
+          :error="errors.phone_number"
+          required
+        />
+      </div>
 
-      <FormField
-        id="phone_number"
-        v-model="formData.phone_number"
-        type="tel"
-        label="Phone Number"
-        placeholder="+1 (555) 000-0000"
-        :error="errors.phone_number"
-        required
-      />
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <FormField
+          id="address"
+          v-model="formData.address"
+          label="Residential City"
+          placeholder="New York, NY"
+          :error="errors.address"
+          required
+        />
+        <FormField
+          id="pincode"
+          v-model="formData.pincode"
+          label="Postal Code"
+          placeholder="10001"
+          :error="errors.pincode"
+          required
+        />
+      </div>
 
-      <FormField
-        id="address"
-        v-model="formData.address"
-        label="Address"
-        placeholder="123 Main St, City"
-        :error="errors.address"
-        required
-      />
-
-      <FormField
-        id="pincode"
-        v-model="formData.pincode"
-        label="Pincode"
-        placeholder="123456"
-        :error="errors.pincode"
-        required
-      />
-
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-x-4">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <FormField
           id="password"
           v-model="formData.password"
           type="password"
-          label="Password"
+          label="New Password"
           placeholder="••••••••"
           :error="errors.password"
           required
@@ -182,7 +184,7 @@ const handleRegister = async () => {
           id="confirm_password"
           v-model="formData.confirm_password"
           type="password"
-          label="Confirm Password"
+          label="Confirm Selection"
           placeholder="••••••••"
           :error="errors.confirm_password"
           required
@@ -195,23 +197,23 @@ const handleRegister = async () => {
           id="terms"
           type="checkbox"
           required
-          class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 dark:border-slate-600 rounded bg-white dark:bg-slate-700"
+          class="h-4 w-4 text-emerald-600 focus:ring-emerald-500 border-gray-300 dark:border-slate-600 rounded bg-white dark:bg-slate-700"
         />
         <label
           for="terms"
-          class="ml-2 block text-sm text-gray-700 dark:text-slate-400 transition-colors"
+          class="ml-2 block text-xs font-bold text-gray-500 dark:text-slate-400 transition-colors uppercase tracking-widest"
         >
-          I agree to the
+          I accept the
           <a
             href="#"
-            class="text-blue-600 dark:text-blue-400 font-bold hover:text-blue-500 transition-colors"
-            >Terms</a
+            class="text-emerald-600 dark:text-emerald-400 font-black hover:text-emerald-500 transition-colors"
+            >Agreement</a
           >
           and
           <a
             href="#"
-            class="text-blue-600 dark:text-blue-400 font-bold hover:text-blue-500 transition-colors"
-            >Privacy Policy</a
+            class="text-emerald-600 dark:text-emerald-400 font-black hover:text-emerald-500 transition-colors"
+            >Privacy</a
           >
         </label>
       </div>
@@ -220,11 +222,11 @@ const handleRegister = async () => {
         <button
           :disabled="isLoading"
           type="submit"
-          class="w-full flex justify-center py-3.5 px-4 border border-transparent rounded-xl shadow-sm text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all active:scale-95 disabled:opacity-70 disabled:active:scale-100"
+          class="w-full flex justify-center py-4 px-4 border border-transparent rounded-2xl shadow-xl shadow-emerald-500/20 text-xs font-black uppercase tracking-[0.2em] text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-4 focus:ring-emerald-500/20 transition-all active:scale-95 disabled:opacity-70 disabled:active:scale-100"
         >
           <svg
             v-if="isLoading"
-            class="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+            class="animate-spin -ml-1 mr-3 h-4 w-4 text-white"
             xmlns="http://www.w3.org/2000/svg"
             fill="none"
             viewBox="0 0 24 24"
@@ -243,18 +245,18 @@ const handleRegister = async () => {
               d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
             ></path>
           </svg>
-          {{ isLoading ? 'Creating account...' : 'Create account' }}
+          {{ isLoading ? 'Initializing...' : 'Confirm Registration' }}
         </button>
       </div>
     </form>
 
-    <div class="mt-8 text-center border-t border-gray-100 dark:border-slate-700 pt-6">
-      <p class="text-sm text-gray-600 dark:text-slate-400 transition-colors">
-        Already have an account?
+    <div class="mt-10 text-center border-t border-gray-100 dark:border-white/5 pt-8">
+      <p class="text-xs font-bold text-gray-500 dark:text-slate-400 transition-colors uppercase tracking-widest">
+        Already have an identity?
         <router-link
           :to="{ name: 'login' }"
-          class="font-bold text-blue-600 dark:text-blue-400 hover:text-blue-500 transition-colors"
-          >Sign in instead</router-link
+          class="font-black text-emerald-600 dark:text-emerald-400 hover:text-emerald-500 transition-colors"
+          >Sign In</router-link
         >
       </p>
     </div>

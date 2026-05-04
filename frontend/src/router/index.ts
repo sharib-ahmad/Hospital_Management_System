@@ -3,6 +3,7 @@ import { useAuthStore } from '../stores/auth'
 import LandingView from '../views/LandingView.vue'
 import LoginView from '../views/LoginView.vue'
 import RegisterView from '../views/RegisterView.vue'
+import NotFoundView from '../views/NotFoundView.vue'
 
 // Portals
 import AdminPortal from '../views/portals/AdminPortal.vue'
@@ -13,6 +14,7 @@ import UserPortal from '../views/portals/UserPortal.vue'
 
 // Admin Pages
 import DepartmentManagement from '../views/admin/DepartmentManagement.vue'
+import UserManagement from '../views/admin/UserManagement.vue'
 import ApplicationManagement from '../views/ApplicationManagement.vue'
 
 // Application Pages
@@ -50,10 +52,16 @@ const router = createRouter({
       meta: { requiresAuth: true, role: 'admin' },
     },
     {
-      path: '/admin/applications',
-      name: 'admin-applications',
-      component: ApplicationManagement,
+      path: '/admin/users',
+      name: 'admin-users',
+      component: UserManagement,
       meta: { requiresAuth: true, role: 'admin' },
+    },
+    {
+      path: '/applications/management',
+      name: 'application-management',
+      component: ApplicationManagement,
+      meta: { requiresAuth: true, roles: ['admin', 'doctor', 'nurse'] },
     },
     {
       path: '/doctor',
@@ -85,6 +93,12 @@ const router = createRouter({
       component: ApplyForRole,
       meta: { requiresAuth: true, role: 'user' },
     },
+    // Catch-all 404
+    {
+      path: '/:pathMatch(.*)*',
+      name: 'not-found',
+      component: NotFoundView,
+    },
   ],
 })
 
@@ -93,7 +107,13 @@ router.beforeEach((to, from, next) => {
 
   if (to.meta.requiresAuth && !auth.isAuthenticated) {
     next({ name: 'login' })
-  } else if (to.meta.role && auth.user?.role !== to.meta.role) {
+  } else if (
+    (to.meta.role && auth.user?.role !== to.meta.role) ||
+    (to.meta.roles && !Array.isArray(to.meta.roles)
+      ? false
+      : (to.meta.roles as string[])?.length > 0 &&
+        !(to.meta.roles as string[]).includes(auth.user?.role || ''))
+  ) {
     // Simple role check - redirect to their own portal if they try to access wrong one
     if (auth.isAuthenticated) {
       next({ name: `${auth.user?.role}-portal` })

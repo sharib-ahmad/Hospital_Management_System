@@ -134,7 +134,7 @@ const handleSubmit = async () => {
         <label class="block text-sm font-semibold text-gray-700 dark:text-slate-300">Gender</label>
         <select
           v-model="form.gender"
-          class="block w-full px-4 py-3 border border-gray-300 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-gray-900 dark:text-white sm:text-sm outline-none focus:ring-4 focus:ring-blue-500/10 transition-all"
+          class="block w-full px-4 py-3 border border-gray-300 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-gray-900 dark:text-white sm:text-sm outline-none focus:ring-4 focus:ring-emerald-500/10 transition-all"
         >
           <option value="male">Male</option>
           <option value="female">Female</option>
@@ -148,7 +148,7 @@ const handleSubmit = async () => {
         >
         <select
           v-model="form.blood_group"
-          class="block w-full px-4 py-3 border border-gray-300 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-gray-900 dark:text-white sm:text-sm outline-none focus:ring-4 focus:ring-blue-500/10 transition-all"
+          class="block w-full px-4 py-3 border border-gray-300 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-gray-900 dark:text-white sm:text-sm outline-none focus:ring-4 focus:ring-emerald-500/10 transition-all"
         >
           <option
             v-for="bg in ['A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-']"
@@ -180,7 +180,7 @@ const handleSubmit = async () => {
           v-model="form.medical_history"
           rows="4"
           placeholder="List any past illnesses, surgeries, or chronic conditions..."
-          class="block w-full px-4 py-3 border border-gray-300 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-gray-900 dark:text-white sm:text-sm outline-none focus:ring-4 focus:ring-blue-500/10 transition-all"
+          class="block w-full px-4 py-3 border border-gray-300 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-gray-900 dark:text-white sm:text-sm outline-none focus:ring-4 focus:ring-emerald-500/10 transition-all"
         ></textarea>
       </div>
     </div>
@@ -201,7 +201,7 @@ const handleSubmit = async () => {
         >
         <select
           v-model="form.department_id"
-          class="block w-full px-4 py-3 border border-gray-300 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-gray-900 dark:text-white sm:text-sm outline-none focus:ring-4 focus:ring-blue-500/10 transition-all"
+          class="block w-full px-4 py-3 border border-gray-300 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-gray-900 dark:text-white sm:text-sm outline-none focus:ring-4 focus:ring-emerald-500/10 transition-all"
           required
         >
           <option value="" disabled>Select Department</option>
@@ -226,7 +226,7 @@ const handleSubmit = async () => {
         >
         <select
           v-model="form.shift"
-          class="block w-full px-4 py-3 border border-gray-300 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-gray-900 dark:text-white sm:text-sm outline-none focus:ring-4 focus:ring-blue-500/10 transition-all"
+          class="block w-full px-4 py-3 border border-gray-300 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-gray-900 dark:text-white sm:text-sm outline-none focus:ring-4 focus:ring-emerald-500/10 transition-all"
         >
           <option value="Day">Day</option>
           <option value="Night">Night</option>
@@ -265,7 +265,7 @@ const handleSubmit = async () => {
     <button
       type="submit"
       :disabled="isLoading"
-      class="w-full flex justify-center py-4 px-4 border border-transparent rounded-xl shadow-lg text-lg font-bold text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all active:scale-95 disabled:opacity-70"
+      class="w-full flex justify-center py-4 px-4 border border-transparent rounded-xl shadow-lg text-lg font-bold text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition-all active:scale-95 disabled:opacity-70"
     >
       <svg v-if="isLoading" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" viewBox="0 0 24 24">
         <circle

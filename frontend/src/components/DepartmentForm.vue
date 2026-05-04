@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onUnmounted } from 'vue'
 import FormField from './FormField.vue'
 import { useNotificationStore } from '../stores/notification'
 import api from '../utils/axios'
@@ -41,6 +41,16 @@ const form = ref({
 
 const errors = ref<Record<string, string>>({})
 const isLoading = ref(false)
+const descriptionLength = ref(0)
+
+// Watch description to update length live
+watch(
+  () => form.value.description,
+  (newVal) => {
+    descriptionLength.value = newVal?.length || 0
+  },
+  { immediate: true },
+)
 
 const isFormValid = computed(() => {
   return (
@@ -69,6 +79,22 @@ watch(
     errors.value = {}
   },
 )
+
+watch(
+  () => props.isOpen,
+  (newVal) => {
+    if (newVal) {
+      document.body.classList.add('overflow-hidden')
+    } else {
+      document.body.classList.remove('overflow-hidden')
+    }
+  },
+  { immediate: true },
+)
+
+onUnmounted(() => {
+  document.body.classList.remove('overflow-hidden')
+})
 
 const resetForm = () => {
   form.value = {
@@ -171,7 +197,7 @@ const handleClose = () => {
   <Transition name="slide-up">
     <div
       v-show="isOpen"
-      class="fixed inset-x-0 bottom-0 z-50 max-h-[90vh] overflow-y-auto bg-white dark:bg-slate-800 rounded-t-3xl border-t border-gray-200 dark:border-slate-700 shadow-2xl md:inset-auto md:top-1/2 md:left-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:rounded-2xl md:w-full md:max-w-md"
+      class="fixed inset-x-0 bottom-0 z-50 max-h-[90vh] overflow-y-auto glass rounded-t-3xl shadow-2xl md:inset-auto md:top-1/2 md:left-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:rounded-2xl md:w-full md:max-w-md"
       @click.stop
     >
       <div class="p-6 sm:p-8">
@@ -280,7 +306,7 @@ const handleClose = () => {
                 v-model="form.description"
                 placeholder="Enter department description..."
                 rows="4"
-                class="appearance-none block w-full px-4 py-3 border rounded-xl shadow-sm transition-all sm:text-sm outline-none bg-white dark:bg-slate-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-500 border-gray-300 dark:border-slate-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10 dark:focus:ring-blue-400/10"
+                class="appearance-none block w-full px-4 py-3 border rounded-xl shadow-sm transition-all sm:text-sm outline-none bg-white dark:bg-slate-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-500 border-gray-300 dark:border-slate-600 focus:border-emerald-500 dark:focus:border-emerald-400 focus:ring-4 focus:ring-emerald-500/10 dark:focus:ring-emerald-400/10"
               />
             </div>
 
@@ -303,8 +329,11 @@ const handleClose = () => {
                 </svg>
                 {{ errors.description }}
               </p>
-              <p v-else class="text-xs text-gray-500 dark:text-slate-400">
-                Brief description of the department (0-500 characters)
+              <p v-else class="text-xs text-gray-500 dark:text-slate-400 flex justify-between">
+                <span>Brief description of the department</span>
+                <span :class="{ 'text-red-500 font-bold': descriptionLength > 500 }">
+                  {{ descriptionLength }} / 500
+                </span>
               </p>
             </div>
           </div>
@@ -321,7 +350,7 @@ const handleClose = () => {
             </button>
             <button
               type="submit"
-              class="flex-1 px-4 py-3 text-center font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              class="flex-1 px-4 py-3 text-center font-medium text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               :disabled="!isFormValid || isLoading"
             >
               <svg

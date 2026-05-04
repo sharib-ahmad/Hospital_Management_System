@@ -98,12 +98,12 @@ onMounted(() => {
         v-model="searchQuery"
         type="text"
         placeholder="Search departments by name or ID..."
-        class="flex-1 px-4 py-2.5 border rounded-xl text-sm outline-none bg-white dark:bg-slate-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-500 border-gray-300 dark:border-slate-600 focus:border-blue-500 dark:focus:border-blue-400"
+        class="flex-1 px-4 py-2.5 border rounded-xl text-sm outline-none bg-white dark:bg-slate-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-500 border-gray-300 dark:border-slate-600 focus:border-emerald-500 dark:focus:border-emerald-400"
       />
       <button
         @click="loadDepartments"
         :disabled="isLoading"
-        class="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-colors disabled:opacity-50 text-sm font-medium"
+        class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl transition-colors disabled:opacity-50 text-sm font-medium"
       >
         <svg
           v-if="isLoading"
@@ -139,7 +139,7 @@ onMounted(() => {
         <div class="animate-spin inline-block">
           <svg
             xmlns="http://www.w3.org/2000/svg"
-            class="h-8 w-8 text-blue-600"
+            class="h-8 w-8 text-emerald-600"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -181,7 +181,7 @@ onMounted(() => {
         v-for="dept in filteredDepartments"
         :key="dept.id"
         @click="selectedDept = selectedDept === dept.id ? null : dept.id"
-        class="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 hover:border-blue-300 dark:hover:border-blue-600 transition-all cursor-pointer"
+        class="bg-white/70 dark:bg-slate-800/70 glass rounded-xl border border-gray-200 dark:border-slate-700 hover:border-emerald-300 dark:hover:border-emerald-600 transition-all cursor-pointer"
       >
         <!-- Collapsed View -->
         <div class="p-4">
@@ -189,7 +189,7 @@ onMounted(() => {
             <div class="flex-1">
               <div class="flex items-center gap-3">
                 <div
-                  class="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center"
+                  class="w-10 h-10 rounded-lg bg-gradient-to-br from-emerald-400 to-teal-600 flex items-center justify-center"
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -266,7 +266,7 @@ onMounted(() => {
             <div v-if="editable" class="flex gap-2 pt-2">
               <button
                 @click.stop="handleEdit(dept)"
-                class="flex-1 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors"
+                class="flex-1 px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium rounded-lg transition-colors"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"

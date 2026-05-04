@@ -72,6 +72,7 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   async function logout() {
+    const wasAuthenticated = isAuthenticated.value
     try {
       await api.post('/auth/logout')
     } catch (e) {
@@ -81,7 +82,9 @@ export const useAuthStore = defineStore('auth', () => {
       user.value = null
       localStorage.removeItem('user')
       localStorage.removeItem('is_logged_in')
-      notification.info('Logged out successfully')
+      if (wasAuthenticated) {
+        notification.info('Logged out successfully')
+      }
     }
   }
 

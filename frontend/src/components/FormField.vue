@@ -63,10 +63,10 @@ const handleBlur = (event: FocusEvent) => {
     <div class="flex justify-between items-center px-0.5">
       <label
         :for="id"
-        class="block text-sm font-semibold transition-colors"
+        class="block text-sm font-bold transition-colors"
         :class="[
-          error ? 'text-red-500' : 'text-gray-700 dark:text-slate-300',
-          isFocused && !error ? 'text-blue-600 dark:text-blue-400' : '',
+          error ? 'text-red-500' : 'text-gray-600 dark:text-slate-400',
+          isFocused && !error ? 'text-emerald-600 dark:text-emerald-400' : '',
         ]"
       >
         {{ label }}
@@ -90,11 +90,11 @@ const handleBlur = (event: FocusEvent) => {
         :disabled="disabled"
         :required="required"
         :autocomplete="autocomplete"
-        class="appearance-none block w-full px-4 py-3 border rounded-xl shadow-sm transition-all sm:text-sm outline-none bg-white dark:bg-slate-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-50 dark:disabled:bg-slate-800"
+        class="appearance-none block w-full px-4 py-3.5 border rounded-2xl shadow-sm transition-all sm:text-sm outline-none bg-white dark:bg-slate-800/50 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-50 dark:disabled:bg-slate-800"
         :class="[
           error
             ? 'border-red-500 focus:ring-4 focus:ring-red-500/10'
-            : 'border-gray-300 dark:border-slate-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10 dark:focus:ring-blue-400/10',
+            : 'border-gray-200 dark:border-slate-700/50 focus:border-emerald-500 dark:focus:border-emerald-400 focus:ring-4 focus:ring-emerald-500/10 dark:focus:ring-emerald-400/10',
         ]"
       />
 
