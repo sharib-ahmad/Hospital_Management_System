@@ -1,114 +1,103 @@
-# 🏥 Hospital Management System (WIP)
+# 🏥 Hospital Management System (HMS)
 
 ## 📌 Overview
 
-This project is a **modern, full-stack Hospital Management System** being built with an API-first approach.
-It is designed to simulate real-world healthcare workflows such as patient management, doctor coordination, and appointment scheduling.
+A comprehensive, **modern full-stack Hospital Management System** designed to replace manual registers with an efficient, API-first digital solution. The system facilitates seamless coordination between patients, doctors, and administrative staff, ensuring data integrity and real-time scheduling.
 
-> ⚠️ **Status:** Initial setup phase (project structure and tooling in progress)
+> 🚀 **Status:** Active Development (Core features implemented)
 
 ---
 
 ## 🧱 Tech Stack
 
-### 🔹 Backend
+### 🔹 Backend (API-First)
+* **Framework:** Python (Flask)
+* **API Engine:** Flask-RESTX (Swagger/OpenAPI Documentation)
+* **Database/ORM:** Flask-SQLAlchemy (PostgreSQL compatible)
+* **Validation:** Pydantic & Marshmallow
+* **Environment:** Managed via **uv** (high-performance Python packager)
+* **Async Tasks:** Celery + Redis (Background processing)
 
-* Python (Flask)
-* Flask-RESTX (API design & documentation)
-* Flask-SQLAlchemy (ORM)
-* PostgreSQL (planned)
-* Pydantic (data validation - planned)
-* uv (Python environment & dependency management)
-
-### 🔹 Frontend
-
-* Vue 3
-* Tailwind CSS
-* Vite
+### 🔹 Frontend (Premium UI)
+* **Framework:** Vue 3 (Composition API + TypeScript)
+* **State Management:** Pinia
+* **Styling:** Tailwind CSS 4 (Utility-first, Glassmorphism, Dark Mode)
+* **Build Tool:** Vite
+* **Formatting:** `oxfmt`
 
 ---
 
 ## 📂 Project Structure
 
-
-
----
-
-## 🎯 Project Goals
-
-* Build a **scalable, API-first backend**
-* Implement **role-based access control (RBAC)**
-* Design **real-world workflows** (appointments, treatments)
-* Create a **clean and responsive UI**
-* Follow **industry-level project structure and practices**
-
----
-
-## 🚀 Planned Features
-
-* 🔐 Authentication (JWT-based)
-* 👨‍⚕️ Doctor Management
-* 🧑‍🤝‍🧑 Patient Management
-* 📅 Appointment Scheduling System
-* 📊 Dashboard & Analytics
-* 🧾 Treatment Records
-* ⏱️ Background Jobs (reminders, reports)
+```text
+├── backend/                # Flask API Root
+│   ├── app/
+│   │   ├── api_models/    # Swagger/RESTX models
+│   │   ├── controllers/   # Business logic orchestration
+│   │   ├── models/        # SQLAlchemy Database models
+│   │   ├── routes/        # API Endpoints
+│   │   ├── services/      # Core business logic
+│   │   └── tasks/         # Celery background jobs
+│   └── manage.sh           # Backend utility scripts
+└── frontend/               # Vue 3 SPA Root
+    ├── src/
+    │   ├── components/    # Reusable UI elements
+    │   ├── layouts/       # Dashboard & Auth layouts
+    │   ├── stores/        # Pinia state (Auth, Notifications)
+    │   └── views/         # Page components (Portals, Management)
+```
 
 ---
 
-## ⚙️ Setup Status
+## 🎯 Key Features Implemented
 
-* [x] Project structure initialized
-* [x] Frontend initialized (Vue 3 + Vite)
-* [ ] Backend initialized (Flask + uv)
-* [ ] Database setup
-* [ ] API development
-* [ ] Frontend integration
-
----
-
-## 📌 Development Approach
-
-This project follows:
-
-* **API-first design**
-* **Modular backend architecture**
-* **Separation of concerns (validation, business logic, data layer)**
-* **Incremental feature development**
+* 🔐 **Robust Authentication:** JWT-based secure auth with role-based access control (RBAC).
+* 👨‍⚕️ **Doctor Portal:** Specialized dashboard for appointment management and schedule tracking.
+* 🧑‍🤝‍🧑 **Patient Management:** Profile creation, clinical history, and application tracking.
+* 📋 **Role Application System:** Multi-step onboarding for Doctors, Nurses, and Patients with administrative review.
+* 📊 **Admin Dashboard:** Comprehensive statistics, user management, and department configuration.
+* 🌓 **Dynamic Theming:** Support for Light, Dark, and System modes with a premium emerald design language.
+* 📱 **Fully Responsive:** Mobile-first design ensuring usability across all device sizes.
 
 ---
 
-## 🧠 Learning Objectives
+## 🚀 Getting Started
 
-* Build production-style backend systems with Flask
-* Understand full-stack integration (Vue + Flask)
-* Apply validation, authentication, and API design best practices
-* Improve project structuring for real-world applications
+### Prerequisites
+* Python 3.12+ (managed via `uv`)
+* Node.js & npm/pnpm
+* Redis (for background tasks)
+
+### Backend Setup
+```bash
+cd backend
+uv sync
+uv run python run.py
+```
+
+### Frontend Setup
+```bash
+cd frontend
+npm install
+npm run dev
+```
 
 ---
 
-## 📎 Notes
+## ⚙️ Development Status
 
-This is a **practice + portfolio project**, focused on learning and implementing industry-relevant patterns rather than just fulfilling academic requirements.
-
----
-
-## 📈 Future Improvements
-
-* Deployment (backend + frontend)
-* Advanced caching
-* Async/background processing
-* Testing coverage
-
----
-
-## 🤝 Contribution
-
-Currently a personal learning project. Contributions are not open at this stage.
+* [x] Project architecture & RBAC
+* [x] Database Schema & ORM
+* [x] JWT Authentication & Secure Cookies
+* [x] Advanced Application Management (Filters, Stats)
+* [x] Doctor Appointment Portal
+* [x] Responsive Dashboard UI
+* [ ] Advanced Medical Records (In Progress)
+* [ ] Billing & Invoicing (Planned)
+* [ ] Real-time Notifications (Planned)
 
 ---
 
 ## 📄 License
 
-This project is for educational purposes.
-
+This project is built for educational and portfolio purposes, showcasing modern software engineering practices.
