@@ -15,6 +15,7 @@ class Department(db.Model):
     # Relationships
     doctors = db.relationship('Doctor', back_populates='department', lazy='selectin')
     nurses = db.relationship('Nurse', back_populates='department', lazy='selectin')
+    applications = db.relationship('Application', back_populates='department', lazy='selectin')
     @property
     def staff(self):
         return {

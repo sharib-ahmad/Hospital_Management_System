@@ -63,29 +63,23 @@ class ApplicationModels:
             'status': EnumField(ApplicationStatus),
             'created_at': fields.DateTime(readOnly=True),
             'updated_at': fields.DateTime(readOnly=True),
-            **self.base_application_fields,
-            **self.user_profile_fragment
-        })
-
-        self.patient_application_detail = api.inherit('PatientApplicationDetail', self.application_base_output, {
-            'medical_history': fields.String
-        })
-
-        self.doctor_application_detail = api.inherit('DoctorApplicationDetail', self.application_base_output, {
+            'department_name': fields.String(attribute='department.name'),
             'specialization': fields.String,
             'experience_years': fields.Integer,
             'consultation_fee': fields.Fixed(decimals=2),
             'license_number': fields.String,
             'department_id': fields.String,
-            'shift': fields.String
+            'shift': fields.String,
+            'medical_history': fields.String,
+            **self.base_application_fields,
+            **self.user_profile_fragment
         })
 
-        self.nurse_application_detail = api.inherit('NurseApplicationDetail', self.application_base_output, {
-            'experience_years': fields.Integer,
-            'license_number': fields.String,
-            'department_id': fields.String,
-            'shift': fields.String
-        })
+        self.patient_application_detail = api.inherit('PatientApplicationDetail', self.application_base_output, {})
+
+        self.doctor_application_detail = api.inherit('DoctorApplicationDetail', self.application_base_output, {})
+
+        self.nurse_application_detail = api.inherit('NurseApplicationDetail', self.application_base_output, {})
 
         # --- UNIFIED RESPONSE WRAPPER ---
 
@@ -115,6 +109,6 @@ class ApplicationModels:
         self.application_list_response = api.model('ApplicationListResponse', {
             'success': fields.Boolean,
             'message': fields.String,
-            'data': fields.List(fields.Nested(self.application_base_output)),
+            'data': fields.List(fields.Nested(self.application_base_output, skip_none=True)),
             'errors': fields.List(fields.Nested(self.error_detail), skip_none=True)
         })

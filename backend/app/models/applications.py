@@ -1,5 +1,6 @@
 from ..extensions import db
 from ..utils.enum import UserRole, ApplicationStatus, Gender, BloodGroup
+from ..utils.time import utc_now
 
 class Application(db.Model):
     __tablename__ = 'applications'
@@ -24,6 +25,9 @@ class Application(db.Model):
     license_number = db.Column(db.String(20), unique=True)
     department_id = db.Column(db.String(12), db.ForeignKey('departments.id'))
     shift = db.Column(db.String(20))  # e.g., "Day", "Night", "Rotating"
+    
+    created_at = db.Column(db.DateTime, default=utc_now)
+    updated_at = db.Column(db.DateTime, default=utc_now, onupdate=utc_now)
 
     __table_args__ = (
         db.CheckConstraint('experience_years >= 0', name='check_app_experience_years_non_negative'),
@@ -31,6 +35,7 @@ class Application(db.Model):
 
     # Relationships
     user = db.relationship('User', back_populates='applications')
+    department = db.relationship('Department', back_populates='applications')
 
     def __repr__(self):
         return f"<Application {self.id} for {self.role_applied.value}>"

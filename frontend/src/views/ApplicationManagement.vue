@@ -16,6 +16,7 @@ interface Application {
   experience_years?: number
   license_number?: string
   department_id?: string
+  department_name?: string
   // User profile details
   full_name?: string
   username?: string
@@ -111,6 +112,7 @@ const loadApplications = async () => {
   try {
     const response = await api.get('/applications')
     applications.value = response.data.data || []
+    console.log('Loaded applications:', applications.value)
   } catch (error) {
     notification.error('Failed to load applications')
   } finally {
@@ -524,9 +526,9 @@ onMounted(loadApplications)
                 </p>
               </div>
               <div v-if="selectedApplication.department_id">
-                <label class="block text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-1.5">Dept ID</label>
+                <label class="block text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-1.5">Department</label>
                 <p class="text-gray-900 dark:text-white font-bold">
-                  {{ selectedApplication.department_id }}
+                  {{ selectedApplication.department_name || selectedApplication.department_id }}
                 </p>
               </div>
               <div class="col-span-2">
