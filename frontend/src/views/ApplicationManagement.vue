@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, watch } from 'vue'
+import { ref, onMounted, onUnmounted, watch, computed } from 'vue'
 import DashboardLayout from '../layouts/DashboardLayout.vue'
 import { useNotificationStore } from '../stores/notification'
 import api from '../utils/axios'
@@ -32,6 +32,67 @@ const selectedApplication = ref<Application | null>(null)
 const isModalOpen = ref(false)
 const rejectionReason = ref('')
 const isProcessing = ref(false)
+
+// Filters
+const filters = ref({
+  role: '',
+  status: '',
+  search: ''
+})
+
+// Pagination
+const currentPage = ref(1)
+const itemsPerPage = 10
+
+const statsSummary = computed(() => {
+  const roles = ['doctor', 'nurse', 'patient']
+  const statuses = ['pending', 'approved', 'rejected']
+  
+  const summary: Record<string, any> = {}
+  
+  roles.forEach(role => {
+    summary[role] = {
+      total: applications.value.filter(a => a.role_applied === role).length,
+      pending: applications.value.filter(a => a.role_applied === role && a.status === 'pending').length,
+      approved: applications.value.filter(a => a.role_applied === role && a.status === 'approved').length,
+      rejected: applications.value.filter(a => a.role_applied === role && a.status === 'rejected').length
+    }
+  })
+  
+  return summary
+})
+
+const filteredApplications = computed(() => {
+  return applications.value.filter(app => {
+    // Role filter
+    const matchRole = !filters.value.role || app.role_applied === filters.value.role
+    
+    // Status filter
+    const matchStatus = !filters.value.status || app.status === filters.value.status
+    
+    // Search filter (username, email, or full name)
+    const searchLower = filters.value.search.toLowerCase()
+    const matchSearch = !filters.value.search || 
+      app.username?.toLowerCase().includes(searchLower) || 
+      app.email?.toLowerCase().includes(searchLower) ||
+      app.full_name?.toLowerCase().includes(searchLower)
+
+    return matchRole && matchStatus && matchSearch
+  })
+})
+
+const totalPages = computed(() => Math.ceil(filteredApplications.value.length / itemsPerPage))
+
+const paginatedApplications = computed(() => {
+  const start = (currentPage.value - 1) * itemsPerPage
+  const end = start + itemsPerPage
+  return filteredApplications.value.slice(start, end)
+})
+
+// Reset to page 1 when filters change
+watch(filters, () => {
+  currentPage.value = 1
+}, { deep: true })
 
 watch(isModalOpen, (newValue) => {
   if (newValue) {
@@ -106,9 +167,81 @@ onMounted(loadApplications)
 
 <template>
   <DashboardLayout>
-    <div class="mb-10">
-      <h1 class="text-4xl font-black text-gray-900 dark:text-white tracking-tight leading-none">Application Management</h1>
-      <p class="text-gray-500 dark:text-slate-400 mt-2 font-medium">Review and process role applications for doctors, nurses, and patients.</p>
+    <div class="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
+      <div>
+        <h1 class="text-4xl font-black text-gray-900 dark:text-white tracking-tight leading-none">Application Management</h1>
+        <p class="text-gray-500 dark:text-slate-400 mt-2 font-medium">Review and process role applications for doctors, nurses, and patients.</p>
+      </div>
+      
+      <div class="flex flex-wrap items-center gap-4">
+        <!-- Search Bar -->
+        <div class="relative group">
+          <input 
+            v-model="filters.search"
+            type="text" 
+            placeholder="Search username or email..."
+            class="pl-12 pr-6 py-3.5 w-64 bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-2xl text-sm font-bold focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 outline-none transition-all dark:text-white shadow-premium"
+          />
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-emerald-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+        </div>
+
+        <!-- Role Filter -->
+        <select 
+          v-model="filters.role"
+          class="px-6 py-3.5 bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-2xl text-sm font-bold focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 outline-none transition-all dark:text-white shadow-premium cursor-pointer"
+        >
+          <option value="">All Roles</option>
+          <option value="doctor">Doctors</option>
+          <option value="nurse">Nurses</option>
+          <option value="patient">Patients</option>
+        </select>
+
+        <!-- Status Filter -->
+        <select 
+          v-model="filters.status"
+          class="px-6 py-3.5 bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-2xl text-sm font-bold focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 outline-none transition-all dark:text-white shadow-premium cursor-pointer"
+        >
+          <option value="">All Statuses</option>
+          <option value="pending">Pending</option>
+          <option value="approved">Approved</option>
+          <option value="rejected">Rejected</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Stats Summary Section -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+      <div 
+        v-for="(data, role) in statsSummary" 
+        :key="role"
+        class="bg-white dark:bg-slate-900 rounded-[2rem] border border-gray-100 dark:border-slate-800 p-6 shadow-premium group hover:-translate-y-1 transition-all duration-300"
+      >
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-xs font-black uppercase tracking-[0.2em]" :class="{
+            'text-teal-600': role === 'doctor',
+            'text-emerald-600': role === 'nurse',
+            'text-indigo-600': role === 'patient'
+          }">{{ role }}s</h3>
+          <span class="text-[10px] font-black text-gray-400 bg-gray-50 dark:bg-slate-800 px-2 py-1 rounded-lg uppercase">{{ data.total }} Total</span>
+        </div>
+        
+        <div class="grid grid-cols-3 gap-2 text-center">
+          <div class="flex flex-col">
+            <span class="text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1">Pending</span>
+            <span class="text-lg font-black text-amber-500">{{ data.pending }}</span>
+          </div>
+          <div class="flex flex-col border-x border-gray-50 dark:border-slate-800 px-2">
+            <span class="text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1">Approved</span>
+            <span class="text-lg font-black text-emerald-500">{{ data.approved }}</span>
+          </div>
+          <div class="flex flex-col">
+            <span class="text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1">Rejected</span>
+            <span class="text-lg font-black text-rose-500">{{ data.rejected }}</span>
+          </div>
+        </div>
+      </div>
     </div>
 
     <div
@@ -168,7 +301,7 @@ onMounted(loadApplications)
           </thead>
           <tbody class="divide-y divide-gray-100 dark:divide-white/5">
             <tr
-              v-for="app in applications"
+              v-for="app in paginatedApplications"
               :key="app.id"
               class="hover:bg-emerald-50/30 dark:hover:bg-emerald-900/10 transition-colors cursor-pointer group"
               @click="openDetails(app)"
@@ -229,6 +362,43 @@ onMounted(loadApplications)
             </tr>
           </tbody>
         </table>
+      </div>
+
+      <!-- Pagination Controls -->
+      <div v-if="totalPages > 1" class="p-8 border-t border-gray-100 dark:border-white/5 flex flex-col sm:flex-row items-center justify-between gap-6 bg-gray-50/30 dark:bg-slate-800/30">
+        <div class="text-xs font-black text-gray-400 uppercase tracking-widest">
+          Showing <span class="text-emerald-600">{{ (currentPage - 1) * itemsPerPage + 1 }}</span> to 
+          <span class="text-emerald-600">{{ Math.min(currentPage * itemsPerPage, filteredApplications.length) }}</span> of 
+          <span class="text-emerald-600">{{ filteredApplications.length }}</span> entries
+        </div>
+        
+        <div class="flex items-center gap-2">
+          <button 
+            @click="currentPage--"
+            :disabled="currentPage === 1"
+            class="p-2.5 bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-gray-400 hover:text-emerald-600 disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-sm active:scale-95"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+          
+          <div class="flex items-center gap-1 px-4 py-2 bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl shadow-sm">
+            <span class="text-xs font-black text-emerald-600">{{ currentPage }}</span>
+            <span class="text-[10px] font-black text-gray-300 uppercase tracking-widest mx-1">of</span>
+            <span class="text-xs font-black text-gray-400">{{ totalPages }}</span>
+          </div>
+
+          <button 
+            @click="currentPage++"
+            :disabled="currentPage === totalPages"
+            class="p-2.5 bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-gray-400 hover:text-emerald-600 disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-sm active:scale-95"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
+        </div>
       </div>
     </div>
 

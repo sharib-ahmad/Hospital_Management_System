@@ -8,6 +8,7 @@ import NotFoundView from '../views/NotFoundView.vue'
 // Portals
 import AdminPortal from '../views/portals/AdminPortal.vue'
 import DoctorPortal from '../views/portals/DoctorPortal.vue'
+import DoctorAppointments from '../views/portals/DoctorAppointments.vue'
 import PatientPortal from '../views/portals/PatientPortal.vue'
 import NursePortal from '../views/portals/NursePortal.vue'
 import UserPortal from '../views/portals/UserPortal.vue'
@@ -67,6 +68,12 @@ const router = createRouter({
       path: '/doctor',
       name: 'doctor-portal',
       component: DoctorPortal,
+      meta: { requiresAuth: true, role: 'doctor' },
+    },
+    {
+      path: '/doctor/appointments',
+      name: 'doctor-appointments',
+      component: DoctorAppointments,
       meta: { requiresAuth: true, role: 'doctor' },
     },
     {
