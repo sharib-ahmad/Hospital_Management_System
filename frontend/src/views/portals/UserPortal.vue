@@ -8,6 +8,7 @@ import { useNotificationStore } from '../../stores/notification'
 const router = useRouter()
 const notification = useNotificationStore()
 const patients = ref<any[]>([])
+const applications = ref<any[]>([])
 const isLoading = ref(true)
 
 const stats = ref([
@@ -25,19 +26,30 @@ const stats = ref([
   },
 ])
 
-const loadPatients = async () => {
+const loadData = async () => {
   try {
-    const response = await api.get('/patients/my')
-    patients.value = response.data.data || []
+    const [patientsRes, appsRes] = await Promise.all([
+      api.get('/patients/my'),
+      api.get('/applications/my'),
+    ])
+    patients.value = patientsRes.data.data || []
+    const allApps = appsRes.data.data || []
+
+    // Filter to show pending apps or rejected patient apps
+    applications.value = allApps.filter(
+      (app: any) =>
+        app.status === 'pending' || (app.status === 'rejected' && app.role_applied === 'patient'),
+    )
+
     stats.value[1].value = patients.value.length.toString()
   } catch (error) {
-    console.error('Failed to load patients', error)
+    console.error('Failed to load data', error)
   } finally {
     isLoading.value = false
   }
 }
 
-onMounted(loadPatients)
+onMounted(loadData)
 </script>
 
 <template>
@@ -168,6 +180,75 @@ onMounted(loadPatients)
                     d="M9 5l7 7-7 7"
                   />
                 </svg>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Pending/Rejected Applications -->
+        <div v-if="applications.length > 0" class="space-y-8 pt-4">
+          <h3 class="text-xl font-black text-gray-900 dark:text-white flex items-center gap-3">
+            <span class="h-1.5 w-6 bg-amber-500 rounded-full"></span>
+            Registration Progress
+          </h3>
+
+          <div class="grid grid-cols-1 gap-6">
+            <div
+              v-for="app in applications"
+              :key="app.id"
+              class="glass p-6 rounded-3xl border border-white/40 dark:border-white/5 flex flex-col md:flex-row md:items-center justify-between gap-6 shadow-premium"
+            >
+              <div class="flex items-center gap-6">
+                <div
+                  :class="`w-12 h-12 rounded-2xl flex items-center justify-center ${app.status === 'pending' ? 'bg-amber-50 text-amber-600' : 'bg-red-50 text-red-600'}`"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    class="h-6 w-6"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      v-if="app.status === 'pending'"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M12 8v4l3 3m6-3a9 9 0 11-12 0 9 9 0 0112 0z"
+                    />
+                    <path
+                      v-else
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                </div>
+                <div>
+                  <h4 class="text-lg font-black text-gray-900 dark:text-white">
+                    {{ app.patient_full_name }}
+                  </h4>
+                  <p class="text-xs text-gray-500 font-bold uppercase tracking-widest mt-0.5">
+                    {{ app.relation }} • Patient Registration
+                  </p>
+                </div>
+              </div>
+
+              <div class="flex flex-col md:items-end gap-2">
+                <div class="flex items-center gap-2">
+                  <span
+                    :class="`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${app.status === 'pending' ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700'}`"
+                  >
+                    {{ app.status }}
+                  </span>
+                </div>
+                <p
+                  v-if="app.reason && app.status === 'rejected'"
+                  class="text-xs text-red-500 font-bold max-w-sm md:text-right"
+                >
+                  {{ app.reason }}
+                </p>
               </div>
             </div>
           </div>

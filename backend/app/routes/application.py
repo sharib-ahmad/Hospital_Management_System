@@ -16,6 +16,14 @@ class ApplicationList(Resource):
         """List applications based on role permissions"""
         return ApplicationController.get_applications()
 
+@application_ns.route('/my')
+class MyApplicationList(Resource):
+    @role_required(UserRole.USER)
+    @application_ns.marshal_with(application_models.application_list_response)
+    def get(self):
+        """List my submitted applications"""
+        return ApplicationController.get_my_applications()
+
 @application_ns.route('/patient')
 class PatientApplication(Resource):
     @role_required(UserRole.USER)

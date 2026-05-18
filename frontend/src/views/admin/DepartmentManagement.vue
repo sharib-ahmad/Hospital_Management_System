@@ -69,16 +69,18 @@ const handleRefresh = () => {
 <template>
   <DashboardLayout>
     <!-- Header -->
-    <div class="mb-8 flex items-center justify-between">
+    <div class="mb-12 flex flex-col md:flex-row md:items-center justify-between gap-6">
       <div>
-        <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Department Management</h1>
-        <p class="text-gray-600 dark:text-slate-400 mt-1">
-          Create, manage, and organize hospital departments
+        <h1 class="text-4xl font-black text-gray-900 dark:text-white tracking-tight">
+          Department Management
+        </h1>
+        <p class="text-gray-500 dark:text-slate-400 mt-2 font-medium">
+          Create, manage, and organize hospital departments and resource limits.
         </p>
       </div>
       <button
         @click="openCreateForm"
-        class="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition-colors flex items-center gap-2 shadow-lg hover:shadow-xl"
+        class="px-8 py-4 bg-emerald-600 text-white font-black rounded-2xl shadow-xl shadow-emerald-500/20 hover:-translate-y-1 transition-all active:scale-95 uppercase tracking-widest text-xs flex items-center justify-center gap-3"
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -86,7 +88,7 @@ const handleRefresh = () => {
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
-          stroke-width="2"
+          stroke-width="3"
         >
           <line x1="12" y1="5" x2="12" y2="19" />
           <line x1="5" y1="12" x2="19" y2="12" />
@@ -96,27 +98,27 @@ const handleRefresh = () => {
     </div>
 
     <!-- Info Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
       <div
-        class="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-6"
+        class="glass p-8 rounded-[2rem] border border-white/40 dark:border-white/5 shadow-premium group"
       >
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-sm font-medium text-gray-600 dark:text-slate-400">Total Departments</p>
-            <p class="text-3xl font-bold text-gray-900 dark:text-white mt-1">
+            <p class="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-1">Total Departments</p>
+            <p class="text-3xl font-black text-gray-900 dark:text-white tracking-tighter">
               {{ stats.departments }}
             </p>
           </div>
           <div
-            class="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center"
+            class="w-14 h-14 bg-emerald-50 dark:bg-emerald-900/30 rounded-2xl flex items-center justify-center text-emerald-600 shadow-sm group-hover:rotate-6 transition-transform"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
-              class="h-6 w-6 text-blue-600"
+              class="h-7 w-7"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
-              stroke-width="2"
+              stroke-width="2.5"
             >
               <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
               <polyline points="9 22 9 12 15 12 15 22" />
@@ -126,23 +128,23 @@ const handleRefresh = () => {
       </div>
 
       <div
-        class="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-6"
+        class="glass p-8 rounded-[2rem] border border-white/40 dark:border-white/5 shadow-premium group"
       >
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-sm font-medium text-gray-600 dark:text-slate-400">Active Doctors</p>
-            <p class="text-3xl font-bold text-gray-900 dark:text-white mt-1">{{ stats.doctors }}</p>
+            <p class="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-1">Active Doctors</p>
+            <p class="text-3xl font-black text-gray-900 dark:text-white tracking-tighter">{{ stats.doctors }}</p>
           </div>
           <div
-            class="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center"
+            class="w-14 h-14 bg-teal-50 dark:bg-teal-900/30 rounded-2xl flex items-center justify-center text-teal-600 shadow-sm group-hover:rotate-6 transition-transform"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
-              class="h-6 w-6 text-green-600"
+              class="h-7 w-7"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
-              stroke-width="2"
+              stroke-width="2.5"
             >
               <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
               <circle cx="12" cy="7" r="4" />
@@ -152,23 +154,23 @@ const handleRefresh = () => {
       </div>
 
       <div
-        class="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-6"
+        class="glass p-8 rounded-[2rem] border border-white/40 dark:border-white/5 shadow-premium group"
       >
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-sm font-medium text-gray-600 dark:text-slate-400">Staff Members</p>
-            <p class="text-3xl font-bold text-gray-900 dark:text-white mt-1">{{ stats.staff }}</p>
+            <p class="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-1">Staff Members</p>
+            <p class="text-3xl font-black text-gray-900 dark:text-white tracking-tighter">{{ stats.staff }}</p>
           </div>
           <div
-            class="w-12 h-12 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center"
+            class="w-14 h-14 bg-emerald-50 dark:bg-emerald-900/30 rounded-2xl flex items-center justify-center text-emerald-600 shadow-sm group-hover:rotate-6 transition-transform"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
-              class="h-6 w-6 text-purple-600"
+              class="h-7 w-7"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
-              stroke-width="2"
+              stroke-width="2.5"
             >
               <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
               <circle cx="9" cy="7" r="4" />
@@ -182,13 +184,13 @@ const handleRefresh = () => {
 
     <!-- Main Content -->
     <div
-      class="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-6"
+      class="glass rounded-[2.5rem] border border-white/40 dark:border-white/5 p-10 shadow-premium"
     >
-      <div class="mb-6">
-        <h2 class="text-xl font-bold text-gray-900 dark:text-white">All Departments</h2>
-        <p class="text-sm text-gray-600 dark:text-slate-400 mt-1">
-          View and manage all hospital departments
-        </p>
+      <div class="mb-10 flex items-center justify-between">
+        <h3 class="text-xl font-black text-gray-900 dark:text-white flex items-center gap-3">
+          <span class="h-1.5 w-6 bg-emerald-600 rounded-full"></span>
+          Hospital Departments
+        </h3>
       </div>
 
       <!-- Department List Component -->

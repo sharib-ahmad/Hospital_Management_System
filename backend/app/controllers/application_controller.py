@@ -8,11 +8,16 @@ from ..schemas.application import (
 from pydantic import ValidationError
 from ..utils.response import handle_response
 from ..utils.request import validate_json
+from flask_jwt_extended import current_user
 
 class ApplicationController:
     @staticmethod
     def get_applications():
         return ApplicationService.get_all_applications()
+
+    @staticmethod
+    def get_my_applications():
+        return ApplicationService.get_user_applications(current_user.id)
 
     @staticmethod
     def create_patient_application():

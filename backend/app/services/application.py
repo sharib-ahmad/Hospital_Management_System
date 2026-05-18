@@ -19,6 +19,11 @@ class ApplicationService:
         elif user.role == UserRole.DOCTOR or user.role == UserRole.NURSE:
             applications = Application.query.filter_by(role_applied=UserRole.PATIENT).all()
             return handle_response(success=True, data=applications, message="Patient applications retrieved successfully")
+
+    @staticmethod
+    def get_user_applications(user_id):
+        applications = Application.query.filter_by(user_id=user_id).all()
+        return handle_response(success=True, data=applications, message="User applications retrieved successfully")
         
         
 

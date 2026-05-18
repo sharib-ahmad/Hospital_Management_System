@@ -223,13 +223,13 @@ const handleClose = () => {
         </button>
 
         <!-- Header -->
-        <div class="mb-6">
-          <h2 class="text-2xl font-bold text-gray-900 dark:text-white">
-            {{ isEditing ? 'Edit Department' : 'Create New Department' }}
+        <div class="mb-10">
+          <h2 class="text-3xl font-black text-gray-900 dark:text-white tracking-tight">
+            {{ isEditing ? 'Modify Department' : 'New Department' }}
           </h2>
-          <p class="text-sm text-gray-600 dark:text-slate-400 mt-1">
+          <p class="text-xs text-gray-500 dark:text-slate-400 mt-2 font-black uppercase tracking-widest">
             {{
-              isEditing ? 'Update department information' : 'Add a new department to your hospital'
+              isEditing ? 'Syncing departmental resource limits' : 'Expanding hospital clinical units'
             }}
           </p>
         </div>
@@ -339,18 +339,18 @@ const handleClose = () => {
           </div>
 
           <!-- Action Buttons -->
-          <div class="flex gap-3 pt-4">
+          <div class="flex gap-4 pt-6">
             <button
               type="button"
               @click="handleClose"
-              class="flex-1 px-4 py-3 text-center font-medium text-gray-700 dark:text-slate-300 bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 rounded-xl transition-colors disabled:opacity-50"
+              class="flex-1 px-4 py-4 text-center text-[10px] font-black uppercase tracking-widest text-gray-500 dark:text-slate-400 bg-gray-50 dark:bg-slate-800/50 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-2xl transition-colors disabled:opacity-50"
               :disabled="isLoading"
             >
               Cancel
             </button>
             <button
               type="submit"
-              class="flex-1 px-4 py-3 text-center font-medium text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              class="flex-1 px-4 py-4 text-center text-[10px] font-black uppercase tracking-widest text-white bg-emerald-600 hover:bg-emerald-700 rounded-2xl transition-all shadow-lg shadow-emerald-500/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               :disabled="!isFormValid || isLoading"
             >
               <svg
@@ -363,7 +363,7 @@ const handleClose = () => {
               >
                 <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2" />
               </svg>
-              {{ isLoading ? 'Saving...' : isEditing ? 'Update Department' : 'Create Department' }}
+              {{ isLoading ? 'Syncing...' : isEditing ? 'Update Unit' : 'Create Unit' }}
             </button>
           </div>
         </form>

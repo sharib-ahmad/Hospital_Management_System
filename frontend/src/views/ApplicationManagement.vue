@@ -17,7 +17,19 @@ interface Application {
   license_number?: string
   department_id?: string
   department_name?: string
-  // User profile details
+  // Patient specific details
+  patient_full_name?: string
+  relation?: string
+  patient_email?: string
+  patient_phone_number?: string
+  patient_address?: string
+  patient_pincode?: string
+  date_of_birth?: string
+  gender?: string
+  blood_group?: string
+  medical_history?: string
+  emergency_contact_number?: string
+  // User profile details (the person who submitted it)
   full_name?: string
   username?: string
   email?: string
@@ -367,13 +379,15 @@ onMounted(loadApplications)
                   <div
                     class="h-10 w-10 rounded-2xl bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400 font-black text-sm shadow-sm border border-emerald-200/50 dark:border-emerald-500/20 group-hover:scale-110 transition-transform"
                   >
-                    {{ app.full_name?.charAt(0) || app.username?.charAt(0) }}
+                    {{ (app.role_applied === 'patient' ? app.patient_full_name : app.full_name)?.charAt(0) || app.username?.charAt(0) }}
                   </div>
                   <div>
                     <p class="text-sm font-black text-gray-900 dark:text-white leading-tight">
-                      {{ app.full_name || app.username }}
+                      {{ app.role_applied === 'patient' ? app.patient_full_name : (app.full_name || app.username) }}
                     </p>
-                    <p class="text-xs text-gray-500 mt-0.5">@{{ app.username }}</p>
+                    <p class="text-xs text-gray-500 mt-0.5">
+                      {{ app.role_applied === 'patient' ? `Relation: ${app.relation}` : `@${app.username}` }}
+                    </p>
                   </div>
                 </div>
               </td>
@@ -381,7 +395,7 @@ onMounted(loadApplications)
                 <span
                   class="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border"
                   :class="{
-                    'bg-emerald-50 text-emerald-700 border-emerald-100/50 dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-500/20':
+                    'bg-indigo-50 text-indigo-700 border-indigo-100/50 dark:bg-indigo-900/20 dark:text-indigo-400 dark:border-indigo-500/20':
                       app.role_applied === 'patient',
                     'bg-teal-50 text-teal-700 border-teal-100/50 dark:bg-teal-900/20 dark:text-teal-400 dark:border-teal-500/20':
                       app.role_applied === 'doctor',
@@ -534,12 +548,20 @@ onMounted(loadApplications)
         </div>
 
         <div class="p-8 overflow-y-auto flex-1">
-          <!-- Applicant Info -->
+          <!-- Applicant Info (The Submitter) -->
           <div class="grid grid-cols-2 gap-8 mb-10">
+            <div class="col-span-2">
+              <h4
+                class="text-xs font-black text-gray-400 dark:text-slate-500 mb-4 uppercase tracking-[0.2em] flex items-center gap-2"
+              >
+                Submitter Information
+                <span class="h-px flex-1 bg-gray-100 dark:bg-white/5"></span>
+              </h4>
+            </div>
             <div>
               <label
                 class="block text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-1.5"
-                >Full Name</label
+                >Account Name</label
               >
               <p class="text-gray-900 dark:text-white font-bold text-lg leading-tight">
                 {{ selectedApplication.full_name }}
@@ -554,41 +576,98 @@ onMounted(loadApplications)
                 @{{ selectedApplication.username }}
               </p>
             </div>
-            <div>
-              <label
-                class="block text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-1.5"
-                >Email Address</label
-              >
-              <p class="text-gray-900 dark:text-white font-bold">
-                {{ selectedApplication.email }}
-              </p>
-            </div>
-            <div>
-              <label
-                class="block text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-1.5"
-                >Phone Contact</label
-              >
-              <p class="text-gray-900 dark:text-white font-bold">
-                {{ selectedApplication.phone_number }}
-              </p>
-            </div>
-            <div class="col-span-2">
-              <label
-                class="block text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-1.5"
-                >Residential Address</label
-              >
-              <p class="text-gray-900 dark:text-white font-bold">
-                {{ selectedApplication.address }}, {{ selectedApplication.pincode }}
-              </p>
+          </div>
+
+          <!-- Patient Specific Info -->
+          <div
+            v-if="selectedApplication.role_applied === 'patient'"
+            class="bg-indigo-50/50 dark:bg-indigo-900/10 rounded-3xl p-8 mb-10 border border-indigo-100 dark:border-indigo-500/10"
+          >
+            <h4
+              class="text-xs font-black text-indigo-900 dark:text-white mb-6 flex items-center gap-3 uppercase tracking-widest"
+            >
+              <span class="h-1.5 w-6 bg-indigo-600 rounded-full"></span>
+              Patient Details
+            </h4>
+            <div class="grid grid-cols-2 gap-8">
+              <div class="col-span-2">
+                <label
+                  class="block text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-1.5"
+                  >Patient Full Name</label
+                >
+                <p class="text-gray-900 dark:text-white font-black text-xl">
+                  {{ selectedApplication.patient_full_name }}
+                </p>
+                <p class="text-[10px] font-black text-indigo-600 uppercase tracking-widest mt-1">
+                  Relation: {{ selectedApplication.relation }}
+                </p>
+              </div>
+
+              <div>
+                <label
+                  class="block text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-1.5"
+                  >Date of Birth</label
+                >
+                <p class="text-gray-900 dark:text-white font-bold">
+                  {{ selectedApplication.date_of_birth }}
+                </p>
+              </div>
+              <div>
+                <label
+                  class="block text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-1.5"
+                  >Gender / Blood Group</label
+                >
+                <p class="text-gray-900 dark:text-white font-bold uppercase">
+                  {{ selectedApplication.gender }} • {{ selectedApplication.blood_group }}
+                </p>
+              </div>
+
+              <div>
+                <label
+                  class="block text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-1.5"
+                  >Contact Email</label
+                >
+                <p class="text-gray-900 dark:text-white font-bold">
+                  {{ selectedApplication.patient_email || 'Not provided' }}
+                </p>
+              </div>
+              <div>
+                <label
+                  class="block text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-1.5"
+                  >Phone Number</label
+                >
+                <p class="text-gray-900 dark:text-white font-bold">
+                  {{ selectedApplication.patient_phone_number || 'Not provided' }}
+                </p>
+              </div>
+
+              <div class="col-span-2">
+                <label
+                  class="block text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-1.5"
+                  >Emergency Contact</label
+                >
+                <p class="text-rose-600 font-black">{{ selectedApplication.emergency_contact_number }}</p>
+              </div>
+
+              <div class="col-span-2">
+                <label
+                  class="block text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-1.5"
+                  >Medical History</label
+                >
+                <p class="text-gray-900 dark:text-white text-sm leading-relaxed font-medium">
+                  {{ selectedApplication.medical_history || 'No significant medical history provided.' }}
+                </p>
+              </div>
             </div>
           </div>
 
-          <!-- Application Info -->
+          <!-- Professional Role Info -->
           <div
+            v-else
             class="bg-emerald-50/50 dark:bg-emerald-900/10 rounded-3xl p-8 mb-10 border border-emerald-100 dark:border-emerald-500/10"
           >
             <h4
-              class="text-xs font-black text-gray-900 dark:text-white mb-6 flex items-center gap-3 uppercase tracking-widest"
+              class="text-xs font-black text-emerald-900 dark:text-white mb-6 flex items-center gap-3 uppercase tracking-widest"
             >
               <span class="h-1.5 w-6 bg-emerald-600 rounded-full"></span>
               Clinical Credentials
@@ -602,8 +681,6 @@ onMounted(loadApplications)
                 <span
                   class="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border"
                   :class="{
-                    'bg-emerald-100 text-emerald-700 border-emerald-200/50':
-                      selectedApplication.role_applied === 'patient',
                     'bg-teal-100 text-teal-700 border-teal-200/50':
                       selectedApplication.role_applied === 'doctor',
                     'bg-emerald-500 text-white border-emerald-600':
