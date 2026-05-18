@@ -1,22 +1,19 @@
 import { defineStore } from 'pinia'
 import { ref, watch, onMounted } from 'vue'
 
-export type Theme = 'light' | 'dark' | 'system'
+export type Theme = 'system' | 'opposite'
 
 export const useThemeStore = defineStore('theme', () => {
   const theme = ref<Theme>((localStorage.getItem('theme') as Theme) || 'system')
+  const isDark = ref(false)
 
   const applyTheme = (newTheme: Theme) => {
     const root = window.document.documentElement
+    const systemIsDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+    
+    isDark.value = newTheme === 'system' ? systemIsDark : !systemIsDark
 
-    let isDark = false
-    if (newTheme === 'system') {
-      isDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-    } else {
-      isDark = newTheme === 'dark'
-    }
-
-    if (isDark) {
+    if (isDark.value) {
       root.classList.add('dark')
     } else {
       root.classList.remove('dark')
@@ -34,21 +31,19 @@ export const useThemeStore = defineStore('theme', () => {
   onMounted(() => {
     applyTheme(theme.value)
 
-    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
-      if (theme.value === 'system') {
-        applyTheme('system')
-      }
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
+    mediaQuery.addEventListener('change', () => {
+      applyTheme(theme.value)
     })
   })
 
   const toggleTheme = () => {
-    if (theme.value === 'light') theme.value = 'dark'
-    else if (theme.value === 'dark') theme.value = 'system'
-    else theme.value = 'light'
+    theme.value = theme.value === 'system' ? 'opposite' : 'system'
   }
 
   return {
     theme,
+    isDark,
     toggleTheme,
     applyTheme,
   }

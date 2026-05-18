@@ -8,11 +8,43 @@ const themeStore = useThemeStore()
   <button
     @click="themeStore.toggleTheme()"
     class="p-2 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-    title="Toggle Theme"
+    :title="themeStore.theme === 'system' ? 'Switch to Opposite of System Theme' : 'Switch to System Default Theme'"
   >
-    <!-- Sun icon for light theme -->
+    <!-- Monitor icon for system theme -->
     <svg
-      v-if="themeStore.theme === 'light'"
+      v-if="themeStore.theme === 'system'"
+      xmlns="http://www.w3.org/2000/svg"
+      class="h-5 w-5"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    >
+      <rect x="2" y="3" width="20" height="14" rx="2" ry="2" />
+      <line x1="8" y1="21" x2="16" y2="21" />
+      <line x1="12" y1="17" x2="12" y2="21" />
+    </svg>
+
+    <!-- Moon icon for dark theme (when in opposite mode) -->
+    <svg
+      v-else-if="themeStore.isDark"
+      xmlns="http://www.w3.org/2000/svg"
+      class="h-5 w-5"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    >
+      <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+    </svg>
+
+    <!-- Sun icon for light theme (when in opposite mode) -->
+    <svg
+      v-else
       xmlns="http://www.w3.org/2000/svg"
       class="h-5 w-5"
       viewBox="0 0 24 24"
@@ -31,38 +63,6 @@ const themeStore = useThemeStore()
       <line x1="21" y1="12" x2="23" y2="12" />
       <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
       <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
-    </svg>
-
-    <!-- Moon icon for dark theme -->
-    <svg
-      v-else-if="themeStore.theme === 'dark'"
-      xmlns="http://www.w3.org/2000/svg"
-      class="h-5 w-5"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      stroke-width="2"
-      stroke-linecap="round"
-      stroke-linejoin="round"
-    >
-      <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
-    </svg>
-
-    <!-- Monitor icon for system theme -->
-    <svg
-      v-else
-      xmlns="http://www.w3.org/2000/svg"
-      class="h-5 w-5"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      stroke-width="2"
-      stroke-linecap="round"
-      stroke-linejoin="round"
-    >
-      <rect x="2" y="3" width="20" height="14" rx="2" ry="2" />
-      <line x1="8" y1="21" x2="16" y2="21" />
-      <line x1="12" y1="17" x2="12" y2="21" />
     </svg>
   </button>
 </template>
