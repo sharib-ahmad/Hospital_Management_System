@@ -8,8 +8,12 @@ import ThemeToggle from '../components/ThemeToggle.vue'
   >
     <!-- Background Decorative Elements -->
     <div class="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full -z-10 pointer-events-none">
-      <div class="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-emerald-200/20 dark:bg-emerald-600/10 rounded-full blur-[100px] animate-pulse"></div>
-      <div class="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-teal-200/20 dark:bg-teal-600/10 rounded-full blur-[100px] animate-pulse transition-delay-2000"></div>
+      <div
+        class="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-emerald-200/20 dark:bg-emerald-600/10 rounded-full blur-[100px] animate-pulse"
+      ></div>
+      <div
+        class="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-teal-200/20 dark:bg-teal-600/10 rounded-full blur-[100px] animate-pulse transition-delay-2000"
+      ></div>
     </div>
 
     <div class="absolute top-6 right-6">

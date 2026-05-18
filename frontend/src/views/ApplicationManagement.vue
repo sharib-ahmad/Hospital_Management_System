@@ -38,7 +38,7 @@ const isProcessing = ref(false)
 const filters = ref({
   role: '',
   status: '',
-  search: ''
+  search: '',
 })
 
 // Pagination
@@ -48,33 +48,37 @@ const itemsPerPage = 10
 const statsSummary = computed(() => {
   const roles = ['doctor', 'nurse', 'patient']
   const statuses = ['pending', 'approved', 'rejected']
-  
+
   const summary: Record<string, any> = {}
-  
-  roles.forEach(role => {
+
+  roles.forEach((role) => {
     summary[role] = {
-      total: applications.value.filter(a => a.role_applied === role).length,
-      pending: applications.value.filter(a => a.role_applied === role && a.status === 'pending').length,
-      approved: applications.value.filter(a => a.role_applied === role && a.status === 'approved').length,
-      rejected: applications.value.filter(a => a.role_applied === role && a.status === 'rejected').length
+      total: applications.value.filter((a) => a.role_applied === role).length,
+      pending: applications.value.filter((a) => a.role_applied === role && a.status === 'pending')
+        .length,
+      approved: applications.value.filter((a) => a.role_applied === role && a.status === 'approved')
+        .length,
+      rejected: applications.value.filter((a) => a.role_applied === role && a.status === 'rejected')
+        .length,
     }
   })
-  
+
   return summary
 })
 
 const filteredApplications = computed(() => {
-  return applications.value.filter(app => {
+  return applications.value.filter((app) => {
     // Role filter
     const matchRole = !filters.value.role || app.role_applied === filters.value.role
-    
+
     // Status filter
     const matchStatus = !filters.value.status || app.status === filters.value.status
-    
+
     // Search filter (username, email, or full name)
     const searchLower = filters.value.search.toLowerCase()
-    const matchSearch = !filters.value.search || 
-      app.username?.toLowerCase().includes(searchLower) || 
+    const matchSearch =
+      !filters.value.search ||
+      app.username?.toLowerCase().includes(searchLower) ||
       app.email?.toLowerCase().includes(searchLower) ||
       app.full_name?.toLowerCase().includes(searchLower)
 
@@ -91,9 +95,13 @@ const paginatedApplications = computed(() => {
 })
 
 // Reset to page 1 when filters change
-watch(filters, () => {
-  currentPage.value = 1
-}, { deep: true })
+watch(
+  filters,
+  () => {
+    currentPage.value = 1
+  },
+  { deep: true },
+)
 
 watch(isModalOpen, (newValue) => {
   if (newValue) {
@@ -171,26 +179,41 @@ onMounted(loadApplications)
   <DashboardLayout>
     <div class="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
       <div>
-        <h1 class="text-4xl font-black text-gray-900 dark:text-white tracking-tight leading-none">Application Management</h1>
-        <p class="text-gray-500 dark:text-slate-400 mt-2 font-medium">Review and process role applications for doctors, nurses, and patients.</p>
+        <h1 class="text-4xl font-black text-gray-900 dark:text-white tracking-tight leading-none">
+          Application Management
+        </h1>
+        <p class="text-gray-500 dark:text-slate-400 mt-2 font-medium">
+          Review and process role applications for doctors, nurses, and patients.
+        </p>
       </div>
-      
+
       <div class="flex flex-wrap items-center gap-4">
         <!-- Search Bar -->
         <div class="relative group">
-          <input 
+          <input
             v-model="filters.search"
-            type="text" 
+            type="text"
             placeholder="Search username or email..."
             class="pl-12 pr-6 py-3.5 w-64 bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-2xl text-sm font-bold focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 outline-none transition-all dark:text-white shadow-premium"
           />
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-emerald-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-5 w-5 absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-emerald-500 transition-colors"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2.5"
+              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+            />
           </svg>
         </div>
 
         <!-- Role Filter -->
-        <select 
+        <select
           v-model="filters.role"
           class="px-6 py-3.5 bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-2xl text-sm font-bold focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 outline-none transition-all dark:text-white shadow-premium cursor-pointer"
         >
@@ -201,7 +224,7 @@ onMounted(loadApplications)
         </select>
 
         <!-- Status Filter -->
-        <select 
+        <select
           v-model="filters.status"
           class="px-6 py-3.5 bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-2xl text-sm font-bold focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 outline-none transition-all dark:text-white shadow-premium cursor-pointer"
         >
@@ -215,31 +238,45 @@ onMounted(loadApplications)
 
     <!-- Stats Summary Section -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-      <div 
-        v-for="(data, role) in statsSummary" 
+      <div
+        v-for="(data, role) in statsSummary"
         :key="role"
         class="bg-white dark:bg-slate-900 rounded-[2rem] border border-gray-100 dark:border-slate-800 p-6 shadow-premium group hover:-translate-y-1 transition-all duration-300"
       >
         <div class="flex items-center justify-between mb-4">
-          <h3 class="text-xs font-black uppercase tracking-[0.2em]" :class="{
-            'text-teal-600': role === 'doctor',
-            'text-emerald-600': role === 'nurse',
-            'text-indigo-600': role === 'patient'
-          }">{{ role }}s</h3>
-          <span class="text-[10px] font-black text-gray-400 bg-gray-50 dark:bg-slate-800 px-2 py-1 rounded-lg uppercase">{{ data.total }} Total</span>
+          <h3
+            class="text-xs font-black uppercase tracking-[0.2em]"
+            :class="{
+              'text-teal-600': role === 'doctor',
+              'text-emerald-600': role === 'nurse',
+              'text-indigo-600': role === 'patient',
+            }"
+          >
+            {{ role }}s
+          </h3>
+          <span
+            class="text-[10px] font-black text-gray-400 bg-gray-50 dark:bg-slate-800 px-2 py-1 rounded-lg uppercase"
+            >{{ data.total }} Total</span
+          >
         </div>
-        
+
         <div class="grid grid-cols-3 gap-2 text-center">
           <div class="flex flex-col">
-            <span class="text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1">Pending</span>
+            <span class="text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1"
+              >Pending</span
+            >
             <span class="text-lg font-black text-amber-500">{{ data.pending }}</span>
           </div>
           <div class="flex flex-col border-x border-gray-50 dark:border-slate-800 px-2">
-            <span class="text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1">Approved</span>
+            <span class="text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1"
+              >Approved</span
+            >
             <span class="text-lg font-black text-emerald-500">{{ data.approved }}</span>
           </div>
           <div class="flex flex-col">
-            <span class="text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1">Rejected</span>
+            <span class="text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1"
+              >Rejected</span
+            >
             <span class="text-lg font-black text-rose-500">{{ data.rejected }}</span>
           </div>
         </div>
@@ -252,7 +289,9 @@ onMounted(loadApplications)
       <div
         class="p-8 border-b border-gray-100 dark:border-white/5 flex justify-between items-center"
       >
-        <h2 class="text-xl font-black text-gray-900 dark:text-white tracking-tight">Recent Applications</h2>
+        <h2 class="text-xl font-black text-gray-900 dark:text-white tracking-tight">
+          Recent Applications
+        </h2>
         <button
           @click="loadApplications"
           class="p-2.5 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded-xl transition-all active:scale-95"
@@ -282,8 +321,23 @@ onMounted(loadApplications)
       </div>
 
       <div v-else-if="applications.length === 0" class="p-20 text-center">
-        <div class="w-20 h-20 bg-gray-50 dark:bg-slate-800 rounded-3xl flex items-center justify-center mx-auto mb-6 text-gray-300">
-           <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+        <div
+          class="w-20 h-20 bg-gray-50 dark:bg-slate-800 rounded-3xl flex items-center justify-center mx-auto mb-6 text-gray-300"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-10 w-10"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+            />
+          </svg>
         </div>
         <p class="text-lg font-bold text-gray-900 dark:text-white">No applications found.</p>
         <p class="text-sm text-gray-500">Wait for new users to apply for roles.</p>
@@ -327,8 +381,10 @@ onMounted(loadApplications)
                 <span
                   class="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border"
                   :class="{
-                    'bg-emerald-50 text-emerald-700 border-emerald-100/50 dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-500/20': app.role_applied === 'patient',
-                    'bg-teal-50 text-teal-700 border-teal-100/50 dark:bg-teal-900/20 dark:text-teal-400 dark:border-teal-500/20': app.role_applied === 'doctor',
+                    'bg-emerald-50 text-emerald-700 border-emerald-100/50 dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-500/20':
+                      app.role_applied === 'patient',
+                    'bg-teal-50 text-teal-700 border-teal-100/50 dark:bg-teal-900/20 dark:text-teal-400 dark:border-teal-500/20':
+                      app.role_applied === 'doctor',
                     'bg-emerald-500 text-white border-emerald-600': app.role_applied === 'nurse',
                   }"
                 >
@@ -356,9 +412,20 @@ onMounted(loadApplications)
                 </span>
               </td>
               <td class="px-8 py-6 text-right">
-                <button class="text-emerald-600 dark:text-emerald-400 text-xs font-black uppercase tracking-[0.15em] hover:underline flex items-center gap-1 ml-auto">
+                <button
+                  class="text-emerald-600 dark:text-emerald-400 text-xs font-black uppercase tracking-[0.15em] hover:underline flex items-center gap-1 ml-auto"
+                >
                   Details
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path d="M9 5l7 7-7 7" /></svg>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    class="h-3 w-3"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    stroke-width="3"
+                  >
+                    <path d="M9 5l7 7-7 7" />
+                  </svg>
                 </button>
               </td>
             </tr>
@@ -367,36 +434,60 @@ onMounted(loadApplications)
       </div>
 
       <!-- Pagination Controls -->
-      <div v-if="totalPages > 1" class="p-8 border-t border-gray-100 dark:border-white/5 flex flex-col sm:flex-row items-center justify-between gap-6 bg-gray-50/30 dark:bg-slate-800/30">
+      <div
+        v-if="totalPages > 1"
+        class="p-8 border-t border-gray-100 dark:border-white/5 flex flex-col sm:flex-row items-center justify-between gap-6 bg-gray-50/30 dark:bg-slate-800/30"
+      >
         <div class="text-xs font-black text-gray-400 uppercase tracking-widest">
-          Showing <span class="text-emerald-600">{{ (currentPage - 1) * itemsPerPage + 1 }}</span> to 
-          <span class="text-emerald-600">{{ Math.min(currentPage * itemsPerPage, filteredApplications.length) }}</span> of 
-          <span class="text-emerald-600">{{ filteredApplications.length }}</span> entries
+          Showing
+          <span class="text-emerald-600">{{ (currentPage - 1) * itemsPerPage + 1 }}</span> to
+          <span class="text-emerald-600">{{
+            Math.min(currentPage * itemsPerPage, filteredApplications.length)
+          }}</span>
+          of <span class="text-emerald-600">{{ filteredApplications.length }}</span> entries
         </div>
-        
+
         <div class="flex items-center gap-2">
-          <button 
+          <button
             @click="currentPage--"
             :disabled="currentPage === 1"
             class="p-2.5 bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-gray-400 hover:text-emerald-600 disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-sm active:scale-95"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-5 w-5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              stroke-width="3"
+            >
               <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
             </svg>
           </button>
-          
-          <div class="flex items-center gap-1 px-4 py-2 bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl shadow-sm">
+
+          <div
+            class="flex items-center gap-1 px-4 py-2 bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl shadow-sm"
+          >
             <span class="text-xs font-black text-emerald-600">{{ currentPage }}</span>
-            <span class="text-[10px] font-black text-gray-300 uppercase tracking-widest mx-1">of</span>
+            <span class="text-[10px] font-black text-gray-300 uppercase tracking-widest mx-1"
+              >of</span
+            >
             <span class="text-xs font-black text-gray-400">{{ totalPages }}</span>
           </div>
 
-          <button 
+          <button
             @click="currentPage++"
             :disabled="currentPage === totalPages"
             class="p-2.5 bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-gray-400 hover:text-emerald-600 disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-sm active:scale-95"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-5 w-5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              stroke-width="3"
+            >
               <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
             </svg>
           </button>
@@ -417,19 +508,27 @@ onMounted(loadApplications)
           class="p-8 border-b border-gray-100 dark:border-white/5 flex justify-between items-center"
         >
           <div>
-            <h3 class="text-2xl font-black text-gray-900 dark:text-white tracking-tight leading-none">Application Profile</h3>
-            <p class="text-xs text-gray-500 mt-1 uppercase font-black tracking-widest">Reference ID: #APP-{{ selectedApplication.id }}</p>
+            <h3
+              class="text-2xl font-black text-gray-900 dark:text-white tracking-tight leading-none"
+            >
+              Application Profile
+            </h3>
+            <p class="text-xs text-gray-500 mt-1 uppercase font-black tracking-widest">
+              Reference ID: #APP-{{ selectedApplication.id }}
+            </p>
           </div>
           <button
             @click="closeDetails"
             class="p-2 text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-slate-800 rounded-xl transition-all"
           >
-            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                d="M6 18L18 6M6 6l12 12"
-              />
+            <svg
+              class="h-6 w-6"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              stroke-width="2.5"
+            >
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
         </div>
@@ -438,31 +537,46 @@ onMounted(loadApplications)
           <!-- Applicant Info -->
           <div class="grid grid-cols-2 gap-8 mb-10">
             <div>
-              <label class="block text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-1.5">Full Name</label>
+              <label
+                class="block text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-1.5"
+                >Full Name</label
+              >
               <p class="text-gray-900 dark:text-white font-bold text-lg leading-tight">
                 {{ selectedApplication.full_name }}
               </p>
             </div>
             <div>
-              <label class="block text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-1.5">User Handle</label>
+              <label
+                class="block text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-1.5"
+                >User Handle</label
+              >
               <p class="text-emerald-600 dark:text-emerald-400 font-black text-lg leading-tight">
                 @{{ selectedApplication.username }}
               </p>
             </div>
             <div>
-              <label class="block text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-1.5">Email Address</label>
+              <label
+                class="block text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-1.5"
+                >Email Address</label
+              >
               <p class="text-gray-900 dark:text-white font-bold">
                 {{ selectedApplication.email }}
               </p>
             </div>
             <div>
-              <label class="block text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-1.5">Phone Contact</label>
+              <label
+                class="block text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-1.5"
+                >Phone Contact</label
+              >
               <p class="text-gray-900 dark:text-white font-bold">
                 {{ selectedApplication.phone_number }}
               </p>
             </div>
             <div class="col-span-2">
-              <label class="block text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-1.5">Residential Address</label>
+              <label
+                class="block text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-1.5"
+                >Residential Address</label
+              >
               <p class="text-gray-900 dark:text-white font-bold">
                 {{ selectedApplication.address }}, {{ selectedApplication.pincode }}
               </p>
@@ -470,7 +584,9 @@ onMounted(loadApplications)
           </div>
 
           <!-- Application Info -->
-          <div class="bg-emerald-50/50 dark:bg-emerald-900/10 rounded-3xl p-8 mb-10 border border-emerald-100 dark:border-emerald-500/10">
+          <div
+            class="bg-emerald-50/50 dark:bg-emerald-900/10 rounded-3xl p-8 mb-10 border border-emerald-100 dark:border-emerald-500/10"
+          >
             <h4
               class="text-xs font-black text-gray-900 dark:text-white mb-6 flex items-center gap-3 uppercase tracking-widest"
             >
@@ -479,22 +595,27 @@ onMounted(loadApplications)
             </h4>
             <div class="grid grid-cols-2 gap-8">
               <div>
-                <label class="block text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-1.5"
+                <label
+                  class="block text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-1.5"
                   >Role Applied</label
                 >
                 <span
                   class="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border"
                   :class="{
-                    'bg-emerald-100 text-emerald-700 border-emerald-200/50': selectedApplication.role_applied === 'patient',
-                    'bg-teal-100 text-teal-700 border-teal-200/50': selectedApplication.role_applied === 'doctor',
-                    'bg-emerald-500 text-white border-emerald-600': selectedApplication.role_applied === 'nurse',
+                    'bg-emerald-100 text-emerald-700 border-emerald-200/50':
+                      selectedApplication.role_applied === 'patient',
+                    'bg-teal-100 text-teal-700 border-teal-200/50':
+                      selectedApplication.role_applied === 'doctor',
+                    'bg-emerald-500 text-white border-emerald-600':
+                      selectedApplication.role_applied === 'nurse',
                   }"
                 >
                   {{ selectedApplication.role_applied }}
                 </span>
               </div>
               <div>
-                <label class="block text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-1.5"
+                <label
+                  class="block text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-1.5"
                   >Submission Date</label
                 >
                 <p class="text-gray-900 dark:text-white font-bold">
@@ -502,7 +623,8 @@ onMounted(loadApplications)
                 </p>
               </div>
               <div v-if="selectedApplication.specialization">
-                <label class="block text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-1.5"
+                <label
+                  class="block text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-1.5"
                   >Specialization</label
                 >
                 <p class="text-gray-900 dark:text-white font-bold">
@@ -510,7 +632,8 @@ onMounted(loadApplications)
                 </p>
               </div>
               <div v-if="selectedApplication.experience_years !== undefined">
-                <label class="block text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-1.5"
+                <label
+                  class="block text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-1.5"
                   >Experience</label
                 >
                 <p class="text-gray-900 dark:text-white font-bold">
@@ -518,21 +641,28 @@ onMounted(loadApplications)
                 </p>
               </div>
               <div v-if="selectedApplication.license_number">
-                <label class="block text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-1.5"
+                <label
+                  class="block text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-1.5"
                   >Medical License</label
                 >
-                <p class="text-emerald-600 dark:text-emerald-400 font-black tracking-widest font-mono">
+                <p
+                  class="text-emerald-600 dark:text-emerald-400 font-black tracking-widest font-mono"
+                >
                   {{ selectedApplication.license_number }}
                 </p>
               </div>
               <div v-if="selectedApplication.department_id">
-                <label class="block text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-1.5">Department</label>
+                <label
+                  class="block text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-1.5"
+                  >Department</label
+                >
                 <p class="text-gray-900 dark:text-white font-bold">
                   {{ selectedApplication.department_name || selectedApplication.department_id }}
                 </p>
               </div>
               <div class="col-span-2">
-                <label class="block text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-1.5"
+                <label
+                  class="block text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-1.5"
                   >Professional Statement</label
                 >
                 <p class="text-gray-900 dark:text-white text-sm leading-relaxed font-medium">
@@ -544,7 +674,8 @@ onMounted(loadApplications)
 
           <!-- Rejection Reason Input -->
           <div v-if="selectedApplication.status === 'pending'" class="mt-4">
-            <label class="block text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-3"
+            <label
+              class="block text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-3"
               >Rejection Rationale (Mandatory for rejection)</label
             >
             <textarea

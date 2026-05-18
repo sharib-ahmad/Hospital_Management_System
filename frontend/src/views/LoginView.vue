@@ -142,7 +142,9 @@ const handleLogin = async () => {
     </form>
 
     <div class="mt-10 text-center border-t border-gray-100 dark:border-white/5 pt-8">
-      <p class="text-xs font-bold text-gray-500 dark:text-slate-400 transition-colors uppercase tracking-widest">
+      <p
+        class="text-xs font-bold text-gray-500 dark:text-slate-400 transition-colors uppercase tracking-widest"
+      >
         New to MediFlow?
         <router-link
           :to="{ name: 'register' }"

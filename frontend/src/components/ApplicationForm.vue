@@ -23,6 +23,12 @@ const form = ref({
   emergency_contact_number: '',
   // Role specific
   medical_history: '',
+  full_name: '',
+  relation: 'Self',
+  email: '',
+  phone_number: '',
+  address: '',
+  pincode: '',
   specialization: '',
   experience_years: 0,
   consultation_fee: 0,
@@ -85,7 +91,17 @@ const handleSubmit = async () => {
 
     let payload = {}
     if (props.role === 'patient') {
-      payload = { ...basePayload, medical_history: form.value.medical_history }
+      payload = { 
+        ...basePayload, 
+        medical_history: form.value.medical_history,
+        full_name: form.value.full_name || null,
+        relation: form.value.relation,
+        email: form.value.email || null,
+
+        phone_number: form.value.phone_number || null,
+        address: form.value.address || null,
+        pincode: form.value.pincode || null,
+      }
     } else if (props.role === 'doctor') {
       payload = {
         ...basePayload,
@@ -171,7 +187,62 @@ const handleSubmit = async () => {
     </div>
 
     <!-- Role Specific Fields -->
-    <div v-if="role === 'patient'">
+    <div v-if="role === 'patient'" class="space-y-6">
+      <div
+        class="p-6 bg-emerald-50/50 dark:bg-emerald-900/10 rounded-2xl border border-emerald-100 dark:border-emerald-800/30"
+      >
+        <h3 class="text-lg font-black text-emerald-900 dark:text-emerald-400 mb-4 tracking-tight">
+          Patient Identity (Optional)
+        </h3>
+        <p
+          class="text-xs text-emerald-700/60 dark:text-emerald-500/60 mb-6 font-medium uppercase tracking-widest"
+        >
+          Leave blank to use your own account details
+        </p>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <FormField
+            id="p_name"
+            v-model="form.full_name"
+            label="Full Name"
+            placeholder="Patient's legal name"
+          />
+          <div class="space-y-1.5">
+            <label class="block text-sm font-semibold text-gray-700 dark:text-slate-300">Relation</label>
+            <select
+              v-model="form.relation"
+              class="block w-full px-4 py-3 border border-gray-300 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-gray-900 dark:text-white sm:text-sm outline-none focus:ring-4 focus:ring-emerald-500/10 transition-all"
+            >
+              <option v-for="rel in ['Self', 'Father', 'Mother', 'Spouse', 'Son', 'Daughter', 'Brother', 'Sister', 'Other']" :key="rel" :value="rel">
+                {{ rel }}
+              </option>
+            </select>
+          </div>
+          <FormField
+            id="p_email"
+            v-model="form.email"
+            type="email"
+            label="Email Address"
+            placeholder="patient@example.com"
+          />
+          <FormField
+            id="p_phone"
+            v-model="form.phone_number"
+            label="Phone Number"
+            placeholder="+1 (555) 000-0000"
+          />
+          <FormField id="p_pincode" v-model="form.pincode" label="Pincode" placeholder="123456" />
+          <div class="md:col-span-2">
+            <FormField
+              id="p_address"
+              v-model="form.address"
+              label="Home Address"
+              placeholder="Complete street address"
+            />
+          </div>
+        </div>
+      </div>
+
       <div class="space-y-1.5">
         <label class="block text-sm font-semibold text-gray-700 dark:text-slate-300"
           >Medical History</label

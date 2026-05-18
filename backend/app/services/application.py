@@ -25,14 +25,32 @@ class ApplicationService:
     @staticmethod
     def create_patient_application(validated_data):
         user = User.query.get(current_user.id)
-        existing_application = Application.query.filter_by(user_id=user.id, role_applied=UserRole.PATIENT).first()
-        if existing_application and existing_application.status == ApplicationStatus.PENDING:
-            return handle_response(success=False, message="You have already applied for patient role", status_code=400)
+        
+        # We allow multiple patient applications from the same user now.
+        # But maybe we want to avoid duplicate pending applications for the same patient name?
+        if validated_data.full_name:
+            existing_application = Application.query.filter_by(
+                user_id=user.id, 
+                role_applied=UserRole.PATIENT, 
+                patient_full_name=validated_data.full_name,
+                status=ApplicationStatus.PENDING
+            ).first()
+            if existing_application:
+                return handle_response(success=False, message=f"An application for {validated_data.full_name} is already pending", status_code=400)
+
+        # Map full_name to patient_full_name, etc.
+        app_data = validated_data.dict()
+        app_data['patient_full_name'] = app_data.pop('full_name', None)
+        app_data['patient_email'] = app_data.pop('email', None)
+        app_data['patient_phone_number'] = app_data.pop('phone_number', None)
+        app_data['patient_address'] = app_data.pop('address', None)
+        app_data['patient_pincode'] = app_data.pop('pincode', None)
+        # 'relation' is in app_data and matches Application.relation
 
         application = Application(
             user_id=user.id,
             role_applied=UserRole.PATIENT,
-            **validated_data.dict()
+            **app_data
         )
         db.session.add(application)
         db.session.commit()

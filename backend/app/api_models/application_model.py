@@ -1,5 +1,5 @@
 from flask_restx import fields
-from ..utils.enum import UserRole, EnumField, ApplicationStatus, Gender, BloodGroup
+from ..utils.enum import UserRole, EnumField, ApplicationStatus, Gender, BloodGroup, Relationship
 
 class ApplicationModels:
     def __init__(self, api):
@@ -34,7 +34,13 @@ class ApplicationModels:
         
         self.patient_create = api.model('PatientApplicationCreate', {
             **self.base_application_fields,
-            'medical_history': fields.String
+            'medical_history': fields.String,
+            'full_name': fields.String,
+            'relation': EnumField(Relationship),
+            'email': fields.String,
+            'phone_number': fields.String,
+            'address': fields.String,
+            'pincode': fields.String
         })
 
         self.doctor_create = api.model('DoctorApplicationCreate', {
@@ -71,6 +77,12 @@ class ApplicationModels:
             'department_id': fields.String,
             'shift': fields.String,
             'medical_history': fields.String,
+            'patient_full_name': fields.String,
+            'relation': EnumField(Relationship),
+            'patient_email': fields.String,
+            'patient_phone_number': fields.String,
+            'patient_address': fields.String,
+            'patient_pincode': fields.String,
             **self.base_application_fields,
             **self.user_profile_fragment
         })

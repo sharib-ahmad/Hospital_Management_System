@@ -1,5 +1,5 @@
 from ..extensions import db
-from ..utils.enum import UserRole, ApplicationStatus, Gender, BloodGroup
+from ..utils.enum import UserRole, ApplicationStatus, Gender, BloodGroup, Relationship
 from ..utils.time import utc_now
 
 class Application(db.Model):
@@ -12,6 +12,13 @@ class Application(db.Model):
     reason = db.Column(db.Text)
     
     #Patients things[optionals]
+    relation = db.Column(db.Enum(Relationship, name="application_relationships"), nullable=True)
+    patient_full_name = db.Column(db.String(120), nullable=True)
+    patient_email = db.Column(db.String(120), nullable=True)
+    patient_phone_number = db.Column(db.String(15), nullable=True)
+    patient_address = db.Column(db.String(255), nullable=True)
+    patient_pincode = db.Column(db.String(10), nullable=True)
+
     date_of_birth = db.Column(db.Date)
     gender = db.Column(db.Enum(Gender, name="gender_types"))
     blood_group = db.Column(db.Enum(BloodGroup, name="blood_groups"))

@@ -36,7 +36,7 @@ class User(db.Model):
 
     # Relationships
     doctor = db.relationship('Doctor', back_populates='user', uselist=False)
-    patient = db.relationship('Patient', back_populates='user', uselist=False)
+    patients = db.relationship('Patient', back_populates='user', lazy=True)
     nurse = db.relationship('Nurse', back_populates='user', uselist=False)
     applications = db.relationship('Application', back_populates='user', lazy=True)
     token_blocklist = db.relationship('TokenBlocklist', back_populates='user', lazy=True)
@@ -95,8 +95,6 @@ class User(db.Model):
             return self.doctor.blood_group.value if self.doctor.blood_group else None
         if self.nurse:
             return self.nurse.blood_group.value if self.nurse.blood_group else None
-        if self.patient:
-            return self.patient.blood_group.value if self.patient.blood_group else None
         return None
 
     @property
@@ -105,13 +103,11 @@ class User(db.Model):
             return self.doctor.date_of_birth.isoformat() if self.doctor.date_of_birth else None
         if self.nurse:
             return self.nurse.date_of_birth.isoformat() if self.nurse.date_of_birth else None
-        if self.patient:
-            return self.patient.date_of_birth.isoformat() if self.patient.date_of_birth else None
         return None
 
     @property
     def medical_history(self):
-        return self.patient.medical_history if self.patient else None
+        return None
 
     @property
     def gender(self):
@@ -119,8 +115,6 @@ class User(db.Model):
             return self.doctor.gender.value if self.doctor.gender else None
         if self.nurse:
             return self.nurse.gender.value if self.nurse.gender else None
-        if self.patient:
-            return self.patient.gender.value if self.patient.gender else None
         return None
 
     @property
@@ -129,8 +123,6 @@ class User(db.Model):
             return self.doctor.emergency_contact_number
         if self.nurse:
             return self.nurse.emergency_contact_number
-        if self.patient:
-            return self.patient.emergency_contact_number
         return None
 
     @property

@@ -9,7 +9,6 @@ import NotFoundView from '../views/NotFoundView.vue'
 import AdminPortal from '../views/portals/AdminPortal.vue'
 import DoctorPortal from '../views/portals/DoctorPortal.vue'
 import DoctorAppointments from '../views/portals/DoctorAppointments.vue'
-import PatientPortal from '../views/portals/PatientPortal.vue'
 import NursePortal from '../views/portals/NursePortal.vue'
 import UserPortal from '../views/portals/UserPortal.vue'
 
@@ -20,6 +19,7 @@ import ApplicationManagement from '../views/ApplicationManagement.vue'
 
 // Application Pages
 import ApplyForRole from '../views/ApplyForRole.vue'
+import RegisterPatient from '../views/RegisterPatient.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -77,12 +77,6 @@ const router = createRouter({
       meta: { requiresAuth: true, role: 'doctor' },
     },
     {
-      path: '/patient',
-      name: 'patient-portal',
-      component: PatientPortal,
-      meta: { requiresAuth: true, role: 'patient' },
-    },
-    {
       path: '/nurse',
       name: 'nurse-portal',
       component: NursePortal,
@@ -98,6 +92,12 @@ const router = createRouter({
       path: '/apply',
       name: 'apply',
       component: ApplyForRole,
+      meta: { requiresAuth: true, role: 'user' },
+    },
+    {
+      path: '/register-patient',
+      name: 'register-patient',
+      component: RegisterPatient,
       meta: { requiresAuth: true, role: 'user' },
     },
     // Catch-all 404

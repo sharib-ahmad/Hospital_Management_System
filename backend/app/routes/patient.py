@@ -15,6 +15,14 @@ class PatientList(Resource):
         """List all patients"""
         return PatientController.get_patients()
 
+@patient_ns.route('/my')
+class MyPatientList(Resource):
+    @role_required(UserRole.USER)
+    @patient_ns.marshal_with(patient_models.patient_list_response)
+    def get(self):
+        """List my registered patients"""
+        return PatientController.get_my_patients()
+
 @patient_ns.route('/<string:patient_id>')
 class PatientDetail(Resource):
     @role_required(UserRole.ADMIN, UserRole.DOCTOR, UserRole.NURSE)

@@ -34,6 +34,17 @@ class BloodGroup(enum.Enum):
     O_NEGATIVE = "O-"
     AB_POSITIVE = "AB+"
     AB_NEGATIVE = "AB-"
+
+class Relationship(enum.Enum):
+    SELF = "Self"
+    FATHER = "Father"
+    MOTHER = "Mother"
+    SPOUSE = "Spouse"
+    SON = "Son"
+    DAUGHTER = "Daughter"
+    BROTHER = "Brother"
+    SISTER = "Sister"
+    OTHER = "Other"
     
     
 class EnumField(fields.String):

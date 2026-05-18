@@ -2,6 +2,10 @@ from .exceptions import AppError
 from ..utils.response import handle_response
 from pydantic import ValidationError
 from werkzeug.exceptions import HTTPException
+from sqlalchemy.exc import SQLAlchemyError, IntegrityError
+import logging
+
+logger = logging.getLogger(__name__)
 
 def register_error_handlers(api):
     @api.errorhandler(AppError)
@@ -21,6 +25,24 @@ def register_error_handlers(api):
             status_code=400
         )
 
+    @api.errorhandler(IntegrityError)
+    def handle_integrity_error(error):
+        logger.error(f"Integrity Error: {str(error)}")
+        return handle_response(
+            success=False,
+            message="A record with this information already exists.",
+            status_code=409
+        )
+
+    @api.errorhandler(SQLAlchemyError)
+    def handle_database_error(error):
+        logger.error(f"Database Error: {str(error)}")
+        return handle_response(
+            success=False,
+            message="A database error occurred while processing your request. Please try again later.",
+            status_code=500
+        )
+
     @api.errorhandler(HTTPException)
     def handle_http_exception(error):
         return handle_response(
@@ -31,9 +53,9 @@ def register_error_handlers(api):
 
     @api.errorhandler(Exception)
     def handle_general_exception(error):
-        # In production, you might want to log this and return a generic message
+        logger.exception(f"Unhandled Exception: {str(error)}")
         return handle_response(
             success=False,
-            message=str(error),
+            message="An unexpected error occurred. Please contact support if the issue persists.",
             status_code=500
         )

@@ -1,5 +1,6 @@
 from ..services.patient import PatientService
 from ..utils.response import handle_response
+from flask_jwt_extended import current_user
 
 class PatientController:
     @staticmethod
@@ -8,6 +9,15 @@ class PatientController:
         return handle_response(
             success=True,
             message="Patients retrieved successfully",
+            data=patients
+        )
+
+    @staticmethod
+    def get_my_patients():
+        patients = PatientService.get_patients_for_user(current_user.id)
+        return handle_response(
+            success=True,
+            message="Your patients retrieved successfully",
             data=patients
         )
 

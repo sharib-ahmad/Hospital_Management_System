@@ -9,3 +9,7 @@ class PatientService:
     @staticmethod
     def get_patient_by_id(patient_id):
         return Patient.query.get(patient_id)
+
+    @staticmethod
+    def get_patients_for_user(user_id):
+        return Patient.query.filter_by(user_id=user_id).all()

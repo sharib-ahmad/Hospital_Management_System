@@ -1,7 +1,7 @@
 from ..extensions import db, celery, cache
 from celery import shared_task
 from ..models import User, Application, Doctor, Nurse, Patient
-from ..utils.enum import UserRole, ApplicationStatus
+from ..utils.enum import UserRole, ApplicationStatus, Relationship
 from ..utils.codes import CodeGenerator
 from ..extensions import logger
 
@@ -26,14 +26,13 @@ def process_application_approval(self, application_id, approver_id=None):
             logger.error(f"User {application.user_id} not found.")
             return
 
-        # Update user role
-        user.role = application.role_applied
-
         # We need to invalidate the department cache if a doctor or nurse is added
         # because the department 'staff' count will change.
         department_cache_invalidated = False
 
         if application.role_applied == UserRole.DOCTOR:
+            # Update user role
+            user.role = application.role_applied
             # Create Doctor Profile
             new_profile = Doctor(
                 id=user.id,
@@ -57,6 +56,8 @@ def process_application_approval(self, application_id, approver_id=None):
             department_cache_invalidated = True
 
         elif application.role_applied == UserRole.NURSE:
+            # Update user role
+            user.role = application.role_applied
             new_profile = Nurse(
                 id=user.id,
                 nurse_code=CodeGenerator.generate_nurse_code(),
@@ -77,8 +78,16 @@ def process_application_approval(self, application_id, approver_id=None):
             department_cache_invalidated = True
 
         elif application.role_applied == UserRole.PATIENT:
+            # For patients, we do NOT change the user's role. 
+            # The user remains UserRole.USER (or whatever they were).
             new_profile = Patient(
-                id=user.id,
+                user_id=user.id,
+                relation=application.relation or Relationship.SELF,
+                full_name=application.patient_full_name or user.full_name,
+                email=application.patient_email or user.email,
+                phone_number=application.patient_phone_number or user.phone_number,
+                address=application.patient_address or user.address,
+                pincode=application.patient_pincode or user.pincode,
                 date_of_birth=application.date_of_birth,
                 gender=application.gender,
                 blood_group=application.blood_group,
