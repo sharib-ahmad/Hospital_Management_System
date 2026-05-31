@@ -808,7 +808,7 @@ onUnmounted(() => {
                 type="button"
                 @click="
                   selectedAmPm = 'AM'
-                  selectTime()
+                  selectTime();
                 "
                 class="px-2.5 py-1.5 text-[9px] font-black rounded-lg transition-all"
                 :class="
@@ -823,7 +823,7 @@ onUnmounted(() => {
                 type="button"
                 @click="
                   selectedAmPm = 'PM'
-                  selectTime()
+                  selectTime();
                 "
                 class="px-2.5 py-1.5 text-[9px] font-black rounded-lg transition-all"
                 :class="

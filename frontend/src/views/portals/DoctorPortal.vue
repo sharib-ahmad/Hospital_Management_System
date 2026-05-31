@@ -699,7 +699,7 @@ onMounted(loadData)
               :key="p.id"
               @click="
                 recordsSelectedPatientId = p.id
-                loadPatientRecords(p.id)
+                loadPatientRecords(p.id);
               "
               :class="`px-4 py-2 rounded-full text-xs font-black uppercase tracking-widest transition-all border ${
                 recordsSelectedPatientId === p.id

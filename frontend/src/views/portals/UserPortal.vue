@@ -959,7 +959,7 @@ onMounted(loadData)
           <button
             @click="
               switchTab('appointments')
-              openBookModal()
+              openBookModal();
             "
             class="w-full flex items-center gap-3 p-4 bg-emerald-50/50 dark:bg-emerald-900/10 rounded-2xl border border-emerald-100/50 dark:border-emerald-500/10 hover:border-emerald-500/40 transition-all text-left group"
           >

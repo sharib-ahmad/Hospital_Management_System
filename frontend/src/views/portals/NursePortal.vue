@@ -836,7 +836,7 @@ onMounted(loadData)
             v-if="patientSearch || patientBloodGroupFilter"
             @click="
               patientSearch = ''
-              patientBloodGroupFilter = ''
+              patientBloodGroupFilter = '';
             "
             class="mt-4 px-4 py-2 text-xs font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-widest hover:underline"
           >
