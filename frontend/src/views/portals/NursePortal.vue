@@ -58,8 +58,12 @@ const recentlyRecordedPatientId = ref<string | null>(null)
 const referToDoctor = ref(false)
 const vitalsReferToDept = ref('')
 
-// Patients tab search
+// Patients tab
 const patientSearch = ref('')
+const patientBloodGroupFilter = ref('')
+const expandedPatientId = ref<string | null>(null)
+const patientVitals = ref<Record<string, any>>({})
+const loadingVitals = ref<Record<string, boolean>>({})
 
 // Profile edit modal
 const showEditModal = ref(false)
@@ -109,9 +113,70 @@ const pendingCheckupRequests = computed(() => {
 
 const filteredPatients = computed(() => {
   const q = patientSearch.value.toLowerCase().trim()
-  if (!q) return patients.value
-  return patients.value.filter((p) => p.full_name?.toLowerCase().includes(q))
+  let list = patients.value
+  if (patientBloodGroupFilter.value) {
+    list = list.filter((p) => p.blood_group === patientBloodGroupFilter.value)
+  }
+  if (!q) return list
+  return list.filter((p) => p.full_name?.toLowerCase().includes(q))
 })
+
+const bloodGroups = computed(() => {
+  const groups = new Set(patients.value.map((p: any) => p.blood_group).filter(Boolean))
+  return Array.from(groups).sort() as string[]
+})
+
+const activeAppointmentsCount = computed(
+  () =>
+    appointments.value.filter((a: any) => a.status === 'confirmed' || a.status === 'pending')
+      .length,
+)
+
+const getPatientAppointment = (patientId: string) => {
+  return (
+    appointments.value
+      .filter(
+        (a: any) =>
+          a.patient_id === patientId && (a.status === 'confirmed' || a.status === 'pending'),
+      )
+      .sort(
+        (a: any, b: any) =>
+          new Date(a.appointment_date).getTime() - new Date(b.appointment_date).getTime(),
+      )[0] || null
+  )
+}
+
+const getPatientVitalsStatus = (patientId: string) => {
+  const v = patientVitals.value[patientId]
+  if (!v) return null
+  // Determine colour based on BP
+  const sys = v.systolic_bp
+  if (sys >= 140) return 'high'
+  if (sys < 90) return 'low'
+  return 'normal'
+}
+
+const loadVitalsForPatient = async (patientId: string) => {
+  if (patientVitals.value[patientId] || loadingVitals.value[patientId]) return
+  loadingVitals.value[patientId] = true
+  try {
+    const res = await api.get(`/vitals/${patientId}`)
+    patientVitals.value[patientId] = res.data.data || res.data
+  } catch {
+    // no vitals yet — leave undefined
+  } finally {
+    loadingVitals.value[patientId] = false
+  }
+}
+
+const togglePatient = (patientId: string) => {
+  if (expandedPatientId.value === patientId) {
+    expandedPatientId.value = null
+  } else {
+    expandedPatientId.value = patientId
+    loadVitalsForPatient(patientId)
+  }
+}
 
 const isCurrentAppointmentVitalsCheck = computed(() => {
   if (!vitalsAppointmentId.value) return true
@@ -540,11 +605,17 @@ onMounted(loadData)
 
       <!-- ── TAB 1: Patients ──────────────────────────────────────────── -->
       <div v-else-if="activeTab === 'patients'" class="space-y-6">
-        <div class="flex items-center justify-between flex-wrap gap-4 mb-2">
-          <h3 class="text-lg font-black text-gray-900 dark:text-white flex items-center gap-3">
-            <span class="h-1.5 w-6 bg-emerald-600 rounded-full"></span>
-            All Patients
-          </h3>
+        <!-- ── Header row ──────────────────────────────────────────────── -->
+        <div class="flex items-start justify-between flex-wrap gap-4 mb-2">
+          <div>
+            <h3 class="text-lg font-black text-gray-900 dark:text-white flex items-center gap-3">
+              <span class="h-1.5 w-6 bg-emerald-600 rounded-full"></span>
+              Patient Directory
+            </h3>
+            <p class="text-xs text-gray-400 dark:text-slate-500 mt-1 font-medium">
+              Clinical records and vitals history for all registered patients
+            </p>
+          </div>
           <!-- Search -->
           <div class="relative">
             <svg
@@ -568,6 +639,164 @@ onMounted(loadData)
               class="appearance-none pl-10 pr-4 py-2.5 border border-gray-200 dark:border-slate-700/50 rounded-2xl shadow-sm transition-all text-sm outline-none bg-white dark:bg-slate-800/50 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-500 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 w-64"
             />
           </div>
+        </div>
+
+        <!-- ── Summary Stats Strip ─────────────────────────────────────── -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div
+            class="bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-2xl p-4 flex items-center gap-3"
+          >
+            <div
+              class="w-9 h-9 bg-emerald-50 dark:bg-emerald-900/30 rounded-xl flex items-center justify-center"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-5 w-5 text-emerald-600"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"
+                />
+              </svg>
+            </div>
+            <div>
+              <p
+                class="text-[9px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest"
+              >
+                Total
+              </p>
+              <p class="text-xl font-black text-gray-900 dark:text-white leading-none">
+                {{ patients.length }}
+              </p>
+            </div>
+          </div>
+          <div
+            class="bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-2xl p-4 flex items-center gap-3"
+          >
+            <div
+              class="w-9 h-9 bg-amber-50 dark:bg-amber-900/30 rounded-xl flex items-center justify-center"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-5 w-5 text-amber-500"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                />
+              </svg>
+            </div>
+            <div>
+              <p
+                class="text-[9px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest"
+              >
+                Active Appts
+              </p>
+              <p class="text-xl font-black text-gray-900 dark:text-white leading-none">
+                {{ activeAppointmentsCount }}
+              </p>
+            </div>
+          </div>
+          <div
+            class="bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-2xl p-4 flex items-center gap-3"
+          >
+            <div
+              class="w-9 h-9 bg-rose-50 dark:bg-rose-900/30 rounded-xl flex items-center justify-center"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-5 w-5 text-rose-500"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+                />
+              </svg>
+            </div>
+            <div>
+              <p
+                class="text-[9px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest"
+              >
+                Blood Types
+              </p>
+              <p class="text-xl font-black text-gray-900 dark:text-white leading-none">
+                {{ bloodGroups.length }}
+              </p>
+            </div>
+          </div>
+          <div
+            class="bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-2xl p-4 flex items-center gap-3"
+          >
+            <div
+              class="w-9 h-9 bg-teal-50 dark:bg-teal-900/30 rounded-xl flex items-center justify-center"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-5 w-5 text-teal-600"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                />
+              </svg>
+            </div>
+            <div>
+              <p
+                class="text-[9px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest"
+              >
+                Vitals Queue
+              </p>
+              <p class="text-xl font-black text-gray-900 dark:text-white leading-none">
+                {{ awaitingVitalsQueue.length }}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── Blood Group Filter Chips ────────────────────────────────── -->
+        <div v-if="bloodGroups.length" class="flex flex-wrap gap-2">
+          <button
+            @click="patientBloodGroupFilter = ''"
+            :class="`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border ${
+              patientBloodGroupFilter === ''
+                ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
+                : 'bg-white dark:bg-slate-800 text-gray-500 dark:text-slate-400 border-gray-200 dark:border-slate-700 hover:border-emerald-400/60'
+            }`"
+          >
+            All Groups
+          </button>
+          <button
+            v-for="bg in bloodGroups"
+            :key="bg"
+            @click="patientBloodGroupFilter = bg"
+            :class="`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border ${
+              patientBloodGroupFilter === bg
+                ? 'bg-rose-600 text-white border-rose-600 shadow-sm'
+                : 'bg-white dark:bg-slate-800 text-gray-500 dark:text-slate-400 border-gray-200 dark:border-slate-700 hover:border-rose-400/60'
+            }`"
+          >
+            {{ bg }}
+          </button>
         </div>
 
         <!-- Empty State -->
@@ -594,85 +823,462 @@ onMounted(loadData)
             </svg>
           </div>
           <h4 class="text-lg font-bold text-gray-900 dark:text-white mb-2">
-            {{ patientSearch ? 'No patients match your search' : 'No patients found' }}
+            {{
+              patientSearch || patientBloodGroupFilter
+                ? 'No patients match your filters'
+                : 'No patients found'
+            }}
           </h4>
-          <p class="text-gray-500 dark:text-slate-400 text-sm max-w-xs font-medium">
+          <p class="text-gray-500 dark:text-slate-400 text-sm max-w-xs font-medium text-center">
             Patient records will appear here once registered in the system.
           </p>
+          <button
+            v-if="patientSearch || patientBloodGroupFilter"
+            @click="
+              patientSearch = ''
+              patientBloodGroupFilter = ''
+            "
+            class="mt-4 px-4 py-2 text-xs font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-widest hover:underline"
+          >
+            Clear Filters
+          </button>
         </div>
 
-        <!-- Patient Grid -->
-        <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- ── Patient Cards (rich redesign) ──────────────────────────── -->
+        <div v-else class="space-y-3">
           <div
             v-for="patient in filteredPatients"
             :key="patient.id"
-            :class="`card-animate bg-white dark:bg-slate-900 p-6 rounded-3xl border shadow-premium group flex flex-col justify-between hover:-translate-y-1 transition-all duration-300 ${
+            :class="`card-animate rounded-[2rem] border overflow-hidden transition-all duration-300 ${
               recentlyRecordedPatientId === patient.id
-                ? 'success-pulse border-emerald-400 dark:border-emerald-600'
-                : 'border-gray-100 dark:border-slate-800'
-            }`"
+                ? 'success-pulse border-emerald-400 dark:border-emerald-600 bg-white dark:bg-slate-900'
+                : 'border-gray-100 dark:border-slate-800 bg-white dark:bg-slate-900'
+            } ${expandedPatientId === patient.id ? 'shadow-premium' : 'shadow-sm hover:shadow-premium hover:-translate-y-0.5'}`"
           >
-            <div>
-              <div class="flex items-start justify-between mb-4">
-                <div
-                  class="w-12 h-12 bg-emerald-50 dark:bg-emerald-900/30 rounded-2xl flex items-center justify-center text-emerald-600 font-bold text-lg"
-                >
-                  {{ patient.full_name?.charAt(0) || 'P' }}
+            <!-- ── Card Header (always visible) ─────────────────────── -->
+            <div class="p-5 flex items-center justify-between gap-4 flex-wrap">
+              <!-- Left: Avatar + name -->
+              <div class="flex items-center gap-4 min-w-0">
+                <!-- Avatar with blood group ring -->
+                <div class="relative flex-shrink-0">
+                  <div
+                    :class="`w-14 h-14 rounded-2xl flex items-center justify-center text-white font-black text-xl shadow-sm ${
+                      getPatientVitalsStatus(patient.id) === 'high'
+                        ? 'bg-rose-500'
+                        : getPatientVitalsStatus(patient.id) === 'low'
+                          ? 'bg-amber-500'
+                          : getPatientVitalsStatus(patient.id) === 'normal'
+                            ? 'bg-emerald-600'
+                            : 'bg-gradient-to-br from-emerald-500 to-teal-600'
+                    }`"
+                  >
+                    {{ patient.full_name?.charAt(0) || 'P' }}
+                  </div>
+                  <!-- Vitals freshness dot -->
+                  <span
+                    :class="`absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full border-2 border-white dark:border-slate-900 ${
+                      patientVitals.value?.[patient.id]
+                        ? 'bg-emerald-500'
+                        : 'bg-gray-300 dark:bg-slate-600'
+                    }`"
+                    :title="
+                      patientVitals.value?.[patient.id] ? 'Vitals on record' : 'No vitals recorded'
+                    "
+                  ></span>
                 </div>
+
+                <!-- Name + meta -->
+                <div class="min-w-0">
+                  <h4 class="text-base font-black text-gray-900 dark:text-white truncate">
+                    {{ patient.full_name }}
+                  </h4>
+                  <div class="flex items-center gap-2 mt-0.5 flex-wrap">
+                    <span
+                      class="text-[10px] text-gray-400 dark:text-slate-500 font-bold uppercase tracking-wider"
+                    >
+                      {{ patient.gender }}
+                    </span>
+                    <span class="h-1 w-1 rounded-full bg-gray-300 dark:bg-slate-600"></span>
+                    <span
+                      class="text-[10px] text-gray-400 dark:text-slate-500 font-bold uppercase tracking-wider"
+                    >
+                      DOB {{ patient.date_of_birth }}
+                    </span>
+                    <span
+                      v-if="patient.doctor_name"
+                      class="h-1 w-1 rounded-full bg-gray-300 dark:bg-slate-600"
+                    ></span>
+                    <span
+                      v-if="patient.doctor_name"
+                      class="text-[10px] text-teal-600 dark:text-teal-400 font-black uppercase tracking-wider"
+                    >
+                      Dr. {{ patient.doctor_name }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Right: Badges + Actions -->
+              <div class="flex items-center gap-2 flex-wrap flex-shrink-0">
+                <!-- Blood group -->
                 <span
-                  class="px-3 py-1 bg-teal-100 dark:bg-teal-900/40 text-teal-700 dark:text-teal-400 text-[10px] font-black uppercase tracking-widest rounded-full"
+                  class="px-2.5 py-1 bg-rose-50 dark:bg-rose-900/30 text-rose-700 dark:text-rose-400 text-[10px] font-black uppercase tracking-widest rounded-lg border border-rose-100 dark:border-rose-500/20"
                 >
                   {{ patient.blood_group || 'N/A' }}
                 </span>
+
+                <!-- Appointment status -->
+                <span
+                  v-if="getPatientAppointment(patient.id)"
+                  :class="`px-2.5 py-1 text-[10px] font-black uppercase tracking-widest rounded-lg border flex items-center gap-1 ${
+                    getPatientAppointment(patient.id).status === 'confirmed'
+                      ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 border-emerald-100 dark:border-emerald-500/20'
+                      : 'bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 border-amber-100 dark:border-amber-500/20'
+                  }`"
+                >
+                  <span
+                    :class="`h-1.5 w-1.5 rounded-full ${
+                      getPatientAppointment(patient.id).status === 'confirmed'
+                        ? 'bg-emerald-500 animate-pulse'
+                        : 'bg-amber-500'
+                    }`"
+                  ></span>
+                  {{
+                    getPatientAppointment(patient.id).status === 'confirmed'
+                      ? 'Confirmed Appt'
+                      : 'Pending Appt'
+                  }}
+                </span>
+                <span
+                  v-else
+                  class="px-2.5 py-1 bg-gray-50 dark:bg-slate-800 text-gray-400 dark:text-slate-500 text-[10px] font-black uppercase tracking-widest rounded-lg border border-gray-100 dark:border-slate-700"
+                >
+                  No Appointment
+                </span>
+
+                <!-- Vitals status badge -->
+                <span
+                  v-if="getPatientVitalsStatus(patient.id) === 'high'"
+                  class="px-2.5 py-1 bg-rose-50 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400 text-[10px] font-black uppercase tracking-widest rounded-lg border border-rose-100 dark:border-rose-500/20 flex items-center gap-1"
+                >
+                  <span class="h-1.5 w-1.5 bg-rose-500 rounded-full"></span>
+                  High BP
+                </span>
+                <span
+                  v-else-if="getPatientVitalsStatus(patient.id) === 'low'"
+                  class="px-2.5 py-1 bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 text-[10px] font-black uppercase tracking-widest rounded-lg border border-amber-100 dark:border-amber-500/20 flex items-center gap-1"
+                >
+                  <span class="h-1.5 w-1.5 bg-amber-500 rounded-full"></span>
+                  Low BP
+                </span>
+
+                <!-- Expand toggle -->
+                <button
+                  @click="togglePatient(patient.id)"
+                  :class="`w-8 h-8 rounded-xl flex items-center justify-center transition-all text-gray-400 dark:text-slate-500 ${
+                    expandedPatientId === patient.id
+                      ? 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 rotate-180'
+                      : 'bg-gray-50 dark:bg-slate-800 hover:bg-gray-100 dark:hover:bg-slate-700'
+                  }`"
+                  :title="expandedPatientId === patient.id ? 'Collapse' : 'Expand details'"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    class="h-4 w-4 transition-transform"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    stroke-width="2.5"
+                  >
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
               </div>
-              <h4 class="text-lg font-black text-gray-900 dark:text-white">
-                {{ patient.full_name }}
-              </h4>
-              <p class="text-[10px] text-gray-400 uppercase tracking-widest mb-2">
-                {{ patient.gender }} • DOB: {{ patient.date_of_birth }}
-              </p>
-              <p
-                v-if="patient.doctor_name"
-                class="text-xs text-gray-500 dark:text-slate-400 font-medium mb-4 flex items-center gap-1.5"
+            </div>
+
+            <!-- ── Expanded Panel ─────────────────────────────────────── -->
+            <Transition
+              enter-active-class="transition-all duration-300 ease-out"
+              enter-from-class="opacity-0 max-h-0"
+              enter-to-class="opacity-100 max-h-[500px]"
+              leave-active-class="transition-all duration-200 ease-in"
+              leave-from-class="opacity-100 max-h-[500px]"
+              leave-to-class="opacity-0 max-h-0"
+            >
+              <div
+                v-if="expandedPatientId === patient.id"
+                class="border-t border-gray-100 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-800/30"
+              >
+                <div class="p-5 space-y-5">
+                  <!-- Appointment detail -->
+                  <div
+                    v-if="getPatientAppointment(patient.id)"
+                    class="p-4 bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 flex items-center justify-between gap-4 flex-wrap"
+                  >
+                    <div>
+                      <p
+                        class="text-[9px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-1"
+                      >
+                        Next Appointment
+                      </p>
+                      <p class="text-sm font-black text-gray-900 dark:text-white">
+                        {{ formatDate(getPatientAppointment(patient.id).appointment_date) }}
+                      </p>
+                      <p class="text-[10px] text-teal-600 dark:text-teal-400 font-bold mt-0.5">
+                        {{
+                          getPatientAppointment(patient.id).appointment_type === 'vitals_check'
+                            ? 'Vitals Screening'
+                            : 'Physician Consultation'
+                        }}
+                        <span v-if="getPatientAppointment(patient.id).doctor_name">
+                          · Dr. {{ getPatientAppointment(patient.id).doctor_name }}</span
+                        >
+                      </p>
+                    </div>
+                    <button
+                      v-if="
+                        getPatientAppointment(patient.id).status === 'confirmed' &&
+                        !getPatientAppointment(patient.id).vitals_checked
+                      "
+                      @click="switchToVitalsFromQueue(getPatientAppointment(patient.id))"
+                      class="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-all shadow-sm flex items-center gap-1.5"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        class="h-3.5 w-3.5"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        stroke-width="2.5"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
+                      </svg>
+                      Record Now
+                    </button>
+                  </div>
+
+                  <!-- Latest vitals summary -->
+                  <div>
+                    <div class="flex items-center justify-between mb-3">
+                      <p
+                        class="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest"
+                      >
+                        Last Recorded Vitals
+                      </p>
+                      <div
+                        v-if="loadingVitals[patient.id]"
+                        class="animate-spin rounded-full h-3.5 w-3.5 border-[2px] border-emerald-500 border-t-transparent"
+                      ></div>
+                    </div>
+
+                    <!-- No vitals -->
+                    <div
+                      v-if="!loadingVitals[patient.id] && !patientVitals[patient.id]"
+                      class="flex items-center gap-3 p-4 bg-white dark:bg-slate-900 rounded-2xl border border-dashed border-gray-200 dark:border-slate-700"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        class="h-5 w-5 text-gray-300 dark:text-slate-600"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                        />
+                      </svg>
+                      <p class="text-xs font-medium text-gray-400 dark:text-slate-500">
+                        No vitals have been recorded for this patient yet.
+                      </p>
+                    </div>
+
+                    <!-- Vitals grid -->
+                    <div
+                      v-else-if="patientVitals[patient.id]"
+                      class="grid grid-cols-2 sm:grid-cols-3 gap-2"
+                    >
+                      <div
+                        v-for="(item, idx) in [
+                          {
+                            label: 'Systolic BP',
+                            value: patientVitals[patient.id].systolic_bp,
+                            unit: 'mmHg',
+                            flag:
+                              patientVitals[patient.id].systolic_bp >= 140
+                                ? 'rose'
+                                : patientVitals[patient.id].systolic_bp < 90
+                                  ? 'amber'
+                                  : 'emerald',
+                          },
+                          {
+                            label: 'Diastolic BP',
+                            value: patientVitals[patient.id].diastolic_bp,
+                            unit: 'mmHg',
+                            flag: 'emerald',
+                          },
+                          {
+                            label: 'Blood Sugar',
+                            value: patientVitals[patient.id].blood_sugar,
+                            unit: 'mg/dL',
+                            flag:
+                              patientVitals[patient.id].blood_sugar > 140
+                                ? 'rose'
+                                : patientVitals[patient.id].blood_sugar < 70
+                                  ? 'amber'
+                                  : 'emerald',
+                          },
+                          {
+                            label: 'Pulse',
+                            value: patientVitals[patient.id].pulse_rate,
+                            unit: 'bpm',
+                            flag:
+                              patientVitals[patient.id].pulse_rate > 100 ||
+                              patientVitals[patient.id].pulse_rate < 50
+                                ? 'amber'
+                                : 'emerald',
+                          },
+                          {
+                            label: 'Temperature',
+                            value: patientVitals[patient.id].temperature,
+                            unit: '°F',
+                            flag: patientVitals[patient.id].temperature > 99 ? 'rose' : 'emerald',
+                          },
+                          {
+                            label: 'Respiration',
+                            value: patientVitals[patient.id].respiration_rate,
+                            unit: '/min',
+                            flag: 'emerald',
+                          },
+                        ]"
+                        :key="idx"
+                        class="bg-white dark:bg-slate-900 rounded-xl p-3 border border-gray-100 dark:border-slate-800"
+                      >
+                        <p
+                          class="text-[9px] font-black uppercase tracking-widest mb-1"
+                          :class="
+                            item.flag === 'rose'
+                              ? 'text-rose-400'
+                              : item.flag === 'amber'
+                                ? 'text-amber-400'
+                                : 'text-gray-400 dark:text-slate-500'
+                          "
+                        >
+                          {{ item.label }}
+                        </p>
+                        <p
+                          :class="`text-base font-black leading-none ${
+                            item.flag === 'rose'
+                              ? 'text-rose-600 dark:text-rose-400'
+                              : item.flag === 'amber'
+                                ? 'text-amber-600 dark:text-amber-400'
+                                : 'text-emerald-600 dark:text-emerald-400'
+                          }`"
+                        >
+                          {{ item.value
+                          }}<span class="text-[10px] font-bold text-gray-400 ml-0.5">{{
+                            item.unit
+                          }}</span>
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Actions row -->
+                  <div class="flex items-center gap-3">
+                    <button
+                      @click="switchToVitals(patient)"
+                      class="flex-1 py-3 bg-emerald-600 text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-emerald-700 shadow-lg shadow-emerald-500/10 transition-all flex items-center justify-center gap-2"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        class="h-4 w-4"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        stroke-width="2.5"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+                        />
+                      </svg>
+                      Record New Vitals
+                    </button>
+                    <button
+                      v-if="
+                        getPatientAppointment(patient.id)?.status === 'confirmed' &&
+                        !getPatientAppointment(patient.id)?.vitals_checked
+                      "
+                      @click="switchToVitalsFromQueue(getPatientAppointment(patient.id))"
+                      class="flex-1 py-3 bg-amber-500 text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-amber-600 shadow-lg shadow-amber-500/10 transition-all flex items-center justify-center gap-2"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        class="h-4 w-4"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        stroke-width="2.5"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
+                      </svg>
+                      Vitals for Queue
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </Transition>
+
+            <!-- ── Collapsed footer strip ─────────────────────────────── -->
+            <div
+              v-if="expandedPatientId !== patient.id"
+              class="px-5 py-2.5 bg-gray-50/80 dark:bg-slate-800/30 border-t border-gray-100 dark:border-slate-800 flex items-center justify-between"
+            >
+              <span
+                class="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider"
+              >
+                {{ patientVitals[patient.id] ? 'Vitals on record' : 'No vitals yet' }}
+                <template v-if="patientVitals[patient.id]">
+                  · {{ patientVitals[patient.id].systolic_bp }}/{{
+                    patientVitals[patient.id].diastolic_bp
+                  }}
+                  mmHg · {{ patientVitals[patient.id].pulse_rate }} bpm ·
+                  {{ patientVitals[patient.id].temperature }}°F
+                </template>
+              </span>
+              <button
+                @click="switchToVitals(patient)"
+                class="text-[10px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-widest hover:underline flex items-center gap-1"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
-                  class="h-3.5 w-3.5 text-emerald-500"
+                  class="h-3.5 w-3.5"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
+                  stroke-width="2.5"
                 >
                   <path
                     stroke-linecap="round"
                     stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                    d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
                   />
                 </svg>
-                Dr. {{ patient.doctor_name }}
-              </p>
+                Record Vitals
+              </button>
             </div>
-
-            <button
-              @click="switchToVitals(patient)"
-              class="w-full py-3 bg-emerald-600 text-white text-xs font-black uppercase tracking-widest rounded-xl hover:bg-emerald-700 shadow-lg shadow-emerald-500/10 transition-all flex items-center justify-center gap-2 mt-4"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                class="h-4 w-4"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                stroke-width="2.5"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-                />
-              </svg>
-              Record Vitals
-            </button>
           </div>
         </div>
       </div>
