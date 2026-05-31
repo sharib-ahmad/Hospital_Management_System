@@ -20,6 +20,12 @@ class AuthModels:
             'password': fields.String(required=True)
         })
 
+        self.reset_password = api.model('ResetPassword', {
+            'username': fields.String(required=True),
+            'email': fields.String(required=True),
+            'new_password': fields.String(required=True)
+        })
+
         self.user = api.model('User', {
             'id': fields.String,
             'username': fields.String,

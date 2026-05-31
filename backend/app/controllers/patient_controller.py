@@ -27,3 +27,12 @@ class PatientController:
         if not patient:
             return handle_response(success=False, message="Patient not found", status_code=404)
         return handle_response(success=True, data=patient)
+
+    @staticmethod
+    def get_assigned_patients():
+        patients = PatientService.get_patients_assigned_to_doctor(current_user.id)
+        return handle_response(
+            success=True,
+            message="Assigned patients retrieved successfully",
+            data=patients
+        )

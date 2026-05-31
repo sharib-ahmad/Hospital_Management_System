@@ -1,5 +1,5 @@
-# app/controllers/doctor_controller.py
 from flask import request
+from flask_jwt_extended import current_user
 from ..services.doctor import DoctorService
 from ..schemas.doctor import DoctorUpdateSchema
 from ..utils.response import handle_response
@@ -68,3 +68,36 @@ class DoctorController:
             message="Doctor updated successfully",
             data=doctor
         )
+
+    @staticmethod
+    def get_me():
+        doctor = DoctorService.get_doctor_by_id(current_user.id)
+        if not doctor:
+            raise NotFoundError("Doctor profile not found")
+        return handle_response(success=True, message="Profile retrieved successfully", data=doctor)
+
+    @staticmethod
+    def update_me():
+        data, error = validate_json()
+        if error:
+            return error
+
+        current_doctor = DoctorService.get_doctor_by_id(current_user.id)
+        if not current_doctor:
+            raise NotFoundError("Doctor profile not found")
+
+        validated_data = DoctorUpdateSchema(**data)
+        doctor = DoctorService.update_doctor(current_doctor.doctor_code, validated_data)
+
+        if doctor == "DEPARTMENT_NOT_FOUND":
+            raise NotFoundError("Department not found")
+        if not doctor:
+            raise NotFoundError("Doctor not found")
+
+        cache.delete_memoized(DoctorController.get_doctor, current_doctor.doctor_code)
+        cache.delete_memoized(DoctorController._get_doctors_internal)
+
+        from .department_controller import DEPARTMENTS_CACHE_KEY
+        cache.delete(DEPARTMENTS_CACHE_KEY)
+
+        return handle_response(success=True, message="Profile updated successfully", data=doctor)

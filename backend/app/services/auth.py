@@ -89,3 +89,13 @@ class AuthService:
             data={"access_token": access_token},
             message="Token refreshed successfully"
         )
+
+    @staticmethod
+    def reset_password(reset_data):
+        user = User.query.filter_by(username=reset_data.username, email=reset_data.email).first()
+        if not user:
+            return error_response(message="Invalid credentials: username and email do not match", status=404)
+        
+        user.password = reset_data.new_password
+        db.session.commit()
+        return success_response(message="Password reset successfully")

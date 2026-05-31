@@ -10,7 +10,7 @@ export const useThemeStore = defineStore('theme', () => {
   const applyTheme = (newTheme: Theme) => {
     const root = window.document.documentElement
     const systemIsDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-    
+
     isDark.value = newTheme === 'system' ? systemIsDark : !systemIsDark
 
     if (isDark.value) {

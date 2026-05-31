@@ -227,9 +227,13 @@ const handleClose = () => {
           <h2 class="text-3xl font-black text-gray-900 dark:text-white tracking-tight">
             {{ isEditing ? 'Modify Department' : 'New Department' }}
           </h2>
-          <p class="text-xs text-gray-500 dark:text-slate-400 mt-2 font-black uppercase tracking-widest">
+          <p
+            class="text-xs text-gray-500 dark:text-slate-400 mt-2 font-black uppercase tracking-widest"
+          >
             {{
-              isEditing ? 'Syncing departmental resource limits' : 'Expanding hospital clinical units'
+              isEditing
+                ? 'Syncing departmental resource limits'
+                : 'Expanding hospital clinical units'
             }}
           </p>
         </div>

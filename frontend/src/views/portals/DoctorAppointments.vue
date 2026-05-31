@@ -30,8 +30,12 @@ const updateStatus = async (appointmentId: string, status: string) => {
   }
 }
 
+const normalizeDate = (dateString: string | null | undefined): string => {
+  return dateString || ''
+}
+
 const formatDate = (dateString: string) => {
-  const date = new Date(dateString)
+  const date = new Date(normalizeDate(dateString))
   return date.toLocaleString('en-US', {
     month: 'short',
     day: 'numeric',

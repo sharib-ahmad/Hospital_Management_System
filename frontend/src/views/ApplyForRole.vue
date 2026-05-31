@@ -11,7 +11,7 @@ const auth = useAuthStore()
 const router = useRouter()
 const notification = useNotificationStore()
 
-const selectedRole = ref<string | null>(null)
+const selectedRole = ref<'doctor' | 'nurse' | 'patient' | null>(null)
 const hasApplied = ref(false)
 const applicationStatus = ref<string | null>(null)
 const isLoading = ref(true)
@@ -31,7 +31,7 @@ const roles = [
     icon: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z',
     color: 'bg-teal-50 text-teal-600 dark:bg-teal-900/30 dark:text-teal-400',
   },
-]
+] as const
 
 const checkStatus = async () => {
   try {
@@ -54,7 +54,7 @@ const checkStatus = async () => {
 
 onMounted(checkStatus)
 
-const selectRole = (roleId: string) => {
+const selectRole = (roleId: 'doctor' | 'nurse' | 'patient') => {
   selectedRole.value = roleId
 }
 

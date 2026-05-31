@@ -22,6 +22,8 @@ class PatientModels:
             'pincode': fields.String,
             'guardian_name': fields.String(attribute='user.full_name'),
             'guardian_username': fields.String(attribute='user.username'),
+            'assigned_doctor_name': fields.String(attribute='assigned_doctor.user.full_name'),
+            'assigned_doctor_specialization': fields.String(attribute='assigned_doctor.specialization'),
             'created_at': fields.DateTime,
             'updated_at': fields.DateTime
         })

@@ -33,3 +33,17 @@ class UserRegisterSchema(BaseModel):
 class UserLoginSchema(BaseModel):
     username: str = Field(..., min_length=3)
     password: str = Field(..., min_length=6)
+
+
+class UserResetPasswordSchema(BaseModel):
+    username: str = Field(..., min_length=3)
+    email: EmailStr
+    new_password: str = Field(..., min_length=6, max_length=128)
+
+    @field_validator("username")
+    def normalize_username(cls, v):
+        return v.lower()
+
+    @field_validator("email")
+    def normalize_email(cls, v):
+        return v.lower()

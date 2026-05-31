@@ -3,6 +3,8 @@ from ..utils.response import handle_response
 from pydantic import ValidationError
 from werkzeug.exceptions import HTTPException
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
+from jwt.exceptions import PyJWTError
+from flask_jwt_extended.exceptions import JWTExtendedException
 import logging
 
 logger = logging.getLogger(__name__)
@@ -49,6 +51,24 @@ def register_error_handlers(api):
             success=False,
             message=error.description,
             status_code=error.code
+        )
+
+    @api.errorhandler(PyJWTError)
+    def handle_jwt_error(error):
+        logger.warning(f"JWT/Token Error: {str(error)}")
+        return handle_response(
+            success=False,
+            message=str(error),
+            status_code=401
+        )
+
+    @api.errorhandler(JWTExtendedException)
+    def handle_jwt_extended_error(error):
+        logger.warning(f"Flask-JWT-Extended Error: {str(error)}")
+        return handle_response(
+            success=False,
+            message=str(error),
+            status_code=401
         )
 
     @api.errorhandler(Exception)

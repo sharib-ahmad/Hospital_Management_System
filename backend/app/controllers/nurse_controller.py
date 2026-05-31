@@ -1,5 +1,6 @@
 # app/controllers/nurse_controller.py
 from flask import request
+from flask_jwt_extended import current_user
 from ..services.nurse import NurseService
 from ..schemas.nurse import NurseUpdateSchema
 from ..utils.response import handle_response
@@ -66,3 +67,36 @@ class NurseController:
             message="Nurse updated successfully",
             data=nurse
         )
+
+    @staticmethod
+    def get_me():
+        nurse = NurseService.get_nurse_by_id(current_user.id)
+        if not nurse:
+            raise NotFoundError("Nurse profile not found")
+        return handle_response(success=True, message="Profile retrieved successfully", data=nurse)
+
+    @staticmethod
+    def update_me():
+        data, error = validate_json()
+        if error:
+            return error
+
+        current_nurse = NurseService.get_nurse_by_id(current_user.id)
+        if not current_nurse:
+            raise NotFoundError("Nurse profile not found")
+
+        validated_data = NurseUpdateSchema(**data)
+        nurse = NurseService.update_nurse(current_nurse.nurse_code, validated_data)
+
+        if nurse == "DEPARTMENT_NOT_FOUND":
+            raise NotFoundError("Department not found")
+        if not nurse:
+            raise NotFoundError("Nurse not found")
+
+        cache.delete_memoized(NurseController.get_nurse, current_nurse.nurse_code)
+        cache.delete_memoized(NurseController._get_nurses_internal)
+
+        from .department_controller import DEPARTMENTS_CACHE_KEY
+        cache.delete(DEPARTMENTS_CACHE_KEY)
+
+        return handle_response(success=True, message="Profile updated successfully", data=nurse)

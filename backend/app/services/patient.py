@@ -13,3 +13,7 @@ class PatientService:
     @staticmethod
     def get_patients_for_user(user_id):
         return Patient.query.filter_by(user_id=user_id).all()
+
+    @staticmethod
+    def get_patients_assigned_to_doctor(doctor_id):
+        return Patient.query.filter_by(assigned_doctor_id=doctor_id).all()

@@ -3,7 +3,7 @@
 from flask import request, jsonify, make_response
 from pydantic import ValidationError
 from flask_jwt_extended import set_access_cookies, set_refresh_cookies, unset_jwt_cookies
-from ..schemas.auth import UserRegisterSchema, UserLoginSchema
+from ..schemas.auth import UserRegisterSchema, UserLoginSchema, UserResetPasswordSchema
 from ..services.auth import AuthService
 from ..utils.response import handle_response
 from ..utils.request import validate_json
@@ -76,3 +76,16 @@ class AuthController:
         access_token = resp_data['data']['access_token']
         set_access_cookies(response, access_token)
         return response
+
+    @staticmethod
+    def reset_password():
+        data, error = validate_json()
+        if error:
+            return error
+
+        try:
+            validated = UserResetPasswordSchema(**data)
+            resp_data, status_code = AuthService.reset_password(validated)
+            return resp_data, status_code
+        except ValidationError as e:
+            return handle_response(success=False, message="Validation Error", errors=e.errors(), status_code=400)

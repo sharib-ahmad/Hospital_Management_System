@@ -5,6 +5,7 @@ from ..utils.enum import AppointmentStatus, EnumField
 class AppointmentModels:
     def __init__(self, api):
         self.appointment_create = api.model('AppointmentCreate', {
+            'patient_id': fields.String(required=False, description="UUID of the patient"),
             'doctor_id': fields.String(required=True, description="UUID of the doctor"),
             'appointment_date': fields.DateTime(required=True, description="Date and time of the appointment"),
             'reason': fields.String(description="Reason for the appointment")
@@ -25,7 +26,7 @@ class AppointmentModels:
             'created_at': fields.DateTime,
             'updated_at': fields.DateTime,
             # Joined data
-            'patient_name': fields.String(attribute='patient.user.full_name'),
+            'patient_name': fields.String(attribute='patient.full_name'),
             'doctor_name': fields.String(attribute='doctor.user.full_name'),
             'specialization': fields.String(attribute='doctor.specialization')
         })

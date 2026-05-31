@@ -16,6 +16,23 @@ class NurseList(Resource):
         """List all nurses"""
         return NurseController.get_nurses()
 
+@nurse_ns.route('/me')
+class NurseMe(Resource):
+    @nurse_ns.doc('get_my_nurse_profile', security='Bearer Auth')
+    @nurse_ns.marshal_with(nurse_models.nurse_response)
+    @role_required(UserRole.NURSE)
+    def get(self):
+        """Get the current nurse's own profile"""
+        return NurseController.get_me()
+
+    @nurse_ns.doc('update_my_nurse_profile', security='Bearer Auth')
+    @nurse_ns.expect(nurse_models.nurse_base)
+    @nurse_ns.marshal_with(nurse_models.nurse_response)
+    @role_required(UserRole.NURSE)
+    def put(self):
+        """Update the current nurse's own profile"""
+        return NurseController.update_me()
+
 @nurse_ns.route('/<string:nurse_code>')
 @nurse_ns.param('nurse_code', 'The nurse code')
 class NurseDetail(Resource):

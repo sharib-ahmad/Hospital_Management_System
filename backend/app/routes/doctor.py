@@ -16,6 +16,23 @@ class DoctorList(Resource):
         """List all doctors"""
         return DoctorController.get_doctors()
 
+@doctor_ns.route('/me')
+class DoctorMe(Resource):
+    @doctor_ns.doc('get_my_doctor_profile', security='Bearer Auth')
+    @doctor_ns.marshal_with(doctor_models.doctor_response)
+    @role_required(UserRole.DOCTOR)
+    def get(self):
+        """Get the current doctor's own profile"""
+        return DoctorController.get_me()
+
+    @doctor_ns.doc('update_my_doctor_profile', security='Bearer Auth')
+    @doctor_ns.expect(doctor_models.doctor_base)
+    @doctor_ns.marshal_with(doctor_models.doctor_response)
+    @role_required(UserRole.DOCTOR)
+    def put(self):
+        """Update the current doctor's own profile"""
+        return DoctorController.update_me()
+
 @doctor_ns.route('/<string:doctor_code>')
 @doctor_ns.param('doctor_code', 'The doctor code')
 class DoctorDetail(Resource):

@@ -379,14 +379,27 @@ onMounted(loadApplications)
                   <div
                     class="h-10 w-10 rounded-2xl bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400 font-black text-sm shadow-sm border border-emerald-200/50 dark:border-emerald-500/20 group-hover:scale-110 transition-transform"
                   >
-                    {{ (app.role_applied === 'patient' ? app.patient_full_name : app.full_name)?.charAt(0) || app.username?.charAt(0) }}
+                    {{
+                      (app.role_applied === 'patient'
+                        ? app.patient_full_name
+                        : app.full_name
+                      )?.charAt(0) || app.username?.charAt(0)
+                    }}
                   </div>
                   <div>
                     <p class="text-sm font-black text-gray-900 dark:text-white leading-tight">
-                      {{ app.role_applied === 'patient' ? app.patient_full_name : (app.full_name || app.username) }}
+                      {{
+                        app.role_applied === 'patient'
+                          ? app.patient_full_name
+                          : app.full_name || app.username
+                      }}
                     </p>
                     <p class="text-xs text-gray-500 mt-0.5">
-                      {{ app.role_applied === 'patient' ? `Relation: ${app.relation}` : `@${app.username}` }}
+                      {{
+                        app.role_applied === 'patient'
+                          ? `Relation: ${app.relation}`
+                          : `@${app.username}`
+                      }}
                     </p>
                   </div>
                 </div>
@@ -646,7 +659,9 @@ onMounted(loadApplications)
                   class="block text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-1.5"
                   >Emergency Contact</label
                 >
-                <p class="text-rose-600 font-black">{{ selectedApplication.emergency_contact_number }}</p>
+                <p class="text-rose-600 font-black">
+                  {{ selectedApplication.emergency_contact_number }}
+                </p>
               </div>
 
               <div class="col-span-2">
@@ -655,7 +670,10 @@ onMounted(loadApplications)
                   >Medical History</label
                 >
                 <p class="text-gray-900 dark:text-white text-sm leading-relaxed font-medium">
-                  {{ selectedApplication.medical_history || 'No significant medical history provided.' }}
+                  {{
+                    selectedApplication.medical_history ||
+                    'No significant medical history provided.'
+                  }}
                 </p>
               </div>
             </div>

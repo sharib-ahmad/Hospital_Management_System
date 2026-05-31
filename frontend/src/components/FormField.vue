@@ -12,6 +12,8 @@ interface Props {
   required?: boolean
   helpText?: string
   autocomplete?: string
+  min?: string | number
+  max?: string | number
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -22,6 +24,8 @@ const props = withDefaults(defineProps<Props>(), {
   required: false,
   helpText: '',
   autocomplete: 'off',
+  min: '',
+  max: '',
 })
 
 const emit = defineEmits(['update:modelValue', 'blur', 'focus'])
@@ -90,6 +94,8 @@ const handleBlur = (event: FocusEvent) => {
         :disabled="disabled"
         :required="required"
         :autocomplete="autocomplete"
+        :min="min"
+        :max="max"
         class="appearance-none block w-full px-4 py-3.5 border rounded-2xl shadow-sm transition-all sm:text-sm outline-none bg-white dark:bg-slate-800/50 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-50 dark:disabled:bg-slate-800"
         :class="[
           error

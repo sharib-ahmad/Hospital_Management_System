@@ -73,7 +73,7 @@ defineProps<{
       <!-- Main Dashboard Area -->
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-10">
         <div
-          class="lg:col-span-2 bg-white dark:bg-slate-900 rounded-[2.5rem] border border-gray-100 dark:border-slate-800 p-10 min-h-[500px] shadow-premium"
+          class="lg:col-span-2 bg-white dark:bg-slate-900 rounded-[2.5rem] border border-gray-100 dark:border-slate-800 p-10 min-h-[500px] shadow-premium flex flex-col"
         >
           <slot name="main">
             <div class="flex items-center justify-between mb-10">
@@ -89,7 +89,7 @@ defineProps<{
             </div>
 
             <div
-              class="flex flex-col items-center justify-center h-full text-center py-20 bg-gray-50/50 dark:bg-slate-800/30 rounded-3xl border-2 border-dashed border-gray-100 dark:border-slate-800"
+              class="flex flex-col items-center justify-center flex-1 text-center py-12 bg-gray-50/50 dark:bg-slate-800/30 rounded-3xl border-2 border-dashed border-gray-100 dark:border-slate-800 overflow-hidden"
             >
               <div
                 class="w-20 h-20 bg-white dark:bg-slate-900 rounded-3xl shadow-premium flex items-center justify-center mb-6 text-gray-300 dark:text-slate-700"

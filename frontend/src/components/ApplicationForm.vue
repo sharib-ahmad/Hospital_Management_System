@@ -91,8 +91,8 @@ const handleSubmit = async () => {
 
     let payload = {}
     if (props.role === 'patient') {
-      payload = { 
-        ...basePayload, 
+      payload = {
+        ...basePayload,
         medical_history: form.value.medical_history,
         full_name: form.value.full_name || null,
         relation: form.value.relation,
@@ -208,12 +208,28 @@ const handleSubmit = async () => {
             placeholder="Patient's legal name"
           />
           <div class="space-y-1.5">
-            <label class="block text-sm font-semibold text-gray-700 dark:text-slate-300">Relation</label>
+            <label class="block text-sm font-semibold text-gray-700 dark:text-slate-300"
+              >Relation</label
+            >
             <select
               v-model="form.relation"
               class="block w-full px-4 py-3 border border-gray-300 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-gray-900 dark:text-white sm:text-sm outline-none focus:ring-4 focus:ring-emerald-500/10 transition-all"
             >
-              <option v-for="rel in ['Self', 'Father', 'Mother', 'Spouse', 'Son', 'Daughter', 'Brother', 'Sister', 'Other']" :key="rel" :value="rel">
+              <option
+                v-for="rel in [
+                  'Self',
+                  'Father',
+                  'Mother',
+                  'Spouse',
+                  'Son',
+                  'Daughter',
+                  'Brother',
+                  'Sister',
+                  'Other',
+                ]"
+                :key="rel"
+                :value="rel"
+              >
                 {{ rel }}
               </option>
             </select>

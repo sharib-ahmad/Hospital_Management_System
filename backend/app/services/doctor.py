@@ -14,6 +14,10 @@ class DoctorService:
         return Doctor.query.filter_by(doctor_code=doctor_code).first()
 
     @staticmethod
+    def get_doctor_by_id(doctor_id):
+        return Doctor.query.get(doctor_id)
+
+    @staticmethod
     def update_doctor(doctor_code, data):
         doctor = Doctor.query.filter_by(doctor_code=doctor_code).first()
         if not doctor:

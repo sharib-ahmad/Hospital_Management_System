@@ -58,3 +58,12 @@ class Refresh(Resource):
     @jwt_required(refresh=True)
     def post(self):
         return AuthController.refresh()
+
+
+@auth_ns.route('/reset-password')
+class ResetPassword(Resource):
+
+    @auth_ns.expect(models.reset_password)
+    @auth_ns.doc(description="Reset secure password using username and email verification")
+    def post(self):
+        return AuthController.reset_password()

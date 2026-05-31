@@ -21,6 +21,17 @@ import ApplicationManagement from '../views/ApplicationManagement.vue'
 import ApplyForRole from '../views/ApplyForRole.vue'
 import RegisterPatient from '../views/RegisterPatient.vue'
 
+// MediStore Pharmacy Pages
+import MediStore from '../views/MediStore.vue'
+import OrderManagement from '../views/admin/OrderManagement.vue'
+import MedicineManagement from '../views/admin/MedicineManagement.vue'
+
+// Profile & Standalone Pages
+import DoctorProfile from '../views/doctor/DoctorProfile.vue'
+import NurseProfile from '../views/nurse/NurseProfile.vue'
+import UserAppointments from '../views/user/UserAppointments.vue'
+import UserMedicalRecords from '../views/user/UserMedicalRecords.vue'
+
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
@@ -98,6 +109,60 @@ const router = createRouter({
       path: '/register-patient',
       name: 'register-patient',
       component: RegisterPatient,
+      meta: { requiresAuth: true, role: 'user' },
+    },
+    {
+      path: '/store',
+      name: 'medistore',
+      component: MediStore,
+      meta: { requiresAuth: true, role: 'user' },
+    },
+    {
+      path: '/admin/orders',
+      name: 'admin-orders',
+      component: OrderManagement,
+      meta: { requiresAuth: true, role: 'admin' },
+    },
+    {
+      path: '/admin/medicines',
+      name: 'admin-medicines',
+      component: MedicineManagement,
+      meta: { requiresAuth: true, role: 'admin' },
+    },
+    {
+      path: '/doctor/profile',
+      name: 'doctor-profile',
+      component: DoctorProfile,
+      meta: { requiresAuth: true, role: 'doctor' },
+    },
+    {
+      path: '/doctor/records',
+      name: 'doctor-records',
+      component: DoctorPortal,
+      meta: { requiresAuth: true, role: 'doctor' },
+    },
+    {
+      path: '/nurse/patients',
+      name: 'nurse-patients',
+      component: NursePortal,
+      meta: { requiresAuth: true, role: 'nurse' },
+    },
+    {
+      path: '/nurse/profile',
+      name: 'nurse-profile',
+      component: NurseProfile,
+      meta: { requiresAuth: true, role: 'nurse' },
+    },
+    {
+      path: '/user/appointments',
+      name: 'user-appointments',
+      component: UserAppointments,
+      meta: { requiresAuth: true, role: 'user' },
+    },
+    {
+      path: '/user/records',
+      name: 'user-records',
+      component: UserMedicalRecords,
       meta: { requiresAuth: true, role: 'user' },
     },
     // Catch-all 404

@@ -8,7 +8,11 @@ const themeStore = useThemeStore()
   <button
     @click="themeStore.toggleTheme()"
     class="p-2 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-    :title="themeStore.theme === 'system' ? 'Switch to Opposite of System Theme' : 'Switch to System Default Theme'"
+    :title="
+      themeStore.theme === 'system'
+        ? 'Switch to Opposite of System Theme'
+        : 'Switch to System Default Theme'
+    "
   >
     <!-- Monitor icon for system theme -->
     <svg

@@ -23,6 +23,14 @@ class MyPatientList(Resource):
         """List my registered patients"""
         return PatientController.get_my_patients()
 
+@patient_ns.route('/assigned')
+class AssignedPatientList(Resource):
+    @role_required(UserRole.DOCTOR)
+    @patient_ns.marshal_with(patient_models.patient_list_response)
+    def get(self):
+        """List patients assigned to current doctor"""
+        return PatientController.get_assigned_patients()
+
 @patient_ns.route('/<string:patient_id>')
 class PatientDetail(Resource):
     @role_required(UserRole.ADMIN, UserRole.DOCTOR, UserRole.NURSE)

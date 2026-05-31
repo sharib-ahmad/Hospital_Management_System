@@ -104,7 +104,11 @@ const handleRefresh = () => {
       >
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-1">Total Departments</p>
+            <p
+              class="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-1"
+            >
+              Total Departments
+            </p>
             <p class="text-3xl font-black text-gray-900 dark:text-white tracking-tighter">
               {{ stats.departments }}
             </p>
@@ -132,8 +136,14 @@ const handleRefresh = () => {
       >
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-1">Active Doctors</p>
-            <p class="text-3xl font-black text-gray-900 dark:text-white tracking-tighter">{{ stats.doctors }}</p>
+            <p
+              class="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-1"
+            >
+              Active Doctors
+            </p>
+            <p class="text-3xl font-black text-gray-900 dark:text-white tracking-tighter">
+              {{ stats.doctors }}
+            </p>
           </div>
           <div
             class="w-14 h-14 bg-teal-50 dark:bg-teal-900/30 rounded-2xl flex items-center justify-center text-teal-600 shadow-sm group-hover:rotate-6 transition-transform"
@@ -158,8 +168,14 @@ const handleRefresh = () => {
       >
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-1">Staff Members</p>
-            <p class="text-3xl font-black text-gray-900 dark:text-white tracking-tighter">{{ stats.staff }}</p>
+            <p
+              class="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-1"
+            >
+              Staff Members
+            </p>
+            <p class="text-3xl font-black text-gray-900 dark:text-white tracking-tighter">
+              {{ stats.staff }}
+            </p>
           </div>
           <div
             class="w-14 h-14 bg-emerald-50 dark:bg-emerald-900/30 rounded-2xl flex items-center justify-center text-emerald-600 shadow-sm group-hover:rotate-6 transition-transform"
