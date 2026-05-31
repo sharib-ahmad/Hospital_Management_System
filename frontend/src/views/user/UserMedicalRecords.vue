@@ -102,7 +102,7 @@ onMounted(loadRecords)
       >
         <!-- Header Row -->
         <div
-          class="flex items-start justify-between flex-wrap gap-4 mb-6 pb-4 border-b border-gray-50 dark:border-slate-850"
+          class="flex items-start justify-between flex-wrap gap-4 mb-6 pb-4 border-b border-gray-50 dark:border-slate-800"
         >
           <div>
             <span

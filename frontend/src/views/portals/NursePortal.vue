@@ -1,21 +1,48 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import PortalBase from './PortalBase.vue'
 import api from '../../utils/axios'
 import { useNotificationStore } from '../../stores/notification'
 import FormField from '../../components/FormField.vue'
 
 const notification = useNotificationStore()
+const route = useRoute()
 
 // ─── State ───────────────────────────────────────────────────────────────────
 const isLoading = ref(true)
-const activeTab = ref<'patients' | 'vitals' | 'profile'>('patients')
+const activeTab = ref<'queue' | 'patients' | 'vitals' | 'profile'>('queue')
+
+// Sync tab with route path
+const syncTabWithRoute = () => {
+  if (route.path === '/nurse/patients') {
+    activeTab.value = 'patients'
+  } else if (route.path === '/nurse/vitals') {
+    activeTab.value = 'vitals'
+  } else if (route.path === '/nurse/profile') {
+    activeTab.value = 'profile'
+  } else {
+    activeTab.value = 'queue'
+  }
+}
+
+// Watch for route changes
+watch(
+  () => route.path,
+  () => {
+    syncTabWithRoute()
+  },
+  { immediate: true },
+)
 
 const patients = ref<any[]>([])
+const appointments = ref<any[]>([])
+const departments = ref<any[]>([])
 const nurseProfile = ref<any>(null)
 
 // Vitals form
 const vitalsPatientId = ref('')
+const vitalsAppointmentId = ref('')
 const vitalsSystolic = ref<number | ''>('')
 const vitalsDiastolic = ref<number | ''>('')
 const vitalsBloodSugar = ref<number | ''>('')
@@ -25,6 +52,10 @@ const vitalsRespiration = ref<number | ''>('')
 const vitalsNotes = ref('')
 const vitalsSubmitting = ref(false)
 const lastRecordedVitals = ref<any>(null)
+
+// Referral section
+const referToDoctor = ref(false)
+const vitalsReferToDept = ref('')
 
 // Patients tab search
 const patientSearch = ref('')
@@ -39,53 +70,73 @@ const editSubmitting = ref(false)
 // ─── Stats ────────────────────────────────────────────────────────────────────
 const stats = ref([
   {
+    name: 'Awaiting Vitals',
+    value: '0',
+    icon: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z',
+    color: 'bg-amber-500',
+  },
+  {
+    name: 'Checkup Requests',
+    value: '0',
+    icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z',
+    color: 'bg-teal-600',
+  },
+  {
     name: 'Total Patients',
     value: '0',
     icon: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z',
     color: 'bg-emerald-600',
   },
   {
-    name: 'Pending Applications',
-    value: '0',
-    icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z',
-    color: 'bg-teal-600',
-  },
-  {
-    name: 'Vitals Recorded',
-    value: '—',
-    icon: 'M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z',
-    color: 'bg-emerald-500',
-  },
-  {
     name: 'My Shift',
     value: '—',
-    icon: 'M12 8v4l3 3m6-3a9 9 0 11-12 0 9 9 0 0112 0z',
+    icon: 'M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2',
     color: 'bg-teal-500',
   },
 ])
 
-// ─── Computed ─────────────────────────────────────────────────────────────────
+// ─── Computed Queues ──────────────────────────────────────────────────────────
+const awaitingVitalsQueue = computed(() => {
+  return appointments.value.filter((a: any) => a.status === 'confirmed' && !a.vitals_checked)
+})
+
+const pendingCheckupRequests = computed(() => {
+  return appointments.value.filter(
+    (a: any) => a.appointment_type === 'vitals_check' && a.status === 'pending',
+  )
+})
+
 const filteredPatients = computed(() => {
   const q = patientSearch.value.toLowerCase().trim()
   if (!q) return patients.value
   return patients.value.filter((p) => p.full_name?.toLowerCase().includes(q))
 })
 
+const isCurrentAppointmentVitalsCheck = computed(() => {
+  if (!vitalsAppointmentId.value) return true
+  const appt = appointments.value.find((a) => a.id === vitalsAppointmentId.value)
+  return appt ? appt.appointment_type === 'vitals_check' : true
+})
+
 // ─── Data Loading ─────────────────────────────────────────────────────────────
 const loadData = async () => {
   isLoading.value = true
   try {
-    const [patientsRes, appsRes, nurseRes] = await Promise.all([
+    const [patientsRes, apptsRes, deptsRes, nurseRes] = await Promise.all([
       api.get('/patients/'),
-      api.get('/applications'),
+      api.get('/appointments'),
+      api.get('/departments'),
       api.get('/nurses/me'),
     ])
 
     patients.value = patientsRes.data.data || []
-    if (stats.value[0]) stats.value[0].value = patients.value.length.toString()
+    appointments.value = apptsRes.data.data || []
+    departments.value = deptsRes.data.data || []
 
-    const pendingApps = (appsRes.data.data || []).filter((a: any) => a.status === 'pending').length
-    if (stats.value[1]) stats.value[1].value = pendingApps.toString()
+    // Update stats values
+    if (stats.value[0]) stats.value[0].value = awaitingVitalsQueue.value.length.toString()
+    if (stats.value[1]) stats.value[1].value = pendingCheckupRequests.value.length.toString()
+    if (stats.value[2]) stats.value[2].value = patients.value.length.toString()
 
     nurseProfile.value = nurseRes.data.data || nurseRes.data
     const shift = nurseProfile.value?.shift
@@ -102,11 +153,23 @@ const loadData = async () => {
 // ─── Vitals ───────────────────────────────────────────────────────────────────
 const switchToVitals = (patient: any) => {
   vitalsPatientId.value = patient.id
+  vitalsAppointmentId.value = ''
+  referToDoctor.value = false
+  vitalsReferToDept.value = ''
+  activeTab.value = 'vitals'
+}
+
+const switchToVitalsFromQueue = (appt: any) => {
+  vitalsPatientId.value = appt.patient_id
+  vitalsAppointmentId.value = appt.id
+  referToDoctor.value = false
+  vitalsReferToDept.value = ''
   activeTab.value = 'vitals'
 }
 
 const resetVitalsForm = () => {
   vitalsPatientId.value = ''
+  vitalsAppointmentId.value = ''
   vitalsSystolic.value = ''
   vitalsDiastolic.value = ''
   vitalsBloodSugar.value = ''
@@ -114,6 +177,8 @@ const resetVitalsForm = () => {
   vitalsTemp.value = ''
   vitalsRespiration.value = ''
   vitalsNotes.value = ''
+  referToDoctor.value = false
+  vitalsReferToDept.value = ''
 }
 
 const handleVitalsSubmit = async () => {
@@ -132,19 +197,41 @@ const handleVitalsSubmit = async () => {
       temperature: Number(vitalsTemp.value),
       respiration_rate: Number(vitalsRespiration.value),
       notes: vitalsNotes.value,
+      appointment_id: vitalsAppointmentId.value || null,
+      refer_to_department_id: referToDoctor.value ? vitalsReferToDept.value : null,
     }
     const res = await api.post('/vitals', payload)
     lastRecordedVitals.value = res.data.data || payload
-    if (stats.value[2]) {
-      stats.value[2].value = ((parseInt(stats.value[2].value) || 0) + 1).toString()
-    }
-    notification.success('Vitals recorded successfully')
+
+    notification.success(res.data.message || 'Vitals recorded successfully')
     resetVitalsForm()
+    await loadData()
   } catch (error: any) {
     const msg = error.response?.data?.message || 'Failed to record vitals'
     notification.error(msg)
   } finally {
     vitalsSubmitting.value = false
+  }
+}
+
+// ─── Checkup Approvals ───────────────────────────────────────────────────────
+const approveVitalsCheckup = async (apptId: string) => {
+  try {
+    await api.put(`/appointments/${apptId}`, { status: 'confirmed' })
+    notification.success('Vitals checkup request approved')
+    await loadData()
+  } catch (error) {
+    notification.error('Failed to approve checkup request')
+  }
+}
+
+const rejectVitalsCheckup = async (apptId: string) => {
+  try {
+    await api.put(`/appointments/${apptId}`, { status: 'cancelled' })
+    notification.success('Vitals checkup request declined')
+    await loadData()
+  } catch (error) {
+    notification.error('Failed to decline checkup request')
   }
 }
 
@@ -186,6 +273,20 @@ const getPatientName = (id: string) => {
   return patients.value.find((p) => p.id === id)?.full_name || 'Unknown Patient'
 }
 
+const normalizeDate = (dateString: string | null | undefined): string => {
+  return dateString || ''
+}
+
+const formatDate = (dateString: string) => {
+  const date = new Date(normalizeDate(dateString))
+  return date.toLocaleString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
+
 onMounted(loadData)
 </script>
 
@@ -196,6 +297,21 @@ onMounted(loadData)
       <div
         class="flex items-center p-1.5 bg-gray-100 dark:bg-slate-800/50 rounded-2xl w-fit mb-8 border border-gray-200/50 dark:border-slate-700/50 flex-wrap gap-1"
       >
+        <button
+          @click="activeTab = 'queue'"
+          :class="`px-5 py-2.5 rounded-xl text-sm font-black uppercase tracking-widest transition-all ${
+            activeTab === 'queue'
+              ? 'bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 shadow-sm'
+              : 'text-gray-400 hover:text-gray-600 dark:hover:text-slate-300'
+          }`"
+        >
+          Vitals Queue
+          <span
+            v-if="awaitingVitalsQueue.length"
+            class="ml-1.5 text-[10px] bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400 px-1.5 py-0.5 rounded-full"
+            >{{ awaitingVitalsQueue.length }}</span
+          >
+        </button>
         <button
           @click="activeTab = 'patients'"
           :class="`px-5 py-2.5 rounded-xl text-sm font-black uppercase tracking-widest transition-all ${
@@ -238,6 +354,144 @@ onMounted(loadData)
         <div
           class="animate-spin rounded-full h-10 w-10 border-[3px] border-emerald-600 border-t-transparent"
         ></div>
+      </div>
+
+      <!-- ── TAB 0: Vitals Queue & Requests ────────────────────────────── -->
+      <div v-else-if="activeTab === 'queue'" class="space-y-10">
+        <!-- Part A: Vitals Queue -->
+        <div class="space-y-6">
+          <h3 class="text-lg font-black text-gray-900 dark:text-white flex items-center gap-3">
+            <span class="h-1.5 w-6 bg-amber-500 rounded-full"></span>
+            Vitals Observation Queue
+          </h3>
+
+          <div
+            v-if="awaitingVitalsQueue.length === 0"
+            class="flex flex-col items-center justify-center py-12 bg-gray-50/50 dark:bg-slate-800/30 rounded-3xl border border-gray-100 dark:border-slate-800"
+          >
+            <p class="text-gray-400 dark:text-slate-500 text-sm font-medium">
+              No patients are currently in the queue awaiting vitals checks.
+            </p>
+          </div>
+
+          <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div
+              v-for="appt in awaitingVitalsQueue"
+              :key="appt.id"
+              class="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-gray-100 dark:border-slate-800 shadow-premium flex flex-col justify-between"
+            >
+              <div>
+                <div class="flex items-center justify-between mb-4">
+                  <span
+                    :class="`px-3 py-1 text-[10px] font-black uppercase tracking-widest rounded-full ${
+                      appt.appointment_type === 'vitals_check'
+                        ? 'bg-teal-50 text-teal-700 dark:bg-teal-950/40 dark:text-teal-400'
+                        : 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400'
+                    }`"
+                  >
+                    {{
+                      appt.appointment_type === 'vitals_check'
+                        ? 'Vitals Screening'
+                        : 'Physician Consultation'
+                    }}
+                  </span>
+                  <span class="text-xs text-gray-400 dark:text-slate-500 font-bold">
+                    {{ formatDate(appt.appointment_date) }}
+                  </span>
+                </div>
+                <h4 class="text-lg font-black text-gray-900 dark:text-white">
+                  {{ appt.patient_name || getPatientName(appt.patient_id) }}
+                </h4>
+                <p class="text-xs text-gray-500 dark:text-slate-400 mt-2 font-medium">
+                  <strong>Clinician:</strong> {{ appt.doctor_name || 'Vitals Check Only' }}
+                </p>
+                <p class="text-xs text-gray-400 dark:text-slate-500 mt-1 italic">
+                  "{{ appt.reason }}"
+                </p>
+              </div>
+
+              <button
+                @click="switchToVitalsFromQueue(appt)"
+                class="w-full py-3 bg-amber-500 hover:bg-amber-600 text-white text-xs font-black uppercase tracking-widest rounded-xl shadow-lg shadow-amber-500/10 transition-all flex items-center justify-center gap-2 mt-6"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="h-4 w-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  stroke-width="2.5"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
+                </svg>
+                Check Vitals Now
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Part B: Vitals Requests -->
+        <div class="space-y-6">
+          <h3 class="text-lg font-black text-gray-900 dark:text-white flex items-center gap-3">
+            <span class="h-1.5 w-6 bg-teal-600 rounded-full"></span>
+            Checkup Requests
+          </h3>
+
+          <div
+            v-if="pendingCheckupRequests.length === 0"
+            class="flex flex-col items-center justify-center py-12 bg-gray-50/50 dark:bg-slate-800/30 rounded-3xl border border-gray-100 dark:border-slate-800"
+          >
+            <p class="text-gray-400 dark:text-slate-500 text-sm font-medium">
+              No pending standalone vitals checkup requests found.
+            </p>
+          </div>
+
+          <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div
+              v-for="req in pendingCheckupRequests"
+              :key="req.id"
+              class="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-gray-100 dark:border-slate-800 shadow-premium flex flex-col justify-between"
+            >
+              <div>
+                <div class="flex items-center justify-between mb-4">
+                  <span
+                    class="px-3 py-1 bg-teal-50 text-teal-700 dark:bg-teal-950/40 dark:text-teal-400 text-[10px] font-black uppercase tracking-widest rounded-full"
+                  >
+                    Pending Approval
+                  </span>
+                  <span class="text-xs text-gray-400 dark:text-slate-500 font-bold">
+                    {{ formatDate(req.appointment_date) }}
+                  </span>
+                </div>
+                <h4 class="text-lg font-black text-gray-900 dark:text-white">
+                  {{ req.patient_name || getPatientName(req.patient_id) }}
+                </h4>
+                <p class="text-xs text-gray-400 dark:text-slate-500 mt-2 italic">
+                  "{{ req.reason }}"
+                </p>
+              </div>
+
+              <div class="grid grid-cols-2 gap-3 mt-6">
+                <button
+                  @click="rejectVitalsCheckup(req.id)"
+                  class="py-3 bg-red-50 hover:bg-red-100 dark:bg-red-950/30 dark:hover:bg-red-950/50 text-red-600 dark:text-red-400 text-xs font-black uppercase tracking-widest rounded-xl transition-all"
+                >
+                  Decline
+                </button>
+                <button
+                  @click="approveVitalsCheckup(req.id)"
+                  class="py-3 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black uppercase tracking-widest rounded-xl shadow-lg shadow-emerald-500/10 transition-all"
+                >
+                  Approve Checkup
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- ── TAB 1: Patients ──────────────────────────────────────────── -->
@@ -552,6 +806,56 @@ onMounted(loadData)
               placeholder="Additional observations or notes…"
               class="appearance-none block w-full px-4 py-3.5 border border-gray-200 dark:border-slate-700/50 rounded-2xl shadow-sm transition-all sm:text-sm outline-none bg-white dark:bg-slate-800/50 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-500 focus:border-emerald-500 dark:focus:border-emerald-400 focus:ring-4 focus:ring-emerald-500/10 dark:focus:ring-emerald-400/10 resize-none"
             ></textarea>
+          </div>
+
+          <!-- Doctor Referral Section (Verbal escalation logic) -->
+          <div
+            v-if="isCurrentAppointmentVitalsCheck"
+            class="p-6 bg-slate-50 dark:bg-slate-800/40 rounded-3xl border border-gray-200/50 dark:border-slate-700/40 space-y-4"
+          >
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-sm font-black text-gray-900 dark:text-white">Refer to Doctor?</p>
+                <p class="text-xs text-gray-400 dark:text-slate-500 mt-0.5">
+                  Does the patient verbally agree to be referred to a department physician?
+                </p>
+              </div>
+              <button
+                type="button"
+                @click="referToDoctor = !referToDoctor"
+                :class="`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                  referToDoctor ? 'bg-amber-500' : 'bg-gray-300 dark:bg-slate-700'
+                }`"
+              >
+                <span
+                  :class="`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                    referToDoctor ? 'translate-x-5' : 'translate-x-0'
+                  }`"
+                ></span>
+              </button>
+            </div>
+
+            <!-- Department dropdown list -->
+            <Transition name="fade">
+              <div
+                v-if="referToDoctor"
+                class="w-full space-y-1.5 pt-2 border-t border-gray-200/30 dark:border-slate-700/30"
+              >
+                <label class="block text-xs font-black uppercase text-gray-400 dark:text-slate-500">
+                  Select Clinical Department
+                </label>
+                <select
+                  v-model="vitalsReferToDept"
+                  required
+                  class="appearance-none block w-full px-4 py-3.5 border border-gray-200 dark:border-slate-700/50 rounded-2xl shadow-sm outline-none bg-white dark:bg-slate-800/50 text-gray-900 dark:text-white focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 text-sm"
+                >
+                  <option value="" disabled>Choose a department to route to…</option>
+                  <option v-for="dept in departments" :key="dept.id" :value="dept.id">
+                    {{ dept.name }}
+                  </option>
+                </select>
+              </div>
+            </Transition>
           </div>
 
           <div class="flex gap-4 pt-2">

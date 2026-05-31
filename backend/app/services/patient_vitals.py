@@ -41,12 +41,83 @@ class PatientVitalsService:
 
         # db.session.merge handles INSERT or UPDATE based on the primary key
         merged_vital = db.session.merge(vital)
+        
+        # Link to active appointment if provided
+        appt_id_str = data.get('appointment_id')
+        referral_created = False
+        referral_doc_name = None
+        
+        if appt_id_str:
+            from ..models.appointment import Appointment
+            from ..utils.enum import AppointmentStatus
+            try:
+                appt_id = uuid.UUID(appt_id_str)
+                appointment = Appointment.query.get(appt_id)
+                if appointment:
+                    appointment.vitals_checked = True
+                    if appointment.appointment_type == 'vitals_check':
+                        appointment.status = AppointmentStatus.COMPLETED
+            except ValueError:
+                pass
+
+        # Check for automated department referral
+        refer_to_dept_id = data.get('refer_to_department_id')
+        
+        # Referral should only trigger for standalone screening checkups (appointment_type == 'vitals_check')
+        # If the patient already had a standard doctor consultation scheduled, referral is not needed.
+        is_vitals_check = True
+        if appt_id_str:
+            from ..models.appointment import Appointment
+            try:
+                appt_id = uuid.UUID(appt_id_str)
+                appointment = Appointment.query.get(appt_id)
+                if appointment and appointment.appointment_type != 'vitals_check':
+                    is_vitals_check = False
+            except ValueError:
+                pass
+
+        if refer_to_dept_id and is_vitals_check:
+            from ..models.doctor import Doctor
+            from ..models.appointment import Appointment
+            from ..utils.enum import AppointmentStatus
+            from datetime import datetime
+            from zoneinfo import ZoneInfo
+            
+            # Retrieve active doctors in that department
+            doctor = Doctor.query.filter_by(department_id=refer_to_dept_id, is_available=True).first()
+            if not doctor:
+                doctor = Doctor.query.filter_by(department_id=refer_to_dept_id).first()
+                
+            if doctor:
+                kolkata_tz = ZoneInfo("Asia/Kolkata")
+                local_now = datetime.now(kolkata_tz).replace(tzinfo=None)
+                
+                new_appt = Appointment(
+                    patient_id=patient_id,
+                    doctor_id=doctor.id,
+                    appointment_date=local_now,
+                    reason="Doctor referral following vitals checkup",
+                    status=AppointmentStatus.CONFIRMED,
+                    appointment_type='consultation',
+                    vitals_checked=True
+                )
+                db.session.add(new_appt)
+                referral_created = True
+                if doctor.user:
+                    referral_doc_name = doctor.user.full_name
+
         db.session.commit()
+
+        success_message = "Patient vitals recorded successfully"
+        if referral_created and referral_doc_name:
+            success_message += f". Referred to Dr. {referral_doc_name}"
+        elif refer_to_dept_id and not referral_created:
+            success_message += ". Referral requested but no clinician found in department"
 
         return handle_response(
             success=True,
             data=merged_vital,
-            message="Patient vitals recorded successfully",
+            message=success_message,
             status_code=200
         )
 

@@ -199,7 +199,7 @@ onMounted(loadOrders)
 
             <!-- Items -->
             <div
-              class="bg-gray-50/50 dark:bg-slate-850 p-4 rounded-2xl border border-gray-100 dark:border-slate-800 space-y-3 mb-6"
+              class="bg-gray-50/50 dark:bg-slate-800 p-4 rounded-2xl border border-gray-100 dark:border-slate-800 space-y-3 mb-6"
             >
               <h5 class="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-2">
                 Cart Prescription Items

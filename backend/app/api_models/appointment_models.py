@@ -6,14 +6,16 @@ class AppointmentModels:
     def __init__(self, api):
         self.appointment_create = api.model('AppointmentCreate', {
             'patient_id': fields.String(required=False, description="UUID of the patient"),
-            'doctor_id': fields.String(required=True, description="UUID of the doctor"),
+            'doctor_id': fields.String(required=False, description="UUID of the doctor (optional for vitals checks)"),
             'appointment_date': fields.DateTime(required=True, description="Date and time of the appointment"),
-            'reason': fields.String(description="Reason for the appointment")
+            'reason': fields.String(description="Reason for the appointment"),
+            'appointment_type': fields.String(required=False, description="Type: 'consultation' or 'vitals_check'")
         })
 
         self.appointment_update = api.model('AppointmentUpdate', {
             'status': EnumField(AppointmentStatus, description="New status of the appointment"),
-            'reason': fields.String(description="Updated reason for the appointment")
+            'reason': fields.String(description="Updated reason for the appointment"),
+            'vitals_checked': fields.Boolean(description="Flag indicating if vitals were captured")
         })
 
         self.appointment = api.model('Appointment', {
@@ -23,12 +25,15 @@ class AppointmentModels:
             'appointment_date': fields.DateTime,
             'status': EnumField(AppointmentStatus),
             'reason': fields.String,
+            'vitals_checked': fields.Boolean,
+            'appointment_type': fields.String,
             'created_at': fields.DateTime,
             'updated_at': fields.DateTime,
             # Joined data
             'patient_name': fields.String(attribute='patient.full_name'),
-            'doctor_name': fields.String(attribute='doctor.user.full_name'),
-            'specialization': fields.String(attribute='doctor.specialization')
+            'doctor_name': fields.String,
+            'specialization': fields.String(attribute='doctor_specialization'),
+            'consultation_fee': fields.Float
         })
 
         self.response_model = api.model('AppointmentResponse', {

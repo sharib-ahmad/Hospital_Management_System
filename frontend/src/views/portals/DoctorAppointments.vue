@@ -152,11 +152,27 @@ onMounted(loadData)
                 </p>
               </div>
             </div>
-            <span
-              :class="`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest ${getStatusColor(apt.status)}`"
-            >
-              {{ apt.status }}
-            </span>
+            <div class="flex flex-col items-end gap-1.5 flex-shrink-0">
+              <span
+                :class="`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest ${getStatusColor(apt.status)}`"
+              >
+                {{ apt.status }}
+              </span>
+              <span
+                v-if="!apt.vitals_checked && apt.appointment_type !== 'vitals_check'"
+                class="px-2.5 py-0.5 bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 rounded-lg text-[9px] font-bold uppercase tracking-wider border border-amber-200/30 dark:border-amber-500/10 flex items-center gap-1"
+              >
+                <span class="h-1 w-1 bg-amber-500 rounded-full animate-pulse"></span>
+                Awaiting Vitals
+              </span>
+              <span
+                v-else-if="apt.vitals_checked"
+                class="px-2.5 py-0.5 bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 rounded-lg text-[9px] font-bold uppercase tracking-wider border border-emerald-200/30 dark:border-emerald-500/10 flex items-center gap-1"
+              >
+                <span class="h-1 w-1 bg-emerald-500 rounded-full"></span>
+                Vitals Captured
+              </span>
+            </div>
           </div>
 
           <div class="space-y-4 mb-8">
@@ -213,9 +229,31 @@ onMounted(loadData)
             <button
               v-if="apt.status === 'confirmed'"
               @click="updateStatus(apt.id, 'completed')"
-              class="w-full py-3 bg-indigo-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-600/20 active:scale-95"
+              :disabled="!apt.vitals_checked"
+              :class="`w-full py-3 text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 flex items-center justify-center gap-2 ${
+                apt.vitals_checked
+                  ? 'bg-indigo-600 hover:bg-indigo-700 shadow-lg shadow-indigo-600/20'
+                  : 'bg-slate-400 dark:bg-slate-700 opacity-60 cursor-not-allowed shadow-none'
+              }`"
             >
-              Mark as Completed
+              <svg
+                v-if="!apt.vitals_checked"
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-3.5 w-3.5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                stroke-width="3"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                />
+              </svg>
+              <span>{{
+                apt.vitals_checked ? 'Mark as Completed' : 'Locked (Awaiting Vitals)'
+              }}</span>
             </button>
           </div>
         </div>

@@ -1,15 +1,37 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import PortalBase from './PortalBase.vue'
 import api from '../../utils/axios'
 import { useNotificationStore } from '../../stores/notification'
 import FormField from '../../components/FormField.vue'
 
 const notification = useNotificationStore()
+const route = useRoute()
 const appointments = ref<any[]>([])
 const assignedPatients = ref<any[]>([])
 const isLoading = ref(true)
 const activeTab = ref('consultations') // 'consultations' | 'patients' | 'records'
+
+// Sync activeTab with route path
+const syncTabWithRoute = () => {
+  if (route.path === '/doctor/records') {
+    activeTab.value = 'records'
+  } else if (route.path === '/doctor/patients') {
+    activeTab.value = 'patients'
+  } else {
+    activeTab.value = 'consultations'
+  }
+}
+
+// Watch for route changes
+watch(
+  () => route.path,
+  () => {
+    syncTabWithRoute()
+  },
+  { immediate: true },
+)
 
 // ───────── Schedule Modal ─────────
 const showScheduleModal = ref(false)
@@ -62,6 +84,30 @@ const writeRecord = ref({
 })
 const isSubmittingRecord = ref(false)
 
+// ───────── Patient Vitals Integration ─────────
+const selectedPatientVitals = ref<any>(null)
+const isLoadingVitals = ref(false)
+
+const loadPatientVitals = async (patientId: string) => {
+  if (!patientId) return
+  isLoadingVitals.value = true
+  try {
+    const res = await api.get(`/vitals/${patientId}`)
+    selectedPatientVitals.value = res.data.data || res.data || null
+  } catch {
+    selectedPatientVitals.value = null
+  } finally {
+    isLoadingVitals.value = false
+  }
+}
+
+const onModalPatientChange = async () => {
+  selectedPatientVitals.value = null
+  if (writeRecord.value.patient_id) {
+    await loadPatientVitals(writeRecord.value.patient_id)
+  }
+}
+
 const writeRecordPatientAppointments = computed(() => {
   if (!writeRecord.value.patient_id) return []
   return appointments.value.filter(
@@ -71,7 +117,7 @@ const writeRecordPatientAppointments = computed(() => {
   )
 })
 
-const openWriteRecordModal = () => {
+const openWriteRecordModal = async () => {
   writeRecord.value = {
     patient_id: recordsSelectedPatientId.value,
     appointment_id: '',
@@ -80,7 +126,11 @@ const openWriteRecordModal = () => {
     prescription: '',
     notes: '',
   }
+  selectedPatientVitals.value = null
   showWriteRecordModal.value = true
+  if (writeRecord.value.patient_id) {
+    await loadPatientVitals(writeRecord.value.patient_id)
+  }
 }
 
 const handleWriteRecordSubmit = async () => {
@@ -91,6 +141,15 @@ const handleWriteRecordSubmit = async () => {
   if (!writeRecord.value.diagnosis.trim()) {
     notification.error('Diagnosis is required')
     return
+  }
+  if (writeRecord.value.appointment_id) {
+    const apt = appointments.value.find((a) => a.id === writeRecord.value.appointment_id)
+    if (apt && !apt.vitals_checked) {
+      notification.error(
+        'Cannot submit record: Patient vitals have not been captured by a nurse for this appointment.',
+      )
+      return
+    }
   }
   isSubmittingRecord.value = true
   try {
@@ -400,7 +459,21 @@ onMounted(loadData)
                   </p>
                 </div>
               </div>
-              <div class="flex items-center gap-4">
+              <div class="flex items-center gap-3 flex-wrap">
+                <span
+                  v-if="!apt.vitals_checked && apt.appointment_type !== 'vitals_check'"
+                  class="px-3 py-1 bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 rounded-full text-[10px] font-black uppercase tracking-widest border border-amber-200/50 dark:border-amber-500/10 flex items-center gap-1.5"
+                >
+                  <span class="h-1.5 w-1.5 bg-amber-500 rounded-full animate-pulse"></span>
+                  Awaiting Vitals
+                </span>
+                <span
+                  v-else-if="apt.vitals_checked"
+                  class="px-3 py-1 bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 rounded-full text-[10px] font-black uppercase tracking-widest border border-emerald-200/50 dark:border-emerald-500/10 flex items-center gap-1.5"
+                >
+                  <span class="h-1.5 w-1.5 bg-emerald-500 rounded-full"></span>
+                  Vitals Checked
+                </span>
                 <span
                   :class="`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${getStatusColor(apt.status)}`"
                 >
@@ -917,6 +990,7 @@ onMounted(loadData)
             <select
               v-model="writeRecord.patient_id"
               required
+              @change="onModalPatientChange"
               class="appearance-none block w-full px-4 py-3.5 border border-gray-200 dark:border-slate-700/50 rounded-2xl shadow-sm transition-all sm:text-sm outline-none bg-white dark:bg-slate-800/50 text-gray-900 dark:text-white focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10"
             >
               <option value="" disabled>Select a patient...</option>
@@ -924,6 +998,129 @@ onMounted(loadData)
                 {{ p.full_name }}
               </option>
             </select>
+          </div>
+
+          <!-- Clinical Vitals Parameters Grid -->
+          <div
+            v-if="writeRecord.patient_id"
+            class="w-full p-5 bg-gray-50 dark:bg-slate-800/30 rounded-2xl border border-gray-100 dark:border-slate-800/80"
+          >
+            <h4
+              class="text-xs font-black text-gray-900 dark:text-white uppercase tracking-widest mb-3 flex items-center gap-2"
+            >
+              <span class="h-1.5 w-1.5 bg-emerald-600 rounded-full"></span>
+              Patient Vitals
+            </h4>
+            <div v-if="isLoadingVitals" class="flex justify-center py-4">
+              <div
+                class="animate-spin rounded-full h-5 w-5 border-2 border-emerald-600 border-t-transparent"
+              ></div>
+            </div>
+            <div
+              v-else-if="!selectedPatientVitals"
+              class="p-3 bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-100 dark:border-amber-900/30 text-xs text-amber-700 dark:text-amber-400 font-bold flex items-center gap-2"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-4 w-4 flex-shrink-0"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                />
+              </svg>
+              No recorded vitals found for this patient. Please ensure a nurse records their vitals.
+            </div>
+            <div v-else class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              <div
+                class="bg-white dark:bg-slate-900 p-3 rounded-xl border border-gray-100 dark:border-slate-800"
+              >
+                <span
+                  class="block text-[9px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-1"
+                  >Blood Pressure</span
+                >
+                <span class="text-sm font-bold text-gray-800 dark:text-slate-200">
+                  {{ selectedPatientVitals.systolic_bp }}/{{ selectedPatientVitals.diastolic_bp }}
+                  <span class="text-[10px] text-gray-400">mmHg</span>
+                </span>
+              </div>
+              <div
+                class="bg-white dark:bg-slate-900 p-3 rounded-xl border border-gray-100 dark:border-slate-800"
+              >
+                <span
+                  class="block text-[9px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-1"
+                  >Blood Sugar</span
+                >
+                <span class="text-sm font-bold text-gray-800 dark:text-slate-200">
+                  {{ selectedPatientVitals.blood_sugar }}
+                  <span class="text-[10px] text-gray-400">mg/dL</span>
+                </span>
+              </div>
+              <div
+                class="bg-white dark:bg-slate-900 p-3 rounded-xl border border-gray-100 dark:border-slate-800"
+              >
+                <span
+                  class="block text-[9px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-1"
+                  >Pulse Rate</span
+                >
+                <span class="text-sm font-bold text-gray-800 dark:text-slate-200">
+                  {{ selectedPatientVitals.pulse_rate }}
+                  <span class="text-[10px] text-gray-400">bpm</span>
+                </span>
+              </div>
+              <div
+                class="bg-white dark:bg-slate-900 p-3 rounded-xl border border-gray-100 dark:border-slate-800"
+              >
+                <span
+                  class="block text-[9px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-1"
+                  >Temperature</span
+                >
+                <span class="text-sm font-bold text-gray-800 dark:text-slate-200">
+                  {{ selectedPatientVitals.temperature }}
+                  <span class="text-[10px] text-gray-400">°F</span>
+                </span>
+              </div>
+              <div
+                class="bg-white dark:bg-slate-900 p-3 rounded-xl border border-gray-100 dark:border-slate-800"
+              >
+                <span
+                  class="block text-[9px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-1"
+                  >Respiration</span
+                >
+                <span class="text-sm font-bold text-gray-800 dark:text-slate-200">
+                  {{ selectedPatientVitals.respiration_rate }}
+                  <span class="text-[10px] text-gray-400">/min</span>
+                </span>
+              </div>
+              <div
+                class="bg-white dark:bg-slate-900 p-3 rounded-xl border border-gray-100 dark:border-slate-800 col-span-2 sm:col-span-1"
+              >
+                <span
+                  class="block text-[9px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-1 font-bold text-teal-600"
+                  >Recorded By</span
+                >
+                <span class="text-xs font-bold text-gray-800 dark:text-slate-200 truncate block">
+                  Nurse: {{ selectedPatientVitals.recorded_by || 'Staff' }}
+                </span>
+              </div>
+              <div
+                v-if="selectedPatientVitals.notes"
+                class="col-span-full bg-white dark:bg-slate-900 p-3 rounded-xl border border-gray-100 dark:border-slate-800"
+              >
+                <span
+                  class="block text-[9px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-1"
+                  >Vitals Notes</span
+                >
+                <p class="text-xs italic text-gray-500 dark:text-slate-400">
+                  "{{ selectedPatientVitals.notes }}"
+                </p>
+              </div>
+            </div>
           </div>
 
           <!-- Appointment selector (optional) -->

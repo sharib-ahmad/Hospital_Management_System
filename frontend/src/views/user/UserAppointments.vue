@@ -21,6 +21,7 @@ const bookForm = ref({
   doctor_id: '',
   appointment_date: '',
   reason: '',
+  appointment_type: 'consultation',
 })
 
 const minDateTime = computed(() => {
@@ -50,12 +51,23 @@ const loadData = async () => {
 }
 
 const openBookModal = () => {
-  bookForm.value = { patient_id: '', doctor_id: '', appointment_date: '', reason: '' }
+  bookForm.value = {
+    patient_id: '',
+    doctor_id: '',
+    appointment_date: '',
+    reason: '',
+    appointment_type: 'consultation',
+  }
   showBookModal.value = true
 }
 
 const handleBookAppointment = async () => {
-  if (!bookForm.value.patient_id || !bookForm.value.doctor_id || !bookForm.value.appointment_date) {
+  const isVitalsCheck = bookForm.value.appointment_type === 'vitals_check'
+  if (
+    !bookForm.value.patient_id ||
+    (!isVitalsCheck && !bookForm.value.doctor_id) ||
+    !bookForm.value.appointment_date
+  ) {
     notification.error('Please fill all required fields')
     return
   }
@@ -63,9 +75,10 @@ const handleBookAppointment = async () => {
   try {
     await api.post('/appointments', {
       patient_id: bookForm.value.patient_id,
-      doctor_id: bookForm.value.doctor_id,
+      doctor_id: isVitalsCheck ? null : bookForm.value.doctor_id,
       appointment_date: new Date(bookForm.value.appointment_date).toISOString(),
       reason: bookForm.value.reason,
+      appointment_type: bookForm.value.appointment_type,
     })
     notification.success('Appointment booked successfully!')
     showBookModal.value = false
@@ -175,7 +188,7 @@ onMounted(loadData)
         <div>
           <!-- Card Header -->
           <div
-            class="flex items-center justify-between flex-wrap gap-4 mb-5 pb-4 border-b border-gray-55 dark:border-slate-850"
+            class="flex items-center justify-between flex-wrap gap-4 mb-5 pb-4 border-b border-gray-100 dark:border-slate-800"
           >
             <div class="flex items-center gap-4">
               <div
@@ -232,7 +245,7 @@ onMounted(loadData)
           <!-- Reason / Notes -->
           <div
             v-if="apt.reason"
-            class="p-5 bg-gray-50 dark:bg-slate-850 rounded-2xl border border-gray-100 dark:border-slate-800 mb-5"
+            class="p-5 bg-gray-50 dark:bg-slate-800/40 rounded-2xl border border-gray-100 dark:border-slate-800/60 mb-5"
           >
             <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1.5">
               Reason for Visit
@@ -334,6 +347,51 @@ onMounted(loadData)
 
               <!-- Form -->
               <form @submit.prevent="handleBookAppointment" class="space-y-6">
+                <!-- Checkup Type -->
+                <div class="w-full space-y-2">
+                  <label class="block text-sm font-bold text-gray-600 dark:text-slate-400">
+                    Checkup Type
+                  </label>
+                  <div class="flex gap-4">
+                    <label
+                      class="flex-1 flex items-center justify-between p-3.5 border rounded-2xl cursor-pointer transition-all bg-white dark:bg-slate-800/50"
+                      :class="
+                        bookForm.appointment_type === 'consultation'
+                          ? 'border-emerald-500 ring-2 ring-emerald-500/10'
+                          : 'border-gray-200 dark:border-slate-700/50'
+                      "
+                    >
+                      <span class="text-xs font-black uppercase text-gray-800 dark:text-slate-200"
+                        >Doctor Consult</span
+                      >
+                      <input
+                        type="radio"
+                        value="consultation"
+                        v-model="bookForm.appointment_type"
+                        class="text-emerald-500 focus:ring-emerald-500"
+                      />
+                    </label>
+                    <label
+                      class="flex-1 flex items-center justify-between p-3.5 border rounded-2xl cursor-pointer transition-all bg-white dark:bg-slate-800/50"
+                      :class="
+                        bookForm.appointment_type === 'vitals_check'
+                          ? 'border-emerald-500 ring-2 ring-emerald-500/10'
+                          : 'border-gray-200 dark:border-slate-700/50'
+                      "
+                    >
+                      <span class="text-xs font-black uppercase text-gray-800 dark:text-slate-200"
+                        >Vitals Screening</span
+                      >
+                      <input
+                        type="radio"
+                        value="vitals_check"
+                        v-model="bookForm.appointment_type"
+                        class="text-emerald-500 focus:ring-emerald-500"
+                      />
+                    </label>
+                  </div>
+                </div>
+
                 <!-- Patient Selector -->
                 <div class="w-full space-y-1.5">
                   <label class="block text-sm font-bold text-gray-600 dark:text-slate-400">
@@ -352,7 +410,7 @@ onMounted(loadData)
                 </div>
 
                 <!-- Doctor Selector -->
-                <div class="w-full space-y-1.5">
+                <div v-if="bookForm.appointment_type === 'consultation'" class="w-full space-y-1.5">
                   <label class="block text-sm font-bold text-gray-600 dark:text-slate-400">
                     Medical Doctor <span class="text-red-500 ml-0.5">*</span>
                   </label>

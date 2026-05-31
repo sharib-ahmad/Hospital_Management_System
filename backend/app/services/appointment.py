@@ -70,10 +70,19 @@ class AppointmentService:
         else:
             return handle_response(success=False, message="Only patients or doctors can book appointments", status_code=403)
             
-        doctor = Doctor.query.get(validated_data['doctor_id'])
-        if not doctor:
-            return handle_response(success=False, message="Doctor not found", status_code=404)
-            
+        appointment_type = validated_data.get('appointment_type', 'consultation')
+        doctor_id = validated_data.get('doctor_id')
+        
+        if appointment_type == 'consultation':
+            if not doctor_id:
+                return handle_response(success=False, message="Doctor ID is required for consultations", status_code=400)
+            doctor = Doctor.query.get(doctor_id)
+            if not doctor:
+                return handle_response(success=False, message="Doctor not found", status_code=404)
+        else:
+            # Standalone vitals checkup - no doctor selected
+            doctor_id = None
+
         # Ensure appointment_date is parsed as a timezone-naive datetime in Asia/Kolkata for storage
         date_val = validated_data['appointment_date']
         if isinstance(date_val, str):
@@ -97,10 +106,12 @@ class AppointmentService:
 
         appointment = Appointment(
             patient_id=patient_id,
-            doctor_id=validated_data['doctor_id'],
+            doctor_id=doctor_id,
             appointment_date=parsed_date,
-            reason=validated_data.get('reason', 'Scheduled Consultation'),
-            status=status
+            reason=validated_data.get('reason', 'Scheduled Consultation' if appointment_type == 'consultation' else 'Vitals Checkup Only'),
+            status=status,
+            appointment_type=appointment_type,
+            vitals_checked=False
         )
         
         db.session.add(appointment)

@@ -474,7 +474,7 @@ onMounted(loadData)
             <div
               v-for="item in cart"
               :key="item.medicine.id"
-              class="flex items-center justify-between border-b border-gray-50 dark:border-slate-850 pb-4"
+              class="flex items-center justify-between border-b border-gray-100 dark:border-slate-800 pb-4"
             >
               <div class="flex-1 min-w-0 pr-4">
                 <h5 class="text-xs font-black text-gray-900 dark:text-white truncate">
@@ -527,7 +527,7 @@ onMounted(loadData)
           </div>
 
           <!-- Checkout Fields -->
-          <div class="space-y-4 pt-4 border-t border-gray-50 dark:border-slate-850">
+          <div class="space-y-4 pt-4 border-t border-gray-100 dark:border-slate-800">
             <div>
               <label
                 class="block text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1.5"
@@ -535,7 +535,7 @@ onMounted(loadData)
               >
               <select
                 v-model="selectedPatientId"
-                class="w-full px-3 py-2 bg-gray-50 dark:bg-slate-800 border border-gray-100 dark:border-slate-850 rounded-xl text-xs outline-none text-gray-900 dark:text-white"
+                class="w-full px-3 py-2 bg-gray-50 dark:bg-slate-800 border border-gray-100 dark:border-slate-800 rounded-xl text-xs outline-none text-gray-900 dark:text-white"
               >
                 <option value="">Order for General Use</option>
                 <option v-for="pat in myPatients" :key="pat.id" :value="pat.id">
@@ -553,7 +553,7 @@ onMounted(loadData)
                 v-model="phone_number"
                 type="text"
                 placeholder="e.g. +1-555-1234"
-                class="w-full px-3 py-2 bg-gray-50 dark:bg-slate-800 border border-gray-100 dark:border-slate-850 rounded-xl text-xs outline-none text-gray-900 dark:text-white"
+                class="w-full px-3 py-2 bg-gray-50 dark:bg-slate-800 border border-gray-100 dark:border-slate-800 rounded-xl text-xs outline-none text-gray-900 dark:text-white"
               />
             </div>
 
@@ -566,7 +566,7 @@ onMounted(loadData)
                 v-model="shippingAddress"
                 type="text"
                 placeholder="Street address, City, Pincode"
-                class="w-full px-3 py-2 bg-gray-50 dark:bg-slate-800 border border-gray-100 dark:border-slate-850 rounded-xl text-xs outline-none text-gray-900 dark:text-white"
+                class="w-full px-3 py-2 bg-gray-50 dark:bg-slate-800 border border-gray-100 dark:border-slate-800 rounded-xl text-xs outline-none text-gray-900 dark:text-white"
               />
             </div>
           </div>

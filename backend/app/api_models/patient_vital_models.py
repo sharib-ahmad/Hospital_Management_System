@@ -13,6 +13,8 @@ class PatientVitalModels:
             'temperature': fields.Float(description='Body temperature (°C)'),
             'respiration_rate': fields.Integer(description='Respiration rate (breaths/min)'),
             'notes': fields.String(description='Additional observations'),
+            'appointment_id': fields.String(required=False, description='Associated appointment ID to update vitals checked status'),
+            'refer_to_department_id': fields.String(required=False, description='Target department ID for doctor referral')
         })
 
         self.vital_response_model = api.model('PatientVital', {
