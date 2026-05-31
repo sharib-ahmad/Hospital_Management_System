@@ -53,11 +53,32 @@ onMounted(loadRecords)
       </p>
     </div>
 
-    <!-- Loading State -->
-    <div v-if="isLoading" class="flex items-center justify-center py-32">
+    <!-- Loading Skeleton -->
+    <div v-if="isLoading" class="max-w-4xl mx-auto space-y-8">
       <div
-        class="animate-spin rounded-full h-10 w-10 border-[3px] border-emerald-600 border-t-transparent"
-      ></div>
+        v-for="i in 2"
+        :key="i"
+        class="bg-white dark:bg-slate-900 p-8 rounded-[2.5rem] border border-gray-100 dark:border-slate-800 shadow-premium"
+      >
+        <div
+          class="flex items-start justify-between mb-6 pb-4 border-b border-gray-50 dark:border-slate-800"
+        >
+          <div class="space-y-2">
+            <div class="skeleton h-5 w-24 rounded-full"></div>
+            <div class="skeleton h-6 w-56"></div>
+            <div class="skeleton h-3 w-36"></div>
+          </div>
+          <div class="space-y-1 text-right">
+            <div class="skeleton h-3 w-20"></div>
+            <div class="skeleton h-4 w-28"></div>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="skeleton h-24 rounded-2xl"></div>
+          <div class="skeleton h-24 rounded-2xl"></div>
+          <div class="skeleton h-20 rounded-2xl col-span-2"></div>
+        </div>
+      </div>
     </div>
 
     <!-- Empty State -->
@@ -91,14 +112,11 @@ onMounted(loadRecords)
     </div>
 
     <!-- Records List -->
-    <div
-      v-else
-      class="max-w-4xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500"
-    >
+    <div v-else class="max-w-4xl mx-auto space-y-8">
       <div
         v-for="record in medicalRecords"
         :key="record.id"
-        class="bg-white dark:bg-slate-900 p-8 rounded-[2.5rem] border border-gray-100 dark:border-slate-800 shadow-premium hover:-translate-y-0.5 transition-all duration-300"
+        class="card-animate bg-white dark:bg-slate-900 p-8 rounded-[2.5rem] border border-gray-100 dark:border-slate-800 shadow-premium hover:-translate-y-0.5 transition-all duration-300"
       >
         <!-- Header Row -->
         <div

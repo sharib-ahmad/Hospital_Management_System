@@ -13,6 +13,8 @@ const patients = ref<any[]>([])
 const doctors = ref<any[]>([])
 const isLoading = ref(true)
 const bookingSubmitting = ref(false)
+const viewMode = ref<'grid' | 'list'>('grid')
+const recentlyCancelledId = ref<string | null>(null)
 
 // Book Appointment modal state
 const showBookModal = ref(false)
@@ -95,10 +97,21 @@ const cancelAppointment = async (aptId: string) => {
   try {
     await api.put(`/appointments/${aptId}`, { status: 'cancelled' })
     notification.success('Appointment cancelled')
+    recentlyCancelledId.value = aptId
+    setTimeout(() => {
+      recentlyCancelledId.value = null
+    }, 2200)
     await loadData()
   } catch (error) {
     notification.error('Failed to cancel appointment')
   }
+}
+
+const getFeeDisplay = (apt: any) => {
+  if (apt.appointment_type === 'vitals_check') return 'Vitals Screening — No Charge'
+  if (apt.consultation_fee != null && apt.consultation_fee > 0)
+    return `$${Number(apt.consultation_fee).toFixed(2)}`
+  return null
 }
 
 const normalizeDate = (dateString: string | null | undefined): string => {
@@ -171,19 +184,108 @@ onMounted(loadData)
       </button>
     </div>
 
-    <!-- Loading State -->
-    <div v-if="isLoading" class="flex items-center justify-center py-32">
+    <!-- View Toggle + count -->
+    <div
+      class="flex items-center justify-between mb-6 flex-wrap gap-3"
+      v-if="!isLoading && appointments.length"
+    >
+      <p class="text-sm text-gray-500 dark:text-slate-400 font-medium">
+        <span class="font-black text-gray-900 dark:text-white">{{ appointments.length }}</span>
+        appointments
+      </p>
       <div
-        class="animate-spin rounded-full h-10 w-10 border-[3px] border-emerald-600 border-t-transparent"
-      ></div>
+        class="flex items-center p-1 bg-gray-100 dark:bg-slate-800 rounded-xl border border-gray-200/50 dark:border-slate-700/50"
+      >
+        <button
+          @click="viewMode = 'grid'"
+          :class="`p-1.5 rounded-lg transition-all ${
+            viewMode === 'grid'
+              ? 'bg-white dark:bg-slate-900 text-emerald-600 shadow-sm'
+              : 'text-gray-400 hover:text-gray-600 dark:hover:text-slate-300'
+          }`"
+          title="Grid view"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-4 w-4"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"
+            />
+          </svg>
+        </button>
+        <button
+          @click="viewMode = 'list'"
+          :class="`p-1.5 rounded-lg transition-all ${
+            viewMode === 'list'
+              ? 'bg-white dark:bg-slate-900 text-emerald-600 shadow-sm'
+              : 'text-gray-400 hover:text-gray-600 dark:hover:text-slate-300'
+          }`"
+          title="List view"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-4 w-4"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M4 6h16M4 10h16M4 14h16M4 18h16"
+            />
+          </svg>
+        </button>
+      </div>
     </div>
 
-    <!-- Appointments List -->
-    <div v-else-if="appointments.length > 0" class="max-w-4xl mx-auto space-y-6">
+    <!-- Loading Skeleton -->
+    <div v-if="isLoading" class="max-w-4xl mx-auto space-y-6">
+      <div
+        v-for="i in 3"
+        :key="i"
+        class="bg-white dark:bg-slate-900 p-6 rounded-[2.5rem] border border-gray-100 dark:border-slate-800 shadow-premium"
+      >
+        <div
+          class="flex items-center gap-4 mb-5 pb-4 border-b border-gray-100 dark:border-slate-800"
+        >
+          <div class="skeleton w-12 h-12 rounded-2xl"></div>
+          <div class="flex-1 space-y-2">
+            <div class="skeleton h-4 w-1/2"></div>
+            <div class="skeleton h-3 w-1/3"></div>
+          </div>
+          <div class="skeleton h-6 w-20 rounded-full"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-4 mb-4">
+          <div class="skeleton h-16 rounded-2xl"></div>
+          <div class="skeleton h-16 rounded-2xl"></div>
+        </div>
+        <div class="skeleton h-12 rounded-2xl mb-4"></div>
+        <div class="skeleton h-10 rounded-2xl"></div>
+      </div>
+    </div>
+
+    <!-- Appointments Grid -->
+    <div
+      v-else-if="appointments.length > 0 && viewMode === 'grid'"
+      class="max-w-4xl mx-auto space-y-6"
+    >
       <div
         v-for="apt in appointments"
         :key="apt.id"
-        class="glass bg-white dark:bg-slate-900 p-6 rounded-[2.5rem] border border-gray-100 dark:border-slate-800 hover:border-emerald-500/30 transition-all duration-300 shadow-premium flex flex-col justify-between"
+        :class="`card-animate glass bg-white dark:bg-slate-900 p-6 rounded-[2.5rem] border transition-all duration-300 shadow-premium flex flex-col justify-between ${
+          recentlyCancelledId === apt.id
+            ? 'success-pulse border-emerald-400 dark:border-emerald-600'
+            : 'border-gray-100 dark:border-slate-800 hover:border-emerald-500/30'
+        }`"
       >
         <div>
           <!-- Card Header -->
@@ -232,12 +334,18 @@ onMounted(loadData)
               class="p-4 bg-gray-50 dark:bg-slate-800/50 rounded-2xl border border-gray-100 dark:border-slate-700/50"
             >
               <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">
-                Consultation Fee
-              </p>
-              <p class="text-xs text-emerald-600 dark:text-emerald-400 font-black">
-                ${{
-                  apt.consultation_fee != null ? Number(apt.consultation_fee).toFixed(2) : '0.00'
+                {{
+                  apt.appointment_type === 'vitals_check' ? 'Appointment Type' : 'Consultation Fee'
                 }}
+              </p>
+              <p
+                :class="`text-xs font-black ${
+                  apt.appointment_type === 'vitals_check'
+                    ? 'text-teal-600 dark:text-teal-400'
+                    : 'text-emerald-600 dark:text-emerald-400'
+                }`"
+              >
+                {{ getFeeDisplay(apt) || '—' }}
               </p>
             </div>
           </div>
@@ -268,9 +376,72 @@ onMounted(loadData)
       </div>
     </div>
 
+    <!-- Compact List View -->
+    <div
+      v-else-if="appointments.length > 0 && viewMode === 'list'"
+      class="max-w-4xl mx-auto space-y-2"
+    >
+      <div
+        v-for="apt in appointments"
+        :key="apt.id"
+        :class="`card-animate flex items-center justify-between gap-4 px-6 py-4 rounded-2xl border transition-all duration-200 hover:shadow-sm ${
+          recentlyCancelledId === apt.id
+            ? 'success-pulse bg-emerald-50/50 dark:bg-emerald-900/10 border-emerald-300 dark:border-emerald-700'
+            : 'bg-white dark:bg-slate-900 border-gray-100 dark:border-slate-800 hover:border-emerald-500/20'
+        }`"
+      >
+        <div class="flex items-center gap-3 min-w-0 flex-1">
+          <div
+            class="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-900/30 flex items-center justify-center font-black text-emerald-600 flex-shrink-0"
+          >
+            {{ apt.patient_name?.charAt(0) || 'P' }}
+          </div>
+          <div class="min-w-0">
+            <h4 class="font-black text-gray-900 dark:text-white text-sm truncate">
+              {{ apt.patient_name }}
+            </h4>
+            <p
+              class="text-[10px] text-teal-600 dark:text-teal-400 font-bold uppercase tracking-wider truncate"
+            >
+              {{ formatDate(apt.appointment_date) }}
+            </p>
+          </div>
+        </div>
+        <div class="hidden sm:flex flex-col items-end gap-0.5 flex-shrink-0">
+          <span
+            :class="`text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full ${
+              apt.appointment_type === 'vitals_check'
+                ? 'bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400'
+                : 'bg-gray-100 text-gray-600 dark:bg-slate-800 dark:text-slate-400'
+            }`"
+          >
+            {{ apt.appointment_type === 'vitals_check' ? 'Vitals Only' : 'Consultation' }}
+          </span>
+          <span
+            v-if="getFeeDisplay(apt)"
+            class="text-[10px] font-bold text-gray-400 dark:text-slate-500"
+          >
+            {{ getFeeDisplay(apt) }}
+          </span>
+        </div>
+        <span
+          :class="`flex-shrink-0 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${getStatusColor(apt.status)}`"
+        >
+          {{ apt.status }}
+        </span>
+        <button
+          v-if="apt.status === 'pending'"
+          @click="cancelAppointment(apt.id)"
+          class="flex-shrink-0 px-3 py-2 bg-rose-50 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-rose-600 hover:text-white transition-all border border-rose-100 dark:border-rose-900/30"
+        >
+          Cancel
+        </button>
+      </div>
+    </div>
+
     <!-- Empty State -->
     <div
-      v-else
+      v-else-if="!isLoading && appointments.length === 0"
       class="flex flex-col items-center justify-center py-20 bg-gray-50/50 dark:bg-slate-800/30 rounded-[2.5rem] border-2 border-dashed border-gray-100 dark:border-slate-800 text-center px-6"
     >
       <div

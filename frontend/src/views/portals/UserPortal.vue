@@ -32,6 +32,7 @@ const bookForm = ref({
   reason: '',
   appointment_type: 'consultation',
 })
+const recentlyBookedId = ref<string | null>(null)
 
 // Stats
 const stats = ref([
@@ -165,6 +166,13 @@ const handleBookAppointment = async () => {
     // Force reload
     appointments.value = []
     await loadAppointments()
+    // Pulse the first new appointment after reload
+    if (appointments.value.length > 0) {
+      recentlyBookedId.value = appointments.value[0]?.id ?? null
+      setTimeout(() => {
+        recentlyBookedId.value = null
+      }, 2200)
+    }
   } catch (error: any) {
     const msg = error.response?.data?.message || 'Failed to book appointment'
     notification.error(msg)
@@ -219,6 +227,13 @@ const getStatusColor = (status: string) => {
     default:
       return 'bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-400'
   }
+}
+
+const getFeeDisplay = (apt: any) => {
+  if (apt.appointment_type === 'vitals_check') return 'Vitals Screening — No Charge'
+  if (apt.consultation_fee != null && apt.consultation_fee > 0)
+    return `$${Number(apt.consultation_fee).toFixed(2)}`
+  return null
 }
 
 onMounted(loadData)
@@ -294,10 +309,22 @@ onMounted(loadData)
           </button>
         </div>
 
-        <div v-if="isLoading" class="flex justify-center py-20">
+        <div v-if="isLoading" class="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div
-            class="animate-spin rounded-full h-10 w-10 border-[3px] border-emerald-600 border-t-transparent"
-          ></div>
+            v-for="i in 4"
+            :key="i"
+            class="bg-white dark:bg-slate-900 p-8 rounded-[2rem] border border-gray-100 dark:border-slate-800 shadow-premium"
+          >
+            <div class="flex items-start justify-between mb-6">
+              <div class="skeleton w-14 h-14 rounded-2xl"></div>
+              <div class="skeleton h-6 w-16 rounded-full"></div>
+            </div>
+            <div class="skeleton h-5 w-3/4 mb-2"></div>
+            <div class="skeleton h-3 w-1/2 mb-2"></div>
+            <div class="skeleton h-3 w-2/3 mb-8"></div>
+            <div class="skeleton h-px w-full mb-4"></div>
+            <div class="skeleton h-3 w-1/3"></div>
+          </div>
         </div>
 
         <div
@@ -341,7 +368,7 @@ onMounted(loadData)
           <div
             v-for="patient in patients"
             :key="patient.id"
-            class="glass p-8 rounded-[2rem] border border-white/40 dark:border-white/5 hover:border-emerald-500/30 transition-all group shadow-premium"
+            class="card-animate glass p-8 rounded-[2rem] border border-white/40 dark:border-white/5 hover:border-emerald-500/30 transition-all group shadow-premium"
           >
             <div class="flex items-start justify-between mb-6">
               <div
@@ -516,11 +543,25 @@ onMounted(loadData)
           </button>
         </div>
 
-        <!-- Loading -->
-        <div v-if="isLoadingAppointments" class="flex items-center justify-center py-20">
+        <!-- Loading skeleton -->
+        <div v-if="isLoadingAppointments" class="space-y-4">
           <div
-            class="animate-spin rounded-full h-10 w-10 border-[3px] border-emerald-600 border-t-transparent"
-          ></div>
+            v-for="i in 3"
+            :key="i"
+            class="bg-gray-50 dark:bg-slate-800/40 p-6 rounded-[2rem] border border-gray-100 dark:border-slate-800"
+          >
+            <div class="flex items-center gap-4 mb-4">
+              <div class="skeleton w-12 h-12 rounded-2xl"></div>
+              <div class="flex-1 space-y-2">
+                <div class="skeleton h-4 w-1/2"></div>
+                <div class="skeleton h-3 w-1/3"></div>
+              </div>
+              <div class="skeleton h-6 w-20 rounded-xl"></div>
+            </div>
+            <div class="skeleton h-3 w-2/3 mb-3"></div>
+            <div class="skeleton h-16 rounded-2xl mb-4"></div>
+            <div class="skeleton h-10 rounded-xl"></div>
+          </div>
         </div>
 
         <!-- Empty state -->
@@ -563,7 +604,11 @@ onMounted(loadData)
           <div
             v-for="apt in appointments"
             :key="apt.id"
-            class="group bg-gray-50 dark:bg-slate-800/40 p-6 rounded-[2rem] border border-gray-100 dark:border-slate-800 hover:border-emerald-500/30 transition-all duration-300 shadow-sm hover:shadow-premium"
+            :class="`card-animate group bg-gray-50 dark:bg-slate-800/40 p-6 rounded-[2rem] border transition-all duration-300 shadow-sm hover:shadow-premium ${
+              recentlyBookedId === apt.id
+                ? 'success-pulse border-emerald-400 dark:border-emerald-600'
+                : 'border-gray-100 dark:border-slate-800 hover:border-emerald-500/30'
+            }`"
           >
             <div class="flex items-center justify-between flex-wrap gap-4 mb-4">
               <div class="flex items-center gap-4">
@@ -609,6 +654,32 @@ onMounted(loadData)
                   formatDate(apt.appointment_date)
                 }}</span>
               </div>
+              <!-- Appointment type / fee -->
+              <div class="flex items-center gap-3 text-gray-500 dark:text-slate-400">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="h-4 w-4 flex-shrink-0"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
+                </svg>
+                <span
+                  :class="`text-xs font-bold uppercase tracking-wider ${
+                    apt.appointment_type === 'vitals_check'
+                      ? 'text-teal-600 dark:text-teal-400'
+                      : ''
+                  }`"
+                >
+                  {{ getFeeDisplay(apt) || apt.appointment_type }}
+                </span>
+              </div>
               <!-- Reason -->
               <div
                 v-if="apt.reason"
@@ -649,11 +720,26 @@ onMounted(loadData)
           </h3>
         </div>
 
-        <!-- Loading -->
-        <div v-if="isLoadingRecords" class="flex items-center justify-center py-20">
+        <!-- Loading skeleton -->
+        <div v-if="isLoadingRecords" class="space-y-6">
           <div
-            class="animate-spin rounded-full h-10 w-10 border-[3px] border-emerald-600 border-t-transparent"
-          ></div>
+            v-for="i in 2"
+            :key="i"
+            class="bg-white dark:bg-slate-900 p-8 rounded-[2rem] border border-gray-100 dark:border-slate-800 shadow-premium"
+          >
+            <div class="flex items-start justify-between mb-6">
+              <div class="space-y-2">
+                <div class="skeleton h-5 w-40"></div>
+                <div class="skeleton h-3 w-24"></div>
+              </div>
+              <div class="skeleton h-6 w-24 rounded-full"></div>
+            </div>
+            <div class="skeleton h-px w-full mb-6"></div>
+            <div class="grid grid-cols-2 gap-4">
+              <div class="skeleton h-20 rounded-2xl"></div>
+              <div class="skeleton h-20 rounded-2xl"></div>
+            </div>
+          </div>
         </div>
 
         <!-- Empty state -->
@@ -692,7 +778,7 @@ onMounted(loadData)
           <div
             v-for="record in medicalRecords"
             :key="record.id"
-            class="bg-white dark:bg-slate-900 p-8 rounded-[2rem] border border-gray-100 dark:border-slate-800 shadow-premium hover:-translate-y-0.5 transition-all duration-300"
+            class="card-animate bg-white dark:bg-slate-900 p-8 rounded-[2rem] border border-gray-100 dark:border-slate-800 shadow-premium hover:-translate-y-0.5 transition-all duration-300"
           >
             <!-- Header row -->
             <div class="flex items-start justify-between flex-wrap gap-4 mb-6">
@@ -873,7 +959,7 @@ onMounted(loadData)
           <button
             @click="
               switchTab('appointments')
-              openBookModal();
+              openBookModal()
             "
             class="w-full flex items-center gap-3 p-4 bg-emerald-50/50 dark:bg-emerald-900/10 rounded-2xl border border-emerald-100/50 dark:border-emerald-500/10 hover:border-emerald-500/40 transition-all text-left group"
           >

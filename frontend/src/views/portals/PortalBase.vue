@@ -31,7 +31,7 @@ defineProps<{
         <div
           v-for="stat in stats"
           :key="stat.name"
-          class="group bg-white dark:bg-slate-900 p-8 rounded-[2rem] border border-gray-100 dark:border-slate-800 shadow-premium hover:shadow-premium-xl transition-all duration-500 hover:-translate-y-1"
+          class="card-animate group bg-white dark:bg-slate-900 p-8 rounded-[2rem] border border-gray-100 dark:border-slate-800 shadow-premium hover:shadow-premium-xl transition-all duration-500 hover:-translate-y-1"
         >
           <div class="flex items-start justify-between mb-6">
             <div

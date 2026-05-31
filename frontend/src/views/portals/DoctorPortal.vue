@@ -83,6 +83,7 @@ const writeRecord = ref({
   notes: '',
 })
 const isSubmittingRecord = ref(false)
+const recentlyWrittenPatientId = ref<string | null>(null)
 
 // ───────── Patient Vitals Integration ─────────
 const selectedPatientVitals = ref<any>(null)
@@ -384,10 +385,32 @@ onMounted(loadData)
         </button>
       </div>
 
-      <div v-if="isLoading" class="flex items-center justify-center py-20">
+      <!-- Global Loading Skeleton -->
+      <div v-if="isLoading" class="space-y-4">
+        <div class="flex items-center justify-between mb-2">
+          <div class="skeleton h-5 w-40 rounded-xl"></div>
+          <div class="skeleton h-4 w-28 rounded"></div>
+        </div>
         <div
-          class="animate-spin rounded-full h-10 w-10 border-[3px] border-emerald-600 border-t-transparent"
-        ></div>
+          v-for="i in 4"
+          :key="i"
+          class="bg-gray-50 dark:bg-slate-800/40 p-6 rounded-3xl border border-gray-100 dark:border-slate-800"
+        >
+          <div class="flex items-center justify-between flex-wrap gap-4">
+            <div class="flex items-center gap-4">
+              <div class="skeleton w-12 h-12 rounded-2xl"></div>
+              <div class="space-y-2">
+                <div class="skeleton h-4 w-32"></div>
+                <div class="skeleton h-3 w-24"></div>
+              </div>
+            </div>
+            <div class="flex gap-2">
+              <div class="skeleton h-6 w-20 rounded-full"></div>
+              <div class="skeleton h-6 w-24 rounded-full"></div>
+            </div>
+          </div>
+          <div class="skeleton h-3 w-2/3 mt-4 ml-16"></div>
+        </div>
       </div>
 
       <!-- ─────────────────────────────────────────────────── -->
@@ -441,7 +464,7 @@ onMounted(loadData)
           <div
             v-for="apt in appointments.slice(0, 8)"
             :key="apt.id"
-            class="group bg-gray-50 dark:bg-slate-800/40 p-6 rounded-3xl border border-gray-100 dark:border-slate-800 hover:border-emerald-500/30 transition-all duration-300"
+            class="card-animate group bg-gray-50 dark:bg-slate-800/40 p-6 rounded-3xl border border-gray-100 dark:border-slate-800 hover:border-emerald-500/30 transition-all duration-300"
           >
             <div class="flex items-center justify-between flex-wrap gap-4">
               <div class="flex items-center gap-4">
@@ -534,7 +557,7 @@ onMounted(loadData)
           <div
             v-for="patient in assignedPatients"
             :key="patient.id"
-            class="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-gray-100 dark:border-slate-800 shadow-premium group flex flex-col justify-between hover:-translate-y-1 transition-all duration-300"
+            class="card-animate bg-white dark:bg-slate-900 p-6 rounded-3xl border border-gray-100 dark:border-slate-800 shadow-premium group flex flex-col justify-between hover:-translate-y-1 transition-all duration-300"
           >
             <div>
               <div class="flex items-start justify-between mb-4">
@@ -676,7 +699,7 @@ onMounted(loadData)
               :key="p.id"
               @click="
                 recordsSelectedPatientId = p.id
-                loadPatientRecords(p.id);
+                loadPatientRecords(p.id)
               "
               :class="`px-4 py-2 rounded-full text-xs font-black uppercase tracking-widest transition-all border ${
                 recordsSelectedPatientId === p.id

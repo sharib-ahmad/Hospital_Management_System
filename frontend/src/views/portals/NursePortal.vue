@@ -52,6 +52,7 @@ const vitalsRespiration = ref<number | ''>('')
 const vitalsNotes = ref('')
 const vitalsSubmitting = ref(false)
 const lastRecordedVitals = ref<any>(null)
+const recentlyRecordedPatientId = ref<string | null>(null)
 
 // Referral section
 const referToDoctor = ref(false)
@@ -202,6 +203,10 @@ const handleVitalsSubmit = async () => {
     }
     const res = await api.post('/vitals', payload)
     lastRecordedVitals.value = res.data.data || payload
+    recentlyRecordedPatientId.value = vitalsPatientId.value
+    setTimeout(() => {
+      recentlyRecordedPatientId.value = null
+    }, 2500)
 
     notification.success(res.data.message || 'Vitals recorded successfully')
     resetVitalsForm()
@@ -349,11 +354,46 @@ onMounted(loadData)
         </button>
       </div>
 
-      <!-- Global Loading -->
-      <div v-if="isLoading" class="flex items-center justify-center py-20">
-        <div
-          class="animate-spin rounded-full h-10 w-10 border-[3px] border-emerald-600 border-t-transparent"
-        ></div>
+      <!-- Global Loading Skeleton -->
+      <div v-if="isLoading" class="space-y-10">
+        <!-- Queue skeleton -->
+        <div class="space-y-6">
+          <div class="skeleton h-5 w-48 rounded-xl"></div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div
+              v-for="i in 4"
+              :key="i"
+              class="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-gray-100 dark:border-slate-800"
+            >
+              <div class="flex items-center justify-between mb-4">
+                <div class="skeleton h-5 w-28 rounded-full"></div>
+                <div class="skeleton h-4 w-20"></div>
+              </div>
+              <div class="skeleton h-5 w-3/4 mb-2"></div>
+              <div class="skeleton h-3 w-1/2 mb-6"></div>
+              <div class="skeleton h-10 w-full rounded-xl"></div>
+            </div>
+          </div>
+        </div>
+        <!-- Requests skeleton -->
+        <div class="space-y-4">
+          <div class="skeleton h-5 w-40 rounded-xl"></div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div
+              v-for="i in 2"
+              :key="i"
+              class="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-gray-100 dark:border-slate-800"
+            >
+              <div class="skeleton h-4 w-24 mb-3 rounded-full"></div>
+              <div class="skeleton h-5 w-3/4 mb-2"></div>
+              <div class="skeleton h-3 w-1/2 mb-6"></div>
+              <div class="grid grid-cols-2 gap-3">
+                <div class="skeleton h-10 rounded-xl"></div>
+                <div class="skeleton h-10 rounded-xl"></div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- ── TAB 0: Vitals Queue & Requests ────────────────────────────── -->
@@ -378,7 +418,11 @@ onMounted(loadData)
             <div
               v-for="appt in awaitingVitalsQueue"
               :key="appt.id"
-              class="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-gray-100 dark:border-slate-800 shadow-premium flex flex-col justify-between"
+              :class="`card-animate bg-white dark:bg-slate-900 p-6 rounded-3xl border shadow-premium flex flex-col justify-between ${
+                recentlyRecordedPatientId === appt.patient_id
+                  ? 'success-pulse border-emerald-400 dark:border-emerald-600'
+                  : 'border-gray-100 dark:border-slate-800'
+              }`"
             >
               <div>
                 <div class="flex items-center justify-between mb-4">
@@ -454,7 +498,7 @@ onMounted(loadData)
             <div
               v-for="req in pendingCheckupRequests"
               :key="req.id"
-              class="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-gray-100 dark:border-slate-800 shadow-premium flex flex-col justify-between"
+              class="card-animate bg-white dark:bg-slate-900 p-6 rounded-3xl border border-gray-100 dark:border-slate-800 shadow-premium flex flex-col justify-between"
             >
               <div>
                 <div class="flex items-center justify-between mb-4">
@@ -562,7 +606,11 @@ onMounted(loadData)
           <div
             v-for="patient in filteredPatients"
             :key="patient.id"
-            class="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-gray-100 dark:border-slate-800 shadow-premium group flex flex-col justify-between hover:-translate-y-1 transition-all duration-300"
+            :class="`card-animate bg-white dark:bg-slate-900 p-6 rounded-3xl border shadow-premium group flex flex-col justify-between hover:-translate-y-1 transition-all duration-300 ${
+              recentlyRecordedPatientId === patient.id
+                ? 'success-pulse border-emerald-400 dark:border-emerald-600'
+                : 'border-gray-100 dark:border-slate-800'
+            }`"
           >
             <div>
               <div class="flex items-start justify-between mb-4">
