@@ -24,3 +24,7 @@ class CodeGenerator:
     @classmethod
     def generate_nurse_code(cls) -> str:
         return cls._generate("NUR")
+
+    @classmethod
+    def generate_pharmacist_code(cls) -> str:
+        return cls._generate("PHM")

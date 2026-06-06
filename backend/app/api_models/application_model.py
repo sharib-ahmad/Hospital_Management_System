@@ -61,6 +61,14 @@ class ApplicationModels:
             'shift': fields.String(required=True)
         })
 
+        self.pharmacist_create = api.model('PharmacistApplicationCreate', {
+            **self.base_application_fields,
+            'experience_years': fields.Integer(required=True),
+            'license_number': fields.String(required=True),
+            'department_id': fields.String(required=True),
+            'shift': fields.String(required=True)
+        })
+
         # --- OUTPUT MODELS ---
 
         self.application_base_output = api.model('ApplicationBaseOutput', {
@@ -93,6 +101,8 @@ class ApplicationModels:
 
         self.nurse_application_detail = api.inherit('NurseApplicationDetail', self.application_base_output, {})
 
+        self.pharmacist_application_detail = api.inherit('PharmacistApplicationDetail', self.application_base_output, {})
+
         # --- UNIFIED RESPONSE WRAPPER ---
 
         def create_unified_response(name, data_model):
@@ -106,6 +116,7 @@ class ApplicationModels:
         self.patient_response = create_unified_response('PatientApplicationResponse', self.patient_application_detail)
         self.doctor_response = create_unified_response('DoctorApplicationResponse', self.doctor_application_detail)
         self.nurse_response = create_unified_response('NurseResponse', self.nurse_application_detail)
+        self.pharmacist_response = create_unified_response('PharmacistResponse', self.pharmacist_application_detail)
 
         self.rejection_reason = api.model('RejectionReason', {
             'reason': fields.String(description='Reason for rejecting the application', required=True)

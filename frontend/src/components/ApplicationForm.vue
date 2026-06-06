@@ -5,7 +5,7 @@ import { useNotificationStore } from '../stores/notification'
 import api from '../utils/axios'
 
 interface Props {
-  role: 'patient' | 'doctor' | 'nurse'
+  role: 'patient' | 'doctor' | 'nurse' | 'pharmacist'
 }
 
 const props = defineProps<Props>()
@@ -49,7 +49,7 @@ const loadDepartments = async () => {
 }
 
 onMounted(() => {
-  if (props.role === 'doctor' || props.role === 'nurse') {
+  if (props.role === 'doctor' || props.role === 'nurse' || props.role === 'pharmacist') {
     loadDepartments()
   }
 })
@@ -61,7 +61,7 @@ const validate = () => {
   if (!form.value.emergency_contact_number)
     newErrors.emergency_contact_number = 'Emergency contact is required'
 
-  if (props.role === 'doctor' || props.role === 'nurse') {
+  if (props.role === 'doctor' || props.role === 'nurse' || props.role === 'pharmacist') {
     if (!form.value.license_number) newErrors.license_number = 'License number is required'
     if (form.value.license_number.length < 12)
       newErrors.license_number = 'License number must be at least 12 characters'
@@ -113,6 +113,14 @@ const handleSubmit = async () => {
         shift: form.value.shift,
       }
     } else if (props.role === 'nurse') {
+      payload = {
+        ...basePayload,
+        experience_years: form.value.experience_years,
+        license_number: form.value.license_number,
+        department_id: form.value.department_id,
+        shift: form.value.shift,
+      }
+    } else if (props.role === 'pharmacist') {
       payload = {
         ...basePayload,
         experience_years: form.value.experience_years,
@@ -272,7 +280,7 @@ const handleSubmit = async () => {
       </div>
     </div>
 
-    <div v-if="role === 'doctor' || role === 'nurse'" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div v-if="role === 'doctor' || role === 'nurse' || role === 'pharmacist'" class="grid grid-cols-1 md:grid-cols-2 gap-6">
       <FormField
         id="license"
         v-model="form.license_number"

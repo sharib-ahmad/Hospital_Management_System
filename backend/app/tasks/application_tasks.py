@@ -1,6 +1,6 @@
 from ..extensions import db, celery, cache
 from celery import shared_task
-from ..models import User, Application, Doctor, Nurse, Patient
+from ..models import User, Application, Doctor, Nurse, Patient, Pharmacist
 from ..utils.enum import UserRole, ApplicationStatus, Relationship
 from ..utils.codes import CodeGenerator
 from ..extensions import logger
@@ -75,6 +75,24 @@ def process_application_approval(self, application_id, approver_id=None):
             # Invalidate nurse list cache
             from ..controllers.nurse_controller import NurseController
             cache.delete_memoized(NurseController._get_nurses_internal)
+            department_cache_invalidated = True
+
+        elif application.role_applied == UserRole.PHARMACIST:
+            # Update user role
+            user.role = application.role_applied
+            new_profile = Pharmacist(
+                id=user.id,
+                pharmacist_code=CodeGenerator.generate_pharmacist_code(),
+                department_id=application.department_id,
+                experience_years=application.experience_years,
+                license_number=application.license_number,
+                shift=application.shift,
+                date_of_birth=application.date_of_birth,
+                gender=application.gender,
+                blood_group=application.blood_group,
+                emergency_contact_number=application.emergency_contact_number
+            )
+            db.session.add(new_profile)
             department_cache_invalidated = True
 
         elif application.role_applied == UserRole.PATIENT:

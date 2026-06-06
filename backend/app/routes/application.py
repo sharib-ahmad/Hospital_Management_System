@@ -51,6 +51,15 @@ class NurseApplication(Resource):
         """Create a new nurse application"""
         return ApplicationController.create_nurse_application()
 
+@application_ns.route('/pharmacist')
+class PharmacistApplication(Resource):
+    @role_required(UserRole.USER)
+    @application_ns.expect(application_models.pharmacist_create)
+    @application_ns.marshal_with(application_models.pharmacist_response, code=201)
+    def post(self):
+        """Create a new pharmacist application"""
+        return ApplicationController.create_pharmacist_application()
+
 @application_ns.route('/<int:application_id>/approve')
 class ApproveApplication(Resource):
     @role_required(UserRole.ADMIN, UserRole.DOCTOR)

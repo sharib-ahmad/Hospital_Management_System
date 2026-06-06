@@ -33,3 +33,9 @@ class NurseApplicationCreateSchema(BaseApplicationSchema):
     license_number: str = Field(...,min_length=12, max_length=20)
     department_id: str = Field(..., max_length=12)
     shift: str = Field(..., max_length=20)
+
+class PharmacistApplicationCreateSchema(BaseApplicationSchema):
+    experience_years: int = Field(..., ge=0)
+    license_number: str = Field(..., min_length=12, max_length=20)
+    department_id: str = Field(..., max_length=12)
+    shift: str = Field(..., max_length=20)

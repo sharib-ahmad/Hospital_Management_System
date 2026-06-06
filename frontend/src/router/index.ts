@@ -23,12 +23,14 @@ import RegisterPatient from '../views/RegisterPatient.vue'
 
 // MediStore Pharmacy Pages
 import MediStore from '../views/MediStore.vue'
+import MyBasket from '../views/MyBasket.vue'
 import OrderManagement from '../views/admin/OrderManagement.vue'
 import MedicineManagement from '../views/admin/MedicineManagement.vue'
 
 // Profile & Standalone Pages
 import DoctorProfile from '../views/doctor/DoctorProfile.vue'
 import NurseProfile from '../views/nurse/NurseProfile.vue'
+import PharmacistProfile from '../views/pharmacist/PharmacistProfile.vue'
 import UserAppointments from '../views/user/UserAppointments.vue'
 import UserMedicalRecords from '../views/user/UserMedicalRecords.vue'
 import PatientVitalsDetailView from '../views/PatientVitalsDetailView.vue'
@@ -119,16 +121,28 @@ const router = createRouter({
       meta: { requiresAuth: true, role: 'user' },
     },
     {
-      path: '/admin/orders',
-      name: 'admin-orders',
-      component: OrderManagement,
-      meta: { requiresAuth: true, role: 'admin' },
+      path: '/store/basket',
+      name: 'my-basket',
+      component: MyBasket,
+      meta: { requiresAuth: true, role: 'user' },
     },
     {
-      path: '/admin/medicines',
-      name: 'admin-medicines',
+      path: '/pharmacist/orders',
+      name: 'pharmacist-orders',
+      component: OrderManagement,
+      meta: { requiresAuth: true, role: 'pharmacist' },
+    },
+    {
+      path: '/pharmacist/medicines',
+      name: 'pharmacist-medicines',
       component: MedicineManagement,
-      meta: { requiresAuth: true, role: 'admin' },
+      meta: { requiresAuth: true, role: 'pharmacist' },
+    },
+    {
+      path: '/pharmacist/profile',
+      name: 'pharmacist-profile',
+      component: PharmacistProfile,
+      meta: { requiresAuth: true, role: 'pharmacist' },
     },
     {
       path: '/doctor/profile',

@@ -20,10 +20,28 @@ class MedicineList(Resource):
     @medistore_ns.doc('create_medicine', security='Bearer Auth')
     @medistore_ns.expect(medistore_models.medicine_create)
     @medistore_ns.marshal_with(medistore_models.medicine_response)
-    @role_required(UserRole.ADMIN)
+    @role_required(UserRole.PHARMACIST)
     def post(self):
-        """Add a new medicine to inventory (Admin only)"""
+        """Add a new medicine to inventory (Pharmacist only)"""
         return PharmacyController.create_medicine()
+
+@medistore_ns.route('/medicines/<string:medicine_id>')
+@medistore_ns.param('medicine_id', 'The medicine ID')
+class MedicineDetail(Resource):
+    @medistore_ns.doc('update_medicine', security='Bearer Auth')
+    @medistore_ns.expect(medistore_models.medicine_create)
+    @medistore_ns.marshal_with(medistore_models.medicine_response)
+    @role_required(UserRole.PHARMACIST)
+    def put(self, medicine_id):
+        """Update a medicine (Pharmacist only)"""
+        return PharmacyController.update_medicine(medicine_id)
+
+    @medistore_ns.doc('delete_medicine', security='Bearer Auth')
+    @medistore_ns.marshal_with(medistore_models.generic_response)
+    @role_required(UserRole.PHARMACIST)
+    def delete(self, medicine_id):
+        """Delete a medicine (Pharmacist only)"""
+        return PharmacyController.delete_medicine(medicine_id)
 
 @medistore_ns.route('/orders/my')
 class MyOrderList(Resource):
@@ -38,9 +56,9 @@ class MyOrderList(Resource):
 class AllOrderList(Resource):
     @medistore_ns.doc('list_all_orders', security='Bearer Auth')
     @medistore_ns.marshal_with(medistore_models.order_list_response)
-    @role_required(UserRole.ADMIN)
+    @role_required(UserRole.PHARMACIST)
     def get(self):
-        """List all pharmacy orders (Admin only)"""
+        """List all pharmacy orders (Pharmacist only)"""
         return PharmacyController.get_all_orders()
 
 @medistore_ns.route('/orders')
@@ -59,7 +77,7 @@ class OrderStatusUpdate(Resource):
     @medistore_ns.doc('update_order_status', security='Bearer Auth')
     @medistore_ns.expect(medistore_models.order_status_update)
     @medistore_ns.marshal_with(medistore_models.order_response)
-    @role_required(UserRole.ADMIN)
+    @role_required(UserRole.PHARMACIST)
     def put(self, order_id):
-        """Update a pharmacy order's processing/delivery status (Admin only)"""
+        """Update a pharmacy order's processing/delivery status (Pharmacist only)"""
         return PharmacyController.update_order_status(order_id)

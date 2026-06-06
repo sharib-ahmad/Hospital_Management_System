@@ -1,31 +1,24 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
-import { useRouter } from 'vue-router'
-import PortalBase from './portals/PortalBase.vue'
+import { ref, onMounted, computed, watch } from 'vue'
+import { useRouter, RouterLink } from 'vue-router'
+import DashboardLayout from '../layouts/DashboardLayout.vue'
 import api from '../utils/axios'
 import { useNotificationStore } from '../stores/notification'
 
+import { useCartStore } from '../stores/cart'
+
 const router = useRouter()
 const notification = useNotificationStore()
+const cartStore = useCartStore()
 
 // State
 const medicines = ref<any[]>([])
 const myPatients = ref<any[]>([])
 const myOrders = ref<any[]>([])
 const isLoading = ref(true)
-const isSubmitting = ref(false)
 const searchQuery = ref('')
 const selectedCategory = ref('All')
 const activeViewTab = ref('browse') // 'browse' or 'orders'
-
-// Shopping Cart (local storage/in-memory)
-const cart = ref<Array<{ medicine: any; quantity: number }>>([])
-const showCartDrawer = ref(false)
-
-// Checkout Form
-const selectedPatientId = ref('')
-const shippingAddress = ref('')
-const phone_number = ref('')
 
 const categories = [
   'All',
@@ -52,7 +45,6 @@ const stats = ref([
   },
 ])
 
-// Load Data
 const loadData = async () => {
   isLoading.value = true
   try {
@@ -74,7 +66,6 @@ const loadData = async () => {
   }
 }
 
-// Filter Medicines
 const filteredMedicines = computed(() => {
   return medicines.value.filter((med) => {
     const matchesSearch =
@@ -85,88 +76,6 @@ const filteredMedicines = computed(() => {
     return matchesSearch && matchesCategory
   })
 })
-
-// Cart operations
-const addToCart = (medicine: any) => {
-  if (medicine.stock <= 0) {
-    notification.error('Medicine is currently out of stock')
-    return
-  }
-  const existing = cart.value.find((item) => item.medicine.id === medicine.id)
-  if (existing) {
-    if (existing.quantity >= medicine.stock) {
-      notification.error(`Cannot add more. Only ${medicine.stock} units in stock.`)
-      return
-    }
-    existing.quantity++
-  } else {
-    cart.value.push({ medicine, quantity: 1 })
-  }
-  notification.success(`${medicine.name} added to cart`)
-}
-
-const updateCartQuantity = (medicineId: string, quantity: number, maxStock: number) => {
-  const existing = cart.value.find((item) => item.medicine.id === medicineId)
-  if (existing) {
-    if (quantity > maxStock) {
-      notification.error(`Only ${maxStock} units available`)
-      existing.quantity = maxStock
-      return
-    }
-    if (quantity <= 0) {
-      cart.value = cart.value.filter((item) => item.medicine.id !== medicineId)
-    } else {
-      existing.quantity = quantity
-    }
-  }
-}
-
-const removeFromCart = (medicineId: string) => {
-  cart.value = cart.value.filter((item) => item.medicine.id !== medicineId)
-}
-
-const cartTotal = computed(() => {
-  return cart.value.reduce((sum, item) => sum + item.medicine.price * item.quantity, 0)
-})
-
-// Checkout Order
-const handleCheckout = async () => {
-  if (cart.value.length === 0) {
-    notification.error('Your cart is empty')
-    return
-  }
-  if (!shippingAddress.value || !phone_number.value) {
-    notification.error('Please fill in your shipping details')
-    return
-  }
-
-  isSubmitting.value = true
-  try {
-    const payload = {
-      patient_id: selectedPatientId.value || null,
-      shipping_address: shippingAddress.value,
-      phone_number: phone_number.value,
-      items: cart.value.map((item) => ({
-        medicine_id: item.medicine.id,
-        quantity: item.quantity,
-      })),
-    }
-    await api.post('/medistore/orders', payload)
-    notification.success('Pharmacy order checked out successfully')
-    cart.value = []
-    shippingAddress.value = ''
-    phone_number.value = ''
-    selectedPatientId.value = ''
-    showCartDrawer.value = false
-    activeViewTab.value = 'orders'
-    await loadData()
-  } catch (error: any) {
-    const message = error.response?.data?.message || 'Checkout failed'
-    notification.error(message)
-  } finally {
-    isSubmitting.value = false
-  }
-}
 
 const formatDate = (dateString: string) => {
   return new Date(dateString).toLocaleDateString('en-US', {
@@ -179,17 +88,17 @@ const formatDate = (dateString: string) => {
 const getOrderStatusClass = (status: string) => {
   switch (status) {
     case 'pending':
-      return 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
+      return 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 border border-amber-200 dark:border-amber-500/20'
     case 'processing':
-      return 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
+      return 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 border border-blue-200 dark:border-blue-500/20'
     case 'shipped':
-      return 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400'
+      return 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-500/20'
     case 'delivered':
-      return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
+      return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/20'
     case 'cancelled':
-      return 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400'
+      return 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400 border border-rose-200 dark:border-rose-500/20'
     default:
-      return 'bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-400'
+      return 'bg-gray-100 text-gray-700 dark:bg-slate-800 dark:text-slate-400 border border-gray-200 dark:border-slate-700'
   }
 }
 
@@ -197,9 +106,84 @@ onMounted(loadData)
 </script>
 
 <template>
-  <PortalBase role="user" title="MediStore Pharmacy" :stats="stats">
-    <!-- Main catalogue browsing area -->
-    <template #main>
+  <DashboardLayout>
+    <!-- Page Header -->
+    <div class="mb-12 flex flex-col md:flex-row md:items-center justify-between gap-6">
+      <div>
+        <div class="flex items-center gap-3 mb-2">
+          <span
+            class="px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 text-[10px] font-black uppercase tracking-widest border border-emerald-100 dark:border-emerald-500/20"
+          >
+            User Portal
+          </span>
+        </div>
+        <h1 class="text-4xl font-black text-gray-900 dark:text-white tracking-tight">
+          MediStore Pharmacy
+        </h1>
+        <p class="text-gray-500 dark:text-slate-400 mt-2 font-medium">
+          Browse medicines, search catalog, and track your pharmacy orders.
+        </p>
+      </div>
+
+      <!-- Go to Basket Button -->
+      <RouterLink
+        to="/store/basket"
+        class="px-8 py-4 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-black rounded-2xl shadow-xl shadow-emerald-500/25 hover:-translate-y-0.5 transition-all uppercase tracking-widest text-xs flex items-center justify-center gap-3 shrink-0"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="h-5 w-5"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          stroke-width="2.5"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"
+          />
+        </svg>
+        View Basket ({{ cartStore.cartCount }})
+      </RouterLink>
+    </div>
+
+    <!-- Stats Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
+      <div
+        v-for="stat in stats"
+        :key="stat.name"
+        class="card-animate group bg-white dark:bg-slate-900 p-8 rounded-[2.5rem] border border-gray-100 dark:border-slate-800 shadow-premium hover:shadow-premium-xl transition-all duration-500 hover:-translate-y-1"
+      >
+        <div class="flex items-start justify-between mb-6">
+          <div
+            :class="`w-14 h-14 rounded-2xl flex items-center justify-center ${stat.color} shadow-lg shadow-current/20 group-hover:rotate-6 transition-transform`"
+          >
+            <svg class="w-7 h-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2.5"
+                :d="stat.icon"
+              />
+            </svg>
+          </div>
+        </div>
+        <div>
+          <p
+            class="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-1"
+          >
+            {{ stat.name }}
+          </p>
+          <p class="text-3xl font-black text-gray-900 dark:text-white tracking-tighter">
+            {{ stat.value }}
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Section -->
+    <div class="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-gray-100 dark:border-slate-800 p-10 min-h-[500px] shadow-premium flex flex-col">
       <!-- Navigation Tab Bar -->
       <div class="flex items-center gap-6 border-b border-gray-100 dark:border-slate-800 mb-8 pb-4">
         <button
@@ -224,7 +208,7 @@ onMounted(loadData)
         </button>
       </div>
 
-      <div v-if="isLoading" class="flex justify-center py-20">
+      <div v-if="isLoading" class="flex justify-center py-20 flex-1 items-center">
         <div
           class="animate-spin rounded-full h-10 w-10 border-[3px] border-emerald-600 border-t-transparent"
         ></div>
@@ -233,8 +217,8 @@ onMounted(loadData)
       <!-- Tab Content: Browse medicines -->
       <div v-else-if="activeViewTab === 'browse'" class="space-y-8">
         <!-- Search and Filter categories -->
-        <div class="flex flex-col md:flex-row gap-4 items-center justify-between">
-          <div class="relative w-full md:max-w-sm group">
+        <div class="flex flex-col lg:flex-row gap-4 items-center justify-between">
+          <div class="relative w-full lg:max-w-md group">
             <div
               class="absolute inset-y-0 left-4 flex items-center pointer-events-none text-gray-400 group-focus-within:text-emerald-500 transition-colors"
             >
@@ -257,12 +241,12 @@ onMounted(loadData)
               v-model="searchQuery"
               type="text"
               placeholder="Search medicine catalog..."
-              class="w-full pl-12 pr-4 py-3 bg-gray-50 dark:bg-slate-800 border border-gray-100 dark:border-slate-800 rounded-2xl text-sm outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500/40 text-gray-900 dark:text-white transition-all"
+              class="w-full pl-12 pr-4 py-3.5 bg-gray-50 dark:bg-slate-800 border border-gray-100 dark:border-slate-800/80 rounded-2xl text-sm outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500/40 text-gray-900 dark:text-white transition-all"
             />
           </div>
 
           <!-- Category Pills -->
-          <div class="flex items-center gap-2 overflow-x-auto w-full md:w-auto pb-2 scrollbar-none">
+          <div class="flex items-center gap-2 overflow-x-auto w-full lg:w-auto pb-2 scrollbar-none">
             <button
               v-for="cat in categories"
               :key="cat"
@@ -288,11 +272,11 @@ onMounted(loadData)
         </div>
 
         <!-- Catalogue Grid -->
-        <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div v-else class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6">
           <div
             v-for="med in filteredMedicines"
             :key="med.id"
-            class="glass p-6 rounded-3xl border border-white/40 dark:border-white/5 shadow-premium flex flex-col justify-between group hover:border-emerald-500/20 transition-all duration-300"
+            class="glass p-6 rounded-3xl border border-gray-100 dark:border-slate-800 shadow-premium flex flex-col justify-between group hover:border-emerald-500/20 transition-all duration-300"
           >
             <div>
               <div class="flex items-start justify-between mb-4">
@@ -302,32 +286,35 @@ onMounted(loadData)
                   >
                     {{ med.category }}
                   </span>
-                  <h4 class="text-lg font-black text-gray-900 dark:text-white mt-2">
+                  <h4 class="text-lg font-black text-gray-900 dark:text-white mt-2 line-clamp-1">
                     {{ med.name }}
                   </h4>
                 </div>
-                <div class="text-right">
-                  <p
-                    class="text-xl font-black text-emerald-600 dark:text-emerald-400 tracking-tight"
-                  >
+              </div>
+              <p class="text-xs text-gray-500 dark:text-slate-400 font-medium leading-relaxed mb-6 line-clamp-3 min-h-[4.5rem]">
+                {{ med.description || 'No detailed instructions provided.' }}
+              </p>
+              
+              <div class="flex items-baseline gap-2 mb-6 justify-between">
+                <div>
+                  <span class="text-[9px] font-black text-gray-400 uppercase tracking-widest block mb-0.5">Price</span>
+                  <p class="text-xl font-black text-emerald-600 dark:text-emerald-400 tracking-tight">
                     ${{ Number(med.price).toFixed(2) }}
                   </p>
-                  <p
-                    :class="`text-[9px] font-black uppercase tracking-widest mt-1 ${med.stock > 0 ? 'text-gray-400' : 'text-rose-500'}`"
-                  >
+                </div>
+                <div class="text-right">
+                  <span class="text-[9px] font-black text-gray-400 uppercase tracking-widest block mb-0.5">Availability</span>
+                  <p :class="`text-[10px] font-black uppercase tracking-widest ${med.stock > 0 ? 'text-teal-600 dark:text-teal-400' : 'text-rose-500'}`">
                     {{ med.stock > 0 ? `Stock: ${med.stock}` : 'Out of stock' }}
                   </p>
                 </div>
               </div>
-              <p class="text-xs text-gray-500 dark:text-slate-400 font-medium leading-relaxed mb-6">
-                {{ med.description || 'No detailed instructions provided.' }}
-              </p>
             </div>
 
             <button
-              @click="addToCart(med)"
+              @click="cartStore.addToCart(med)"
               :disabled="med.stock <= 0"
-              class="w-full py-3 bg-emerald-600 text-white text-xs font-black uppercase tracking-widest rounded-xl hover:bg-emerald-700 shadow-md shadow-emerald-500/10 transition-all disabled:opacity-50 disabled:pointer-events-none flex items-center justify-center gap-2"
+              class="w-full py-3 bg-emerald-600 text-white text-xs font-black uppercase tracking-widest rounded-xl hover:bg-emerald-700 shadow-md shadow-emerald-500/10 transition-all disabled:opacity-50 disabled:pointer-events-none flex items-center justify-center gap-2 active:scale-95"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -362,56 +349,58 @@ onMounted(loadData)
           </p>
         </div>
 
-        <div v-else class="space-y-6">
+        <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div
             v-for="order in myOrders"
             :key="order.id"
-            class="glass p-6 rounded-3xl border border-white/40 dark:border-white/5 shadow-premium"
+            class="glass p-6 rounded-3xl border border-gray-100 dark:border-slate-800 shadow-premium flex flex-col justify-between"
           >
-            <div
-              class="flex items-start justify-between flex-wrap gap-4 border-b border-gray-100 dark:border-slate-800 pb-4 mb-4"
-            >
-              <div>
-                <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">
-                  Order Reference
-                </p>
-                <h4 class="text-sm font-black text-gray-900 dark:text-white mt-0.5">
-                  {{ order.id.slice(0, 8) }}...
-                </h4>
-              </div>
-              <div>
-                <p
-                  class="text-[10px] font-black text-gray-400 uppercase tracking-widest text-right"
-                >
-                  Date Placed
-                </p>
-                <p class="text-xs text-gray-700 dark:text-slate-300 font-bold mt-0.5 text-right">
-                  {{ formatDate(order.order_date) }}
-                </p>
-              </div>
-              <span
-                :class="`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${getOrderStatusClass(order.status)}`"
-              >
-                {{ order.status }}
-              </span>
-            </div>
-
-            <!-- Items -->
-            <div class="space-y-3 mb-6">
+            <div>
               <div
-                v-for="item in order.items"
-                :key="item.id"
-                class="flex items-center justify-between text-xs"
+                class="flex items-start justify-between flex-wrap gap-4 border-b border-gray-100 dark:border-slate-800 pb-4 mb-4"
               >
-                <p class="text-gray-500 dark:text-slate-400 font-medium">
-                  {{ item.medicine_name }}
-                  <span class="font-black text-gray-900 dark:text-white ml-2"
-                    >x{{ item.quantity }}</span
+                <div>
+                  <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                    Order Reference
+                  </p>
+                  <h4 class="text-sm font-black text-gray-900 dark:text-white mt-0.5 font-mono">
+                    {{ order.id.slice(0, 8) }}...
+                  </h4>
+                </div>
+                <div>
+                  <p
+                    class="text-[10px] font-black text-gray-400 uppercase tracking-widest text-right"
                   >
-                </p>
-                <p class="font-black text-gray-950 dark:text-white">
-                  ${{ (item.price * item.quantity).toFixed(2) }}
-                </p>
+                    Date Placed
+                  </p>
+                  <p class="text-xs text-gray-700 dark:text-slate-300 font-bold mt-0.5 text-right">
+                    {{ formatDate(order.order_date) }}
+                  </p>
+                </div>
+                <span
+                  :class="`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${getOrderStatusClass(order.status)}`"
+                >
+                  {{ order.status }}
+                </span>
+              </div>
+
+              <!-- Items -->
+              <div class="space-y-3 mb-6">
+                <div
+                  v-for="item in order.items"
+                  :key="item.id"
+                  class="flex items-center justify-between text-xs"
+                >
+                  <p class="text-gray-500 dark:text-slate-400 font-medium">
+                    {{ item.medicine_name }}
+                    <span class="font-black text-gray-900 dark:text-white ml-2"
+                      >x{{ item.quantity }}</span
+                    >
+                  </p>
+                  <p class="font-black text-gray-950 dark:text-white">
+                    ${{ (item.price * item.quantity).toFixed(2) }}
+                  </p>
+                </div>
               </div>
             </div>
 
@@ -440,151 +429,6 @@ onMounted(loadData)
           </div>
         </div>
       </div>
-    </template>
-
-    <!-- Slide-Out Shopping Basket & Checkout Form in Sidebar Slot -->
-    <template #sidebar>
-      <div
-        class="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-gray-100 dark:border-slate-800 p-8 shadow-premium flex flex-col justify-between"
-      >
-        <div>
-          <div
-            class="flex items-center justify-between mb-8 pb-4 border-b border-gray-100 dark:border-slate-800"
-          >
-            <h3
-              class="text-lg font-black text-gray-900 dark:text-white uppercase tracking-widest flex items-center gap-2"
-            >
-              🛒 Basket
-            </h3>
-            <span
-              class="px-2.5 py-0.5 bg-emerald-500 text-white rounded-full text-[10px] font-bold"
-            >
-              {{ cart.reduce((sum, item) => sum + item.quantity, 0) }}
-            </span>
-          </div>
-
-          <div v-if="cart.length === 0" class="py-12 text-center text-gray-400 font-medium">
-            <p>Your basket is empty.</p>
-            <p class="text-[10px] uppercase text-gray-300 mt-2">
-              Add medicines from the catalog list
-            </p>
-          </div>
-
-          <div v-else class="space-y-6 mb-8 max-h-[300px] overflow-y-auto pr-1">
-            <div
-              v-for="item in cart"
-              :key="item.medicine.id"
-              class="flex items-center justify-between border-b border-gray-100 dark:border-slate-800 pb-4"
-            >
-              <div class="flex-1 min-w-0 pr-4">
-                <h5 class="text-xs font-black text-gray-900 dark:text-white truncate">
-                  {{ item.medicine.name }}
-                </h5>
-                <p class="text-[10px] text-emerald-600 font-bold mt-0.5">
-                  ${{ item.medicine.price.toFixed(2) }} each
-                </p>
-              </div>
-              <div class="flex items-center gap-2">
-                <button
-                  @click="
-                    updateCartQuantity(item.medicine.id, item.quantity - 1, item.medicine.stock)
-                  "
-                  class="w-6 h-6 rounded bg-gray-55 dark:bg-slate-800 flex items-center justify-center font-bold text-gray-500 hover:bg-gray-100 hover:text-gray-700 text-xs transition-colors"
-                >
-                  -
-                </button>
-                <span class="text-xs font-black text-gray-900 dark:text-white w-4 text-center">{{
-                  item.quantity
-                }}</span>
-                <button
-                  @click="
-                    updateCartQuantity(item.medicine.id, item.quantity + 1, item.medicine.stock)
-                  "
-                  class="w-6 h-6 rounded bg-gray-55 dark:bg-slate-800 flex items-center justify-center font-bold text-gray-500 hover:bg-gray-100 hover:text-gray-700 text-xs transition-colors"
-                >
-                  +
-                </button>
-                <button
-                  @click="removeFromCart(item.medicine.id)"
-                  class="text-rose-500 hover:text-rose-700 text-xs font-bold ml-2"
-                >
-                  ×
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div
-          v-if="cart.length > 0"
-          class="pt-4 border-t border-gray-100 dark:border-slate-800 space-y-6"
-        >
-          <div class="flex items-center justify-between text-sm mb-4">
-            <span class="font-black text-gray-400 uppercase tracking-wider">Subtotal</span>
-            <span class="text-2xl font-black text-emerald-600 tracking-tight"
-              >${{ cartTotal.toFixed(2) }}</span
-            >
-          </div>
-
-          <!-- Checkout Fields -->
-          <div class="space-y-4 pt-4 border-t border-gray-100 dark:border-slate-800">
-            <div>
-              <label
-                class="block text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1.5"
-                >For Patient (Optional)</label
-              >
-              <select
-                v-model="selectedPatientId"
-                class="w-full px-3 py-2 bg-gray-50 dark:bg-slate-800 border border-gray-100 dark:border-slate-800 rounded-xl text-xs outline-none text-gray-900 dark:text-white"
-              >
-                <option value="">Order for General Use</option>
-                <option v-for="pat in myPatients" :key="pat.id" :value="pat.id">
-                  {{ pat.full_name }} ({{ pat.relation }})
-                </option>
-              </select>
-            </div>
-
-            <div>
-              <label
-                class="block text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1.5"
-                >Contact Phone</label
-              >
-              <input
-                v-model="phone_number"
-                type="text"
-                placeholder="e.g. +1-555-1234"
-                class="w-full px-3 py-2 bg-gray-50 dark:bg-slate-800 border border-gray-100 dark:border-slate-800 rounded-xl text-xs outline-none text-gray-900 dark:text-white"
-              />
-            </div>
-
-            <div>
-              <label
-                class="block text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1.5"
-                >Shipping Address</label
-              >
-              <input
-                v-model="shippingAddress"
-                type="text"
-                placeholder="Street address, City, Pincode"
-                class="w-full px-3 py-2 bg-gray-50 dark:bg-slate-800 border border-gray-100 dark:border-slate-800 rounded-xl text-xs outline-none text-gray-900 dark:text-white"
-              />
-            </div>
-          </div>
-
-          <button
-            @click="handleCheckout"
-            :disabled="isSubmitting"
-            class="w-full py-4 bg-emerald-600 text-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-lg shadow-emerald-500/10 hover:bg-emerald-700 transition-all flex items-center justify-center gap-2"
-          >
-            <span v-if="isSubmitting">Placing Order...</span>
-            <span v-else>Confirm Checkout</span>
-          </button>
-        </div>
-      </div>
-    </template>
-  </PortalBase>
+    </div>
+  </DashboardLayout>
 </template>
-
-<style scoped>
-/* No additional styles needed; tailwind class handles transitions */
-</style>

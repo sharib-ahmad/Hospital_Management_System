@@ -9,3 +9,4 @@ from .nurse import Nurse
 from .applications import Application
 from .patient_vitals import PatientVital
 from .medistore import Medicine, PharmacyOrder, PharmacyOrderItem, PharmacyOrderStatus
+from .pharmacist import Pharmacist

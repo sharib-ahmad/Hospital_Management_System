@@ -72,3 +72,23 @@ class PharmacyController:
                 errors=e.errors(),
                 status_code=400
             )
+
+    @staticmethod
+    def update_medicine(medicine_id):
+        data, error = validate_json()
+        if error:
+            return error
+        try:
+            validated_data = MedicineCreateSchema(**data)
+            return PharmacyService.update_medicine(medicine_id, validated_data)
+        except ValidationError as e:
+            return handle_response(
+                success=False,
+                message="Validation Error",
+                errors=e.errors(),
+                status_code=400
+            )
+
+    @staticmethod
+    def delete_medicine(medicine_id):
+        return PharmacyService.delete_medicine(medicine_id)

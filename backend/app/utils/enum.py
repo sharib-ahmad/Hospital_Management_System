@@ -7,6 +7,7 @@ class UserRole(enum.Enum):
     DOCTOR = "doctor"
     NURSE = "nurse"
     USER = "user"
+    PHARMACIST = "pharmacist"
     
 class AppointmentStatus(enum.Enum):
     PENDING = 'pending'

@@ -108,3 +108,29 @@ class PharmacyService:
         order.status = status
         db.session.commit()
         return handle_response(success=True, data=order, message="Order status updated successfully")
+
+    @staticmethod
+    def update_medicine(medicine_id, data):
+        medicine = Medicine.query.get(medicine_id)
+        if not medicine:
+            return handle_response(success=False, message="Medicine not found", status_code=404)
+
+        medicine.name = data.name
+        medicine.description = data.description
+        medicine.price = Decimal(data.price)
+        medicine.stock = data.stock
+        medicine.category = data.category
+        medicine.manufacturer = data.manufacturer
+
+        db.session.commit()
+        return handle_response(success=True, data=medicine, message="Medicine updated successfully")
+
+    @staticmethod
+    def delete_medicine(medicine_id):
+        medicine = Medicine.query.get(medicine_id)
+        if not medicine:
+            return handle_response(success=False, message="Medicine not found", status_code=404)
+
+        db.session.delete(medicine)
+        db.session.commit()
+        return handle_response(success=True, message="Medicine deleted successfully")

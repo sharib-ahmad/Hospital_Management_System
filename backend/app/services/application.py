@@ -104,6 +104,27 @@ class ApplicationService:
         return handle_response(success=True, data=application, message="Nurse application created successfully", status_code=201)
 
     @staticmethod
+    def create_pharmacist_application(validated_data):
+        user = User.query.get(current_user.id)
+        existing_application = Application.query.filter_by(user_id=user.id, role_applied=UserRole.PHARMACIST).first()
+        if existing_application and existing_application.status == ApplicationStatus.PENDING:
+            return handle_response(success=False, message="You have already applied for pharmacist role", status_code=400)
+
+        # Validate department
+        department = Department.query.get(validated_data.department_id)
+        if not department:
+            return handle_response(success=False, message=f"Department with ID {validated_data.department_id} does not exist", status_code=404)
+
+        application = Application(
+            user_id=user.id,
+            role_applied=UserRole.PHARMACIST,
+            **validated_data.dict()
+        )
+        db.session.add(application)
+        db.session.commit()
+        return handle_response(success=True, data=application, message="Pharmacist application created successfully", status_code=201)
+
+    @staticmethod
     def approve_application(application_id):
         user = User.query.get(current_user.id)
         application = Application.query.get(application_id)
@@ -139,6 +160,10 @@ class ApplicationService:
                         status_code=400
                     )
                 can_approve = True
+
+        elif application.role_applied == UserRole.PHARMACIST:
+            if user.role == UserRole.ADMIN:
+                can_approve = True
         
         elif application.role_applied == UserRole.PATIENT:
             if user.role == UserRole.DOCTOR:
@@ -170,6 +195,9 @@ class ApplicationService:
                 can_reject = True
         elif application.role_applied == UserRole.NURSE:
             if user.role in [UserRole.ADMIN, UserRole.DOCTOR]:
+                can_reject = True
+        elif application.role_applied == UserRole.PHARMACIST:
+            if user.role == UserRole.ADMIN:
                 can_reject = True
         elif application.role_applied == UserRole.PATIENT:
             if user.role == UserRole.DOCTOR:

@@ -3,7 +3,8 @@ from ..services.application import ApplicationService
 from ..schemas.application import (
     PatientApplicationCreateSchema, 
     DoctorApplicationCreateSchema, 
-    NurseApplicationCreateSchema
+    NurseApplicationCreateSchema,
+    PharmacistApplicationCreateSchema
 )
 from pydantic import ValidationError
 from ..utils.response import handle_response
@@ -59,6 +60,22 @@ class ApplicationController:
         try:
             validated_data = NurseApplicationCreateSchema(**data)
             return ApplicationService.create_nurse_application(validated_data)
+        except ValidationError as e:
+            return handle_response(
+                success=False,
+                message="Validation Error",
+                errors=e.errors(),
+                status_code=400
+            )
+
+    @staticmethod
+    def create_pharmacist_application():
+        data, error = validate_json()
+        if error:
+            return error
+        try:
+            validated_data = PharmacistApplicationCreateSchema(**data)
+            return ApplicationService.create_pharmacist_application(validated_data)
         except ValidationError as e:
             return handle_response(
                 success=False,

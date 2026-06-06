@@ -226,9 +226,9 @@ const confirmDelete = async () => {
             Medicine Management
           </h1>
           <span
-            class="px-3 py-1 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-[10px] font-black uppercase tracking-widest rounded-full border border-emerald-200/50 dark:border-emerald-500/20"
+            class="px-3 py-1 bg-violet-50 dark:bg-violet-900/30 text-violet-700 dark:text-violet-400 text-[10px] font-black uppercase tracking-widest rounded-full border border-violet-200/50 dark:border-violet-500/20"
           >
-            MediStore Admin
+            Pharmacist Portal
           </span>
         </div>
         <p class="text-gray-500 dark:text-slate-400 font-medium">

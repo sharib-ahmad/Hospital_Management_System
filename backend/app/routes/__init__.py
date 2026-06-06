@@ -8,6 +8,7 @@ from .appointment import appointment_ns
 from .medistore import medistore_ns
 from .medical_records import medical_records_ns
 from .patient_vitals import vitals_ns
+from .pharmacist import pharmacist_ns
 
 def register_routes(api):
     """
@@ -18,6 +19,7 @@ def register_routes(api):
     api.add_namespace(application_ns, path='/applications')
     api.add_namespace(doctor_ns, path='/doctors')
     api.add_namespace(nurse_ns, path='/nurses')
+    api.add_namespace(pharmacist_ns, path='/pharmacists')
     api.add_namespace(patient_ns, path='/patients')
     api.add_namespace(appointment_ns, path='/appointments')
     api.add_namespace(medistore_ns, path='/medistore')

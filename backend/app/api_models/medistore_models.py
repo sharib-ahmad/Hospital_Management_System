@@ -92,3 +92,9 @@ class MediStoreModels:
             'message': fields.String,
             'data': fields.List(fields.Nested(self.order))
         })
+
+        self.generic_response = api.model('PharmacyGenericResponse', {
+            'success': fields.Boolean,
+            'message': fields.String,
+            'data': fields.Raw
+        })
