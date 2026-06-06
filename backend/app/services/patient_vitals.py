@@ -135,6 +135,10 @@ class PatientVitalsService:
         if role == UserRole.DOCTOR:
             if str(patient.assigned_doctor_id) != str(current_user.id):
                 return handle_response(success=False, message="Unauthorized", status_code=403)
+        # Patients/Users can only view their own registered patients
+        elif role == UserRole.USER:
+            if str(patient.user_id) != str(current_user.id):
+                return handle_response(success=False, message="Unauthorized", status_code=403)
         elif role not in (UserRole.ADMIN, UserRole.NURSE):
             return handle_response(success=False, message="Unauthorized", status_code=403)
 
