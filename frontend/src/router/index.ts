@@ -127,6 +127,12 @@ const router = createRouter({
       meta: { requiresAuth: true, role: 'user' },
     },
     {
+      path: '/pharmacist',
+      name: 'pharmacist-portal',
+      redirect: '/pharmacist/medicines',
+      meta: { requiresAuth: true, role: 'pharmacist' },
+    },
+    {
       path: '/pharmacist/orders',
       name: 'pharmacist-orders',
       component: OrderManagement,
