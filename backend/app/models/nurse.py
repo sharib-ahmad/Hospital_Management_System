@@ -18,6 +18,7 @@ class Nurse(db.Model):
     experience_years = db.Column(db.Integer, default=0)
     license_number = db.Column(db.String(20), unique=True, nullable=False)
     is_available = db.Column(db.Boolean, default=True)  # Default to available
+    availability = db.Column(db.JSON, nullable=True)
     
     __table_args__ = (
         db.CheckConstraint('experience_years >= 0', name='check_nurse_experience_years_non_negative'),

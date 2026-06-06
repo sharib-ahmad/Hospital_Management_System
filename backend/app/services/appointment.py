@@ -103,6 +103,21 @@ class AppointmentService:
             kolkata_tz = ZoneInfo("Asia/Kolkata")
             parsed_date = parsed_date.astimezone(kolkata_tz).replace(tzinfo=None)
 
+        # Validate that the selected date and slot are available
+        target_date_str = parsed_date.strftime("%Y-%m-%d")
+        slot_time_str = parsed_date.strftime("%H:%M")
+
+        slots_resp_data, slots_status = AppointmentService.get_available_slots(target_date_str, appointment_type, doctor_id)
+        if slots_status != 200:
+            return slots_resp_data, slots_status
+        
+        available_slots = slots_resp_data.get('data', [])
+        if slot_time_str not in available_slots:
+            return handle_response(
+                success=False, 
+                message=f"The selected slot {slot_time_str} is not available on {target_date_str}", 
+                status_code=400
+            )
 
         appointment = Appointment(
             patient_id=patient_id,
@@ -176,3 +191,123 @@ class AppointmentService:
                 return handle_response(success=False, message="Unauthorized", status_code=403)
             
         return handle_response(success=True, data=appointment, message="Appointment retrieved successfully")
+
+    @staticmethod
+    def get_available_slots(date_str, appt_type, doctor_id=None):
+        if not date_str or not appt_type:
+            return handle_response(success=False, message="Date and appointment_type are required", status_code=400)
+
+        from datetime import datetime
+        from zoneinfo import ZoneInfo
+        import datetime as dt_module
+
+        try:
+            target_date = datetime.strptime(date_str, "%Y-%m-%d").date()
+        except ValueError:
+            return handle_response(success=False, message="Invalid date format. Use YYYY-MM-DD", status_code=400)
+
+        kolkata_tz = ZoneInfo("Asia/Kolkata")
+        now_local = datetime.now(kolkata_tz)
+        current_date_local = now_local.date()
+        current_time_local = now_local.time()
+
+        # Reject past dates
+        if target_date < current_date_local:
+            return handle_response(success=True, message="Date is in the past", data=[])
+
+        day_of_week = target_date.strftime("%A")
+
+        def generate_slots(start_str, end_str):
+            slots = []
+            try:
+                start_t = datetime.strptime(start_str, "%H:%M")
+                end_t = datetime.strptime(end_str, "%H:%M")
+                curr = start_t
+                while curr + dt_module.timedelta(minutes=30) <= end_t:
+                    slot_str = curr.strftime("%H:%M")
+                    # If target date is today, filter out slots in the past
+                    if target_date == current_date_local:
+                        slot_time = curr.time()
+                        if slot_time <= current_time_local:
+                            curr += dt_module.timedelta(minutes=30)
+                            continue
+                    slots.append(slot_str)
+                    curr += dt_module.timedelta(minutes=30)
+            except ValueError:
+                pass
+            return slots
+
+        if appt_type == 'consultation':
+            if not doctor_id:
+                return handle_response(success=False, message="Doctor ID is required for consultations", status_code=400)
+            from ..models.doctor import Doctor
+            doctor = Doctor.query.get(doctor_id)
+            if not doctor:
+                return handle_response(success=False, message="Doctor not found", status_code=404)
+
+            availability = doctor.availability or {}
+            day_intervals = availability.get(day_of_week, [])
+            
+            all_slots = []
+            for interval in day_intervals:
+                start = interval.get('start')
+                end = interval.get('end')
+                if start and end:
+                    all_slots.extend(generate_slots(start, end))
+
+            # Query existing appointments for this doctor on that specific date
+            from ..models.appointment import Appointment
+            from ..utils.enum import AppointmentStatus
+            
+            booked_appts = Appointment.query.filter(
+                Appointment.doctor_id == doctor_id,
+                db.func.date(Appointment.appointment_date) == target_date,
+                Appointment.status != AppointmentStatus.CANCELLED
+            ).all()
+
+            booked_times = {appt.appointment_date.strftime("%H:%M") for appt in booked_appts}
+            available_slots = [slot for slot in all_slots if slot not in booked_times]
+            return handle_response(success=True, message="Slots retrieved successfully", data=available_slots)
+
+        elif appt_type == 'vitals_check':
+            from ..models.nurse import Nurse
+            nurses = Nurse.query.filter_by(is_available=True).all()
+            
+            slots_capacity = {}
+            for nurse in nurses:
+                availability = nurse.availability or {}
+                day_intervals = availability.get(day_of_week, [])
+                nurse_slots = []
+                for interval in day_intervals:
+                    start = interval.get('start')
+                    end = interval.get('end')
+                    if start and end:
+                        nurse_slots.extend(generate_slots(start, end))
+                nurse_slots = list(set(nurse_slots))
+                for slot in nurse_slots:
+                    slots_capacity[slot] = slots_capacity.get(slot, 0) + 1
+
+            # Query existing vitals_check appointments on target_date
+            from ..models.appointment import Appointment
+            from ..utils.enum import AppointmentStatus
+            
+            booked_appts = Appointment.query.filter(
+                Appointment.appointment_type == 'vitals_check',
+                db.func.date(Appointment.appointment_date) == target_date,
+                Appointment.status != AppointmentStatus.CANCELLED
+            ).all()
+
+            booked_counts = {}
+            for appt in booked_appts:
+                time_str = appt.appointment_date.strftime("%H:%M")
+                booked_counts[time_str] = booked_counts.get(time_str, 0) + 1
+
+            available_slots = []
+            for slot in sorted(slots_capacity.keys()):
+                if booked_counts.get(slot, 0) < slots_capacity[slot]:
+                    available_slots.append(slot)
+
+            return handle_response(success=True, message="Slots retrieved successfully", data=available_slots)
+
+        else:
+            return handle_response(success=False, message="Invalid appointment type", status_code=400)

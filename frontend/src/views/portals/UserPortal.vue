@@ -33,6 +33,53 @@ const bookForm = ref({
 })
 const recentlyBookedId = ref<string | null>(null)
 
+// Slot-based booking state
+const bookingDate = ref('')
+const bookingSlot = ref('')
+const availableSlots = ref<string[]>([])
+const isLoadingSlots = ref(false)
+
+const minDate = computed(() => {
+  const now = new Date()
+  const offset = now.getTimezoneOffset()
+  const localNow = new Date(now.getTime() - offset * 60 * 1000)
+  return localNow.toISOString().slice(0, 10)
+})
+
+const fetchSlots = async () => {
+  const isVitalsCheck = bookForm.value.appointment_type === 'vitals_check'
+  if (!bookingDate.value || (!isVitalsCheck && !bookForm.value.doctor_id)) {
+    availableSlots.value = []
+    return
+  }
+  isLoadingSlots.value = true
+  availableSlots.value = []
+  bookingSlot.value = ''
+  try {
+    const params: Record<string, string> = {
+      date: bookingDate.value,
+      appointment_type: bookForm.value.appointment_type,
+    }
+    if (!isVitalsCheck) {
+      params.doctor_id = bookForm.value.doctor_id
+    }
+    const res = await api.get('/appointments/slots', { params })
+    availableSlots.value = res.data.data || []
+  } catch (err: any) {
+    notification.error(err.response?.data?.message || 'Failed to load available slots')
+  } finally {
+    isLoadingSlots.value = false
+  }
+}
+
+import { watch } from 'vue'
+watch(
+  [bookingDate, () => bookForm.value.doctor_id, () => bookForm.value.appointment_type],
+  () => {
+    fetchSlots()
+  }
+)
+
 // Stats
 const stats = ref([
   {
@@ -138,6 +185,9 @@ const openBookModal = () => {
     reason: '',
     appointment_type: 'consultation',
   }
+  bookingDate.value = ''
+  bookingSlot.value = ''
+  availableSlots.value = []
   showBookModal.value = true
 }
 
@@ -146,17 +196,19 @@ const handleBookAppointment = async () => {
   if (
     !bookForm.value.patient_id ||
     (!isVitalsCheck && !bookForm.value.doctor_id) ||
-    !bookForm.value.appointment_date
+    !bookingDate.value ||
+    !bookingSlot.value
   ) {
-    notification.error('Please fill all required fields')
+    notification.error('Please select a patient, date and time slot')
     return
   }
   bookingSubmitting.value = true
   try {
+    const appointmentDateStr = `${bookingDate.value}T${bookingSlot.value}:00`
     await api.post('/appointments', {
       patient_id: bookForm.value.patient_id,
       doctor_id: isVitalsCheck ? null : bookForm.value.doctor_id,
-      appointment_date: new Date(bookForm.value.appointment_date).toISOString(),
+      appointment_date: appointmentDateStr,
       reason: bookForm.value.reason,
       appointment_type: bookForm.value.appointment_type,
     })
@@ -1166,15 +1218,57 @@ onMounted(loadData)
             </select>
           </div>
 
-          <!-- Date & Time -->
+          <!-- Date Picker -->
           <FormField
             id="apt-date"
-            label="Date & Time"
-            type="datetime-local"
-            v-model="bookForm.appointment_date"
-            :min="minDateTime"
+            label="Appointment Date"
+            type="date"
+            v-model="bookingDate"
+            :min="minDate"
             required
           />
+
+          <!-- Slot Selector -->
+          <div class="w-full space-y-2">
+            <label class="block text-sm font-bold text-gray-600 dark:text-slate-400">
+              Available Time Slots <span class="text-red-500 ml-0.5">*</span>
+            </label>
+
+            <!-- Loading state -->
+            <div v-if="isLoadingSlots" class="flex items-center gap-2 py-3 text-xs text-gray-500 dark:text-slate-400">
+              <div class="animate-spin rounded-full h-4 w-4 border-2 border-emerald-600 border-t-transparent"></div>
+              <span>Checking slot availability...</span>
+            </div>
+
+            <!-- Warning states -->
+            <div v-else-if="!bookingDate" class="text-xs text-gray-400 dark:text-slate-500 italic py-2">
+              Please select a date to view available time slots.
+            </div>
+            <div v-else-if="bookForm.appointment_type === 'consultation' && !bookForm.doctor_id" class="text-xs text-gray-400 dark:text-slate-500 italic py-2">
+              Please select a doctor to view available time slots.
+            </div>
+            <div v-else-if="availableSlots.length === 0" class="text-xs text-rose-500 font-medium py-2">
+              No slots available for this day. Please choose another date.
+            </div>
+
+            <!-- Slots Grid -->
+            <div v-else class="grid grid-cols-4 gap-2 max-h-40 overflow-y-auto p-1.5 border border-gray-100 dark:border-slate-800 rounded-2xl">
+              <button
+                v-for="slot in availableSlots"
+                :key="slot"
+                type="button"
+                @click="bookingSlot = slot"
+                :class="[
+                  'py-2 px-3 text-xs font-bold rounded-xl border text-center transition-all duration-200 active:scale-95',
+                  bookingSlot === slot
+                    ? 'bg-emerald-600 text-white border-emerald-600 shadow-md shadow-emerald-600/15'
+                    : 'bg-white dark:bg-slate-800 text-gray-700 dark:text-slate-300 border-gray-200 dark:border-slate-700/50 hover:border-emerald-500/30'
+                ]"
+              >
+                {{ slot }}
+              </button>
+            </div>
+          </div>
 
           <!-- Reason -->
           <div class="w-full space-y-1.5">

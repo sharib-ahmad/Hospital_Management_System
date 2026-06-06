@@ -11,3 +11,4 @@ class NurseUpdateSchema(BaseModel):
     blood_group: Optional[BloodGroup] = None
     shift: Optional[str] = None
     emergency_contact_number: Optional[str] = None
+    availability: Optional[dict] = None

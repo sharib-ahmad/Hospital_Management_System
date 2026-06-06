@@ -26,6 +26,7 @@ class Doctor(db.Model):
     )
     
     is_available = db.Column(db.Boolean, default=True)
+    availability = db.Column(db.JSON, nullable=True)
     
     created_at = db.Column(db.DateTime, default=utc_now)
     updated_at = db.Column(db.DateTime, default=utc_now, onupdate=utc_now)

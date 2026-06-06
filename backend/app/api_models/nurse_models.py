@@ -13,7 +13,8 @@ class NurseModels:
             'blood_group': EnumField(BloodGroup, required=True),
             'emergency_contact_number': fields.String(required=True),
             'is_available': fields.Boolean,
-            'department_id': fields.String(required=True)
+            'department_id': fields.String(required=True),
+            'availability': fields.Raw(description="Weekly availability configuration JSON")
         })
 
         self.nurse_detail = api.inherit('NurseDetail', self.nurse_base, {

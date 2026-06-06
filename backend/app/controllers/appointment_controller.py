@@ -19,3 +19,10 @@ class AppointmentController:
     @staticmethod
     def update_appointment(appointment_id, data):
         return AppointmentService.update_appointment_status(appointment_id, data)
+
+    @staticmethod
+    def get_available_slots():
+        date_str = request.args.get('date')
+        appt_type = request.args.get('appointment_type')
+        doctor_id = request.args.get('doctor_id')
+        return AppointmentService.get_available_slots(date_str, appt_type, doctor_id)

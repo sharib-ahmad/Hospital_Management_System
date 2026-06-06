@@ -7,6 +7,21 @@ import { useNotificationStore } from '../../stores/notification'
 
 const notification = useNotificationStore()
 
+interface TimeInterval {
+  start: string
+  end: string
+}
+
+interface WeeklyAvailability {
+  Monday?: TimeInterval[]
+  Tuesday?: TimeInterval[]
+  Wednesday?: TimeInterval[]
+  Thursday?: TimeInterval[]
+  Friday?: TimeInterval[]
+  Saturday?: TimeInterval[]
+  Sunday?: TimeInterval[]
+}
+
 interface DoctorProfile {
   id: string
   doctor_code: string
@@ -22,6 +37,7 @@ interface DoctorProfile {
   emergency_contact_number: string
   department_name: string
   full_name: string
+  availability?: WeeklyAvailability
 }
 
 const profile = ref<DoctorProfile | null>(null)
@@ -43,6 +59,88 @@ const formErrors = ref({
   shift: '',
   experience_years: '',
 })
+
+// Weekly Availability state
+const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+const localAvailability = ref<Record<string, TimeInterval[]>>({})
+const isSavingAvailability = ref(false)
+
+const initializeAvailability = () => {
+  const target = profile.value?.availability || {}
+  const result: Record<string, TimeInterval[]> = {}
+  daysOfWeek.forEach(day => {
+    const intervals = target[day as keyof WeeklyAvailability] || []
+    result[day] = JSON.parse(JSON.stringify(intervals))
+  })
+  localAvailability.value = result
+}
+
+const isDayActive = (day: string) => {
+  return localAvailability.value[day] && localAvailability.value[day].length > 0
+}
+
+const toggleDay = (day: string) => {
+  if (isDayActive(day)) {
+    localAvailability.value[day] = []
+  } else {
+    localAvailability.value[day] = [{ start: '09:00', end: '17:00' }]
+  }
+}
+
+const addInterval = (day: string) => {
+  if (!localAvailability.value[day]) {
+    localAvailability.value[day] = []
+  }
+  const dayIntervals = localAvailability.value[day] || []
+  const len = dayIntervals.length
+  if (len > 0) {
+    const lastEnd = dayIntervals[len - 1]!.end
+    dayIntervals.push({ start: lastEnd, end: lastEnd })
+  } else {
+    dayIntervals.push({ start: '09:00', end: '17:00' })
+  }
+}
+
+const removeInterval = (day: string, index: number) => {
+  if (localAvailability.value[day]) {
+    localAvailability.value[day].splice(index, 1)
+  }
+}
+
+const saveAvailability = async () => {
+  // Validate intervals
+  for (const day of daysOfWeek) {
+    const intervals = localAvailability.value[day] || []
+    for (const interval of intervals) {
+      if (!interval.start || !interval.end) {
+        notification.error(`Please select a valid time range for ${day}.`)
+        return
+      }
+      if (interval.start >= interval.end) {
+        notification.error(`The start time must be earlier than the end time on ${day}.`)
+        return
+      }
+    }
+  }
+
+  isSavingAvailability.value = true
+  try {
+    const payload: Record<string, TimeInterval[]> = {}
+    daysOfWeek.forEach(day => {
+      if (localAvailability.value[day] && localAvailability.value[day].length > 0) {
+        payload[day] = localAvailability.value[day]
+      }
+    })
+    const res = await api.put('/doctors/me', { availability: payload })
+    profile.value = res.data.data ?? res.data
+    initializeAvailability()
+    notification.success('Availability updated successfully')
+  } catch {
+    notification.error('Failed to update availability')
+  } finally {
+    isSavingAvailability.value = false
+  }
+}
 
 const avatarLetter = computed(() => {
   return profile.value?.full_name?.charAt(0)?.toUpperCase() || 'D'
@@ -75,6 +173,7 @@ const loadProfile = async () => {
   try {
     const res = await api.get('/doctors/me')
     profile.value = res.data.data ?? res.data
+    initializeAvailability()
   } catch {
     notification.error('Failed to load profile')
   } finally {
@@ -236,130 +335,230 @@ onMounted(loadProfile)
         </button>
       </div>
 
-      <!-- Info Grid (Right Two-Thirds) -->
-      <div
-        class="lg:col-span-2 bg-white dark:bg-slate-900 rounded-[2.5rem] border border-gray-100 dark:border-slate-800 p-10 shadow-premium hover:-translate-y-1 transition-all duration-300"
-      >
-        <h3 class="text-xl font-black text-gray-900 dark:text-white flex items-center gap-3 mb-8">
-          <span class="h-1.5 w-6 bg-emerald-600 rounded-full"></span>
-          Professional Details
-        </h3>
+      <!-- Right Two-Thirds Wrapper -->
+      <div class="lg:col-span-2 space-y-8">
+        <!-- Info Grid -->
+        <div
+          class="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-gray-100 dark:border-slate-800 p-10 shadow-premium hover:-translate-y-1 transition-all duration-300"
+        >
+          <h3 class="text-xl font-black text-gray-900 dark:text-white flex items-center gap-3 mb-8">
+            <span class="h-1.5 w-6 bg-emerald-600 rounded-full"></span>
+            Professional Details
+          </h3>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
-          <!-- Department -->
-          <div
-            class="p-5 bg-gray-50 dark:bg-slate-800/50 rounded-2xl border border-gray-100 dark:border-slate-700/50"
-          >
-            <p
-              class="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-1.5"
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <!-- Department -->
+            <div
+              class="p-5 bg-gray-50 dark:bg-slate-800/50 rounded-2xl border border-gray-100 dark:border-slate-700/50"
             >
-              Department
-            </p>
-            <p class="text-sm font-bold text-gray-900 dark:text-white">
-              {{ profile.department_name || '—' }}
-            </p>
+              <p
+                class="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-1.5"
+              >
+                Department
+              </p>
+              <p class="text-sm font-bold text-gray-900 dark:text-white">
+                {{ profile.department_name || '—' }}
+              </p>
+            </div>
+
+            <!-- Consultation Fee -->
+            <div
+              class="p-5 bg-gray-50 dark:bg-slate-800/50 rounded-2xl border border-gray-100 dark:border-slate-700/50"
+            >
+              <p
+                class="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-1.5"
+              >
+                Consultation Fee
+              </p>
+              <p class="text-sm font-bold text-emerald-600 dark:text-emerald-400">
+                {{ formatPrice(profile.consultation_fee ?? 0) }}
+              </p>
+            </div>
+
+            <!-- Experience -->
+            <div
+              class="p-5 bg-gray-50 dark:bg-slate-800/50 rounded-2xl border border-gray-100 dark:border-slate-700/50"
+            >
+              <p
+                class="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-1.5"
+              >
+                Experience
+              </p>
+              <p class="text-sm font-bold text-gray-900 dark:text-white">
+                {{
+                  profile.experience_years != null
+                    ? `${profile.experience_years} Year${profile.experience_years !== 1 ? 's' : ''}`
+                    : '—'
+                }}
+              </p>
+            </div>
+
+            <!-- License Number -->
+            <div
+              class="p-5 bg-gray-50 dark:bg-slate-800/50 rounded-2xl border border-gray-100 dark:border-slate-700/50"
+            >
+              <p
+                class="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-1.5"
+              >
+                License Number
+              </p>
+              <p class="text-sm font-bold text-gray-900 dark:text-white font-mono">
+                {{ profile.license_number || '—' }}
+              </p>
+            </div>
+
+            <!-- Blood Group -->
+            <div
+              class="p-5 bg-gray-50 dark:bg-slate-800/50 rounded-2xl border border-gray-100 dark:border-slate-700/50"
+            >
+              <p
+                class="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-1.5"
+              >
+                Blood Group
+              </p>
+              <p class="text-sm font-bold text-gray-900 dark:text-white">
+                {{ profile.blood_group || '—' }}
+              </p>
+            </div>
+
+            <!-- Gender -->
+            <div
+              class="p-5 bg-gray-50 dark:bg-slate-800/50 rounded-2xl border border-gray-100 dark:border-slate-700/50"
+            >
+              <p
+                class="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-1.5"
+              >
+                Gender
+              </p>
+              <p class="text-sm font-bold text-gray-900 dark:text-white capitalize">
+                {{ profile.gender || '—' }}
+              </p>
+            </div>
+
+            <!-- Date of Birth -->
+            <div
+              class="p-5 bg-gray-50 dark:bg-slate-800/50 rounded-2xl border border-gray-100 dark:border-slate-700/50"
+            >
+              <p
+                class="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-1.5"
+              >
+                Date of Birth
+              </p>
+              <p class="text-sm font-bold text-gray-900 dark:text-white">
+                {{ formatDate(profile.date_of_birth) }}
+              </p>
+            </div>
+
+            <!-- Emergency Contact -->
+            <div
+              class="p-5 bg-gray-50 dark:bg-slate-800/50 rounded-2xl border border-gray-100 dark:border-slate-700/50"
+            >
+              <p
+                class="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-1.5"
+              >
+                Emergency Contact
+              </p>
+              <p class="text-sm font-bold text-gray-900 dark:text-white">
+                {{ profile.emergency_contact_number || '—' }}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Weekly Availability Card -->
+        <div
+          class="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-gray-100 dark:border-slate-800 p-10 shadow-premium hover:-translate-y-1 transition-all duration-300"
+        >
+          <h3 class="text-xl font-black text-gray-900 dark:text-white flex items-center gap-3 mb-6">
+            <span class="h-1.5 w-6 bg-emerald-600 rounded-full"></span>
+            Weekly Availability
+          </h3>
+          <p class="text-xs text-gray-500 dark:text-slate-400 font-medium mb-8">
+            Configure your working time slots for each day of the week. Patients will only be able to book appointments during these intervals.
+          </p>
+
+          <div class="space-y-6">
+            <div
+              v-for="day in daysOfWeek"
+              :key="day"
+              class="p-6 bg-gray-50 dark:bg-slate-800/50 rounded-3xl border border-gray-100 dark:border-slate-700/50 space-y-4"
+            >
+              <div class="flex items-center justify-between">
+                <span class="text-sm font-bold text-gray-900 dark:text-white">{{ day }}</span>
+                <button
+                  type="button"
+                  @click="toggleDay(day)"
+                  :class="[
+                    'px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all duration-200 active:scale-95',
+                    isDayActive(day)
+                      ? 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 border-emerald-100 dark:border-emerald-900/30'
+                      : 'bg-gray-100 dark:bg-slate-800 text-gray-400 border-gray-200 dark:border-slate-700'
+                  ]"
+                >
+                  {{ isDayActive(day) ? 'Active' : 'Inactive' }}
+                </button>
+              </div>
+
+              <!-- Intervals list for this day -->
+              <div v-if="isDayActive(day)" class="space-y-3 pt-2">
+                <div
+                  v-for="(interval, idx) in localAvailability[day]"
+                  :key="idx"
+                  class="flex items-center gap-4"
+                >
+                  <div class="flex-1 grid grid-cols-2 gap-3">
+                    <div class="flex items-center gap-2">
+                      <span class="text-[10px] font-black text-gray-400 uppercase">From</span>
+                      <input
+                        type="time"
+                        v-model="interval.start"
+                        class="block w-full px-3 py-2 border border-gray-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800 text-gray-900 dark:text-white text-xs focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/10 outline-none"
+                      />
+                    </div>
+                    <div class="flex items-center gap-2">
+                      <span class="text-[10px] font-black text-gray-400 uppercase">To</span>
+                      <input
+                        type="time"
+                        v-model="interval.end"
+                        class="block w-full px-3 py-2 border border-gray-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800 text-gray-900 dark:text-white text-xs focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/10 outline-none"
+                      />
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    @click="removeInterval(day, idx)"
+                    class="p-2.5 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/20 rounded-xl transition-all border border-transparent hover:border-rose-100 dark:hover:border-rose-950/30"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                  </button>
+                </div>
+                
+                <button
+                  type="button"
+                  @click="addInterval(day)"
+                  class="inline-flex items-center gap-1.5 px-3.5 py-2 text-[10px] font-black uppercase tracking-widest text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/20 border border-dashed border-emerald-200 dark:border-emerald-800/40 rounded-xl transition-all"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4" />
+                  </svg>
+                  Add Time Slot
+                </button>
+              </div>
+            </div>
           </div>
 
-          <!-- Consultation Fee -->
-          <div
-            class="p-5 bg-gray-50 dark:bg-slate-800/50 rounded-2xl border border-gray-100 dark:border-slate-700/50"
-          >
-            <p
-              class="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-1.5"
+          <div class="mt-8 flex justify-end">
+            <button
+              type="button"
+              @click="saveAvailability"
+              :disabled="isSavingAvailability"
+              class="px-6 py-3.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 disabled:cursor-not-allowed text-white rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all duration-300 shadow-lg shadow-emerald-600/25 flex items-center gap-2 active:scale-95"
             >
-              Consultation Fee
-            </p>
-            <p class="text-sm font-bold text-emerald-600 dark:text-emerald-400">
-              {{ formatPrice(profile.consultation_fee ?? 0) }}
-            </p>
-          </div>
-
-          <!-- Experience -->
-          <div
-            class="p-5 bg-gray-50 dark:bg-slate-800/50 rounded-2xl border border-gray-100 dark:border-slate-700/50"
-          >
-            <p
-              class="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-1.5"
-            >
-              Experience
-            </p>
-            <p class="text-sm font-bold text-gray-900 dark:text-white">
-              {{
-                profile.experience_years != null
-                  ? `${profile.experience_years} Year${profile.experience_years !== 1 ? 's' : ''}`
-                  : '—'
-              }}
-            </p>
-          </div>
-
-          <!-- License Number -->
-          <div
-            class="p-5 bg-gray-50 dark:bg-slate-800/50 rounded-2xl border border-gray-100 dark:border-slate-700/50"
-          >
-            <p
-              class="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-1.5"
-            >
-              License Number
-            </p>
-            <p class="text-sm font-bold text-gray-900 dark:text-white font-mono">
-              {{ profile.license_number || '—' }}
-            </p>
-          </div>
-
-          <!-- Blood Group -->
-          <div
-            class="p-5 bg-gray-50 dark:bg-slate-800/50 rounded-2xl border border-gray-100 dark:border-slate-700/50"
-          >
-            <p
-              class="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-1.5"
-            >
-              Blood Group
-            </p>
-            <p class="text-sm font-bold text-gray-900 dark:text-white">
-              {{ profile.blood_group || '—' }}
-            </p>
-          </div>
-
-          <!-- Gender -->
-          <div
-            class="p-5 bg-gray-50 dark:bg-slate-800/50 rounded-2xl border border-gray-100 dark:border-slate-700/50"
-          >
-            <p
-              class="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-1.5"
-            >
-              Gender
-            </p>
-            <p class="text-sm font-bold text-gray-900 dark:text-white capitalize">
-              {{ profile.gender || '—' }}
-            </p>
-          </div>
-
-          <!-- Date of Birth -->
-          <div
-            class="p-5 bg-gray-50 dark:bg-slate-800/50 rounded-2xl border border-gray-100 dark:border-slate-700/50"
-          >
-            <p
-              class="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-1.5"
-            >
-              Date of Birth
-            </p>
-            <p class="text-sm font-bold text-gray-900 dark:text-white">
-              {{ formatDate(profile.date_of_birth) }}
-            </p>
-          </div>
-
-          <!-- Emergency Contact -->
-          <div
-            class="p-5 bg-gray-50 dark:bg-slate-800/50 rounded-2xl border border-gray-100 dark:border-slate-700/50"
-          >
-            <p
-              class="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-1.5"
-            >
-              Emergency Contact
-            </p>
-            <p class="text-sm font-bold text-gray-900 dark:text-white">
-              {{ profile.emergency_contact_number || '—' }}
-            </p>
+              <div v-if="isSavingAvailability" class="animate-spin rounded-full h-4 w-4 border-[2px] border-white border-t-transparent"></div>
+              {{ isSavingAvailability ? 'Saving Availability...' : 'Save Availability' }}
+            </button>
           </div>
         </div>
       </div>

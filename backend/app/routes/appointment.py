@@ -6,6 +6,14 @@ from ..api_models.appointment_models import AppointmentModels
 appointment_ns = Namespace('appointments', description='Appointment management operations')
 appointment_models = AppointmentModels(appointment_ns)
 
+@appointment_ns.route('/slots')
+class AppointmentSlots(Resource):
+    @appointment_ns.doc('get_available_slots', security='Bearer Auth')
+    @jwt_required()
+    def get(self):
+        """Get available 30-minute slots for a given date and appointment type"""
+        return AppointmentController.get_available_slots()
+
 @appointment_ns.route('')
 class AppointmentList(Resource):
     @appointment_ns.doc('list_appointments', security='Bearer Auth')
