@@ -5,6 +5,7 @@ import PortalBase from './PortalBase.vue'
 import api from '../../utils/axios'
 import { useNotificationStore } from '../../stores/notification'
 import FormField from '../../components/FormField.vue'
+import VitalsChart from '../../components/VitalsChart.vue'
 
 const notification = useNotificationStore()
 const route = useRoute()
@@ -654,6 +655,9 @@ onMounted(loadData)
             </button>
           </div>
         </div>
+
+        <!-- Clinical Vitals Chart -->
+        <VitalsChart v-if="!isLoading && assignedPatients.length > 0" :patients="assignedPatients" role="doctor" class="mt-8" />
       </div>
 
       <!-- ─────────────────────────────────────────────────── -->
