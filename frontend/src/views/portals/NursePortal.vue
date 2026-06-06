@@ -280,7 +280,10 @@ const handleVitalsSubmit = async () => {
       respiration_rate: Number(vitalsRespiration.value),
       notes: vitalsNotes.value,
       appointment_id: vitalsAppointmentId.value || null,
-      refer_to_department_id: (isCurrentAppointmentVitalsCheck.value && referToDoctor.value) ? vitalsReferToDept.value : null,
+      refer_to_department_id:
+        isCurrentAppointmentVitalsCheck.value && referToDoctor.value
+          ? vitalsReferToDept.value
+          : null,
     }
     const res = await api.post('/vitals', payload)
     lastRecordedVitals.value = res.data.data || payload
@@ -1211,9 +1214,24 @@ onMounted(loadData)
                     @click="router.push(`/patients/${patient.id}`)"
                     class="w-full mt-4 mb-3 py-2.5 bg-emerald-50 hover:bg-emerald-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-emerald-600 dark:text-emerald-400 text-xs font-black uppercase tracking-widest rounded-xl transition-all flex items-center justify-center gap-2 border border-emerald-100/50 dark:border-slate-700/50"
                   >
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                      <path stroke-linecap="round" stroke-linejoin="round" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" />
-                      <path stroke-linecap="round" stroke-linejoin="round" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" />
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      class="h-4 w-4"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      stroke-width="2.5"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"
+                      />
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"
+                      />
                     </svg>
                     View Vitals & Stats
                   </button>
@@ -1291,9 +1309,24 @@ onMounted(loadData)
                   @click="router.push(`/patients/${patient.id}`)"
                   class="text-[10px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest hover:underline flex items-center gap-1"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" />
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" />
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    class="h-3.5 w-3.5"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    stroke-width="2.5"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"
+                    />
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"
+                    />
                   </svg>
                   View Stats
                 </button>
@@ -1322,7 +1355,6 @@ onMounted(loadData)
             </div>
           </div>
         </div>
-
       </div>
 
       <!-- ── TAB 2: Record Vitals ────────────────────────────────────────── -->
@@ -1432,7 +1464,9 @@ onMounted(loadData)
 
             <!-- Active Appointment Info -->
             <div v-if="activeAppointment" class="mt-2 flex items-center gap-2 text-xs flex-wrap">
-              <span class="text-gray-400 dark:text-slate-500 font-medium">Linked Active Appointment:</span>
+              <span class="text-gray-400 dark:text-slate-500 font-medium"
+                >Linked Active Appointment:</span
+              >
               <span
                 :class="`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
                   activeAppointment.appointment_type === 'vitals_check'
@@ -1450,7 +1484,10 @@ onMounted(loadData)
                 on {{ formatDate(activeAppointment.appointment_date) }}
               </span>
             </div>
-            <div v-else-if="vitalsPatientId" class="mt-2 text-xs text-amber-600 dark:text-amber-400 font-medium">
+            <div
+              v-else-if="vitalsPatientId"
+              class="mt-2 text-xs text-amber-600 dark:text-amber-400 font-medium"
+            >
               No active appointment found in queue. This will be recorded as a Walk-in Vitals Check.
             </div>
           </div>

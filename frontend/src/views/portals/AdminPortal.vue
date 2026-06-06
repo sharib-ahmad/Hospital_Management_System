@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, onBeforeUnmount } from 'vue'
 import PortalBase from './PortalBase.vue'
 import api from '../../utils/axios'
 import { useNotificationStore } from '../../stores/notification'
+import { Chart } from 'chart.js/auto'
 
 const notification = useNotificationStore()
 
@@ -124,7 +125,106 @@ const formatTime = (ds: string) => {
   })
 }
 
-onMounted(loadStats)
+const adminAnalyticsData = ref<any>(null)
+const isLoadingAnalytics = ref(false)
+
+const revenueCanvasRef = ref<HTMLCanvasElement | null>(null)
+const deptVolumeCanvasRef = ref<HTMLCanvasElement | null>(null)
+
+let revenueChart: Chart | null = null
+let deptVolumeChart: Chart | null = null
+
+const fetchAdminAnalytics = async () => {
+  isLoadingAnalytics.value = true
+  try {
+    const res = await api.get('/analytics/admin')
+    adminAnalyticsData.value = res.data.data
+  } catch (err) {
+    console.error('Failed to load admin analytics', err)
+  } finally {
+    isLoadingAnalytics.value = false
+    if (adminAnalyticsData.value) {
+      setTimeout(() => {
+        renderAdminCharts()
+      }, 50)
+    }
+  }
+}
+
+const renderAdminCharts = () => {
+  const isDark = document.documentElement.classList.contains('dark')
+  const textColor = isDark ? '#94a3b8' : '#475569'
+  const gridColor = isDark ? 'rgba(71, 85, 105, 0.4)' : 'rgba(203, 213, 225, 0.9)'
+
+  // 1. Revenue Chart
+  if (revenueCanvasRef.value) {
+    if (revenueChart) revenueChart.destroy()
+    const rev = adminAnalyticsData.value.revenue
+    revenueChart = new Chart(revenueCanvasRef.value, {
+      type: 'doughnut',
+      data: {
+        labels: ['Consultation', 'Pharmacy Store'],
+        datasets: [
+          {
+            data: [rev.consultation, rev.pharmacy],
+            backgroundColor: ['#10b981', '#6366f1'],
+            borderWidth: 0,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'bottom',
+            labels: { color: textColor, padding: 15 },
+          },
+        },
+      },
+    })
+  }
+
+  // 2. Department Volume Chart
+  if (deptVolumeCanvasRef.value) {
+    if (deptVolumeChart) deptVolumeChart.destroy()
+    deptVolumeChart = new Chart(deptVolumeCanvasRef.value, {
+      type: 'bar',
+      data: {
+        labels: adminAnalyticsData.value.department_volume.labels,
+        datasets: [
+          {
+            label: 'Appointments',
+            data: adminAnalyticsData.value.department_volume.data,
+            backgroundColor: '#3b82f6',
+            borderRadius: 8,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+        },
+        scales: {
+          x: { ticks: { color: textColor }, grid: { display: false } },
+          y: { ticks: { color: textColor }, grid: { color: gridColor } },
+        },
+      },
+    })
+  }
+}
+
+onBeforeUnmount(() => {
+  if (revenueChart) revenueChart.destroy()
+  if (deptVolumeChart) deptVolumeChart.destroy()
+})
+
+onMounted(async () => {
+  await loadStats()
+  await fetchAdminAnalytics()
+})
 </script>
 
 <template>
@@ -206,6 +306,57 @@ onMounted(loadStats)
         </div>
       </div>
 
+      <!-- Analytics Charts Panel -->
+      <div class="h-px bg-gray-100 dark:bg-slate-800/80 my-8"></div>
+
+      <div class="flex items-center justify-between mb-8">
+        <h3 class="text-lg font-black text-gray-900 dark:text-white flex items-center gap-3">
+          <span class="h-1.5 w-6 bg-blue-600 rounded-full"></span>
+          Hospital Performance Analytics
+        </h3>
+      </div>
+
+      <div
+        v-if="isLoadingAnalytics"
+        class="flex flex-col items-center justify-center py-16 space-y-4"
+      >
+        <div
+          class="animate-spin rounded-full h-10 w-10 border-[3px] border-blue-600 border-t-transparent"
+        ></div>
+        <p class="text-xs text-gray-400 dark:text-slate-500 uppercase tracking-widest font-black">
+          Generating analytics...
+        </p>
+      </div>
+
+      <div v-else-if="adminAnalyticsData" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Revenue split -->
+        <div
+          class="bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-[2rem] p-6 shadow-premium relative"
+        >
+          <h4
+            class="text-xs font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-6"
+          >
+            Hospital Revenue Split
+          </h4>
+          <div class="h-64 relative">
+            <canvas ref="revenueCanvasRef"></canvas>
+          </div>
+        </div>
+
+        <!-- Department volume -->
+        <div
+          class="bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-[2rem] p-6 shadow-premium relative"
+        >
+          <h4
+            class="text-xs font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-6"
+          >
+            Patient Volume by Department
+          </h4>
+          <div class="h-64 relative">
+            <canvas ref="deptVolumeCanvasRef"></canvas>
+          </div>
+        </div>
+      </div>
     </template>
 
     <template #sidebar>

@@ -29,3 +29,22 @@ class PatientVitalDetail(Resource):
     def get(self, patient_id):
         """Get the vitals history for a patient (Admin/Doctor/Nurse/User)"""
         return PatientVitalsController.get_vitals_for_patient(patient_id)
+
+
+@vitals_ns.route('/my/export')
+class PatientVitalExportDirect(Resource):
+    @vitals_ns.doc('export_vitals_direct', security='Bearer Auth')
+    @role_required(UserRole.USER)
+    def get(self):
+        """Download all registered patients' vitals directly as a CSV"""
+        return PatientVitalsController.export_vitals_direct()
+
+
+@vitals_ns.route('/my/export-job')
+class PatientVitalExportJob(Resource):
+    @vitals_ns.doc('export_vitals_job', security='Bearer Auth')
+    @role_required(UserRole.USER)
+    def post(self):
+        """Trigger a background Celery task to compile and email all patients' vitals as CSV"""
+        return PatientVitalsController.export_vitals_via_job()
+

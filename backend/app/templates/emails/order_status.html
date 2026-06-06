@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Order Status Update</title>
+    <style>
+        body { font-family: 'Outfit', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8fafc; color: #1e293b; margin: 0; padding: 20px; }
+        .container { max-width: 600px; background: #ffffff; border-radius: 24px; padding: 40px; margin: 0 auto; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; }
+        .header { text-align: center; border-bottom: 2px solid #f1f5f9; padding-bottom: 24px; margin-bottom: 30px; }
+        .logo { font-size: 24px; font-weight: 800; color: #0d9488; text-transform: uppercase; letter-spacing: 2px; }
+        .badge { display: inline-block; padding: 8px 16px; border-radius: 9999px; font-size: 14px; font-weight: 700; text-transform: uppercase; margin-top: 10px; }
+        .status-pending { background-color: #fef3c7; color: #d97706; }
+        .status-processing { background-color: #dbeafe; color: #2563eb; }
+        .status-shipped { background-color: #fae8ff; color: #d946ef; }
+        .status-delivered { background-color: #d1fae5; color: #059669; }
+        .status-cancelled { background-color: #fee2e2; color: #dc2626; }
+        .details { background-color: #f8fafc; border-radius: 16px; padding: 20px; margin-bottom: 24px; }
+        .details table { width: 100%; border-collapse: collapse; }
+        .details th { text-align: left; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: #64748b; padding-bottom: 10px; }
+        .details td { padding: 8px 0; font-size: 14px; font-weight: 500; }
+        .total-row { border-top: 1px solid #e2e8f0; font-weight: bold; }
+        .footer { text-align: center; font-size: 12px; color: #94a3b8; margin-top: 40px; border-top: 1px solid #f1f5f9; padding-top: 20px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">🏥 MediFlow Store</div>
+            <h2>Pharmacy Order Status Update</h2>
+            <p>Dear {{ user_name }}, your pharmacy order status has changed.</p>
+            <div class="badge status-{{ status.value }}">{{ status.value }}</div>
+        </div>
+        
+        <div class="details">
+            <h3>Order Details</h3>
+            <p><strong>Order ID:</strong> {{ order_id }}</p>
+            <p><strong>Date:</strong> {{ order_date }}</p>
+            <p><strong>Shipping Address:</strong> {{ shipping_address }}</p>
+            <p><strong>Phone:</strong> {{ phone_number }}</p>
+            
+            <table style="margin-top: 20px;">
+                <thead>
+                    <tr>
+                        <th>Medicine</th>
+                        <th style="text-align: center;">Qty</th>
+                        <th style="text-align: right;">Price</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in items %}
+                    <tr>
+                        <td>{{ item.name }}</td>
+                        <td style="text-align: center;">{{ item.quantity }}</td>
+                        <td style="text-align: right;">${{ "%.2f"|format(item.price) }}</td>
+                    </tr>
+                    {% endfor %}
+                    <tr class="total-row">
+                        <td colspan="2" style="padding-top: 15px;">Total Price</td>
+                        <td style="text-align: right; padding-top: 15px;">${{ "%.2f"|format(total_price) }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="footer">
+            <p>This is an automated message from MediFlow Hospital Management System.</p>
+            <p>&copy; 2026 MediFlow Inc. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>

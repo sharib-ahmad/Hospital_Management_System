@@ -5,6 +5,7 @@ import PortalBase from './PortalBase.vue'
 import FormField from '../../components/FormField.vue'
 import api from '../../utils/axios'
 import { useNotificationStore } from '../../stores/notification'
+import { useCartStore } from '../../stores/cart'
 const router = useRouter()
 const notification = useNotificationStore()
 
@@ -14,12 +15,30 @@ const applications = ref<any[]>([])
 const appointments = ref<any[]>([])
 const medicalRecords = ref<any[]>([])
 const doctors = ref<any[]>([])
+const invoices = ref<any[]>([])
 const isLoading = ref(true)
 const isLoadingAppointments = ref(false)
 const isLoadingRecords = ref(false)
+const isLoadingInvoices = ref(false)
 
 // Tab state
-const activeTab = ref<'patients' | 'appointments' | 'records'>('patients')
+const activeTab = ref<'patients' | 'appointments' | 'records' | 'billing'>('patients')
+
+// Vitals export state
+const exportingVitals = ref(false)
+const showExportModal = ref(false)
+
+// Prescription parser state
+const parsingRecordId = ref<string | null>(null)
+const matchedMedicines = ref<any[]>([])
+const showPrescriptionModal = ref(false)
+const isParsingPrescription = ref(false)
+
+// Simulated payment and receipt state
+const showPaymentModal = ref(false)
+const selectedInvoice = ref<any>(null)
+const isProcessingPayment = ref(false)
+const showReceiptModal = ref(false)
 
 // Book Appointment modal state
 const showBookModal = ref(false)
@@ -73,12 +92,9 @@ const fetchSlots = async () => {
 }
 
 import { watch } from 'vue'
-watch(
-  [bookingDate, () => bookForm.value.doctor_id, () => bookForm.value.appointment_type],
-  () => {
-    fetchSlots()
-  }
-)
+watch([bookingDate, () => bookForm.value.doctor_id, () => bookForm.value.appointment_type], () => {
+  fetchSlots()
+})
 
 // Stats
 const stats = ref([
@@ -171,10 +187,124 @@ const loadMedicalRecords = async () => {
   }
 }
 
-const switchTab = async (tab: 'patients' | 'appointments' | 'records') => {
+const loadInvoices = async () => {
+  isLoadingInvoices.value = true
+  try {
+    const res = await api.get('/invoices')
+    invoices.value = res.data.data || []
+  } catch (err) {
+    notification.error('Failed to load invoices')
+  } finally {
+    isLoadingInvoices.value = false
+  }
+}
+
+const handlePayInvoice = async (invoiceId: string) => {
+  try {
+    await api.post(`/invoices/${invoiceId}/pay`)
+    notification.success('Payment simulated successfully!')
+    await loadInvoices()
+  } catch (err: any) {
+    notification.error(err.response?.data?.message || 'Payment simulation failed')
+  }
+}
+
+const downloadVitalsDirect = async () => {
+  exportingVitals.value = true
+  try {
+    const res = await api.get('/vitals/my/export', { responseType: 'blob' })
+    const url = window.URL.createObjectURL(new Blob([res.data]))
+    const link = document.createElement('a')
+    link.href = url
+    link.setAttribute('download', 'my_patients_vitals.csv')
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    notification.success('Vitals CSV downloaded successfully!')
+    showExportModal.value = false
+  } catch (err) {
+    notification.error('Failed to download vitals CSV')
+  } finally {
+    exportingVitals.value = false
+  }
+}
+
+const triggerVitalsExportJob = async () => {
+  exportingVitals.value = true
+  try {
+    await api.post('/vitals/my/export-job')
+    notification.success('Background export job triggered! Check your email shortly.')
+    showExportModal.value = false
+  } catch (err) {
+    notification.error('Failed to trigger vitals export job')
+  } finally {
+    exportingVitals.value = false
+  }
+}
+
+const parsePrescriptionText = async (recordId: string) => {
+  parsingRecordId.value = recordId
+  isParsingPrescription.value = true
+  matchedMedicines.value = []
+  showPrescriptionModal.value = true
+  try {
+    const res = await api.get(`/medical-records/${recordId}/parse-prescription`)
+    matchedMedicines.value = res.data.data || []
+  } catch (err) {
+    notification.error('Failed to scan prescription')
+  } finally {
+    isParsingPrescription.value = false
+  }
+}
+
+const addPrescribedToCart = () => {
+  const cart = useCartStore()
+  let addedCount = 0
+  matchedMedicines.value.forEach((med) => {
+    if (med.stock > 0) {
+      cart.addToCart(med)
+      addedCount++
+    }
+  })
+  if (addedCount > 0) {
+    notification.success(`Successfully added ${addedCount} medicines to basket!`)
+    showPrescriptionModal.value = false
+    router.push('/store')
+  } else {
+    notification.error('No matched medicines are currently in stock.')
+  }
+}
+
+const openPaymentModal = (invoice: any) => {
+  selectedInvoice.value = invoice
+  showPaymentModal.value = true
+}
+
+const triggerPaymentSimulation = async () => {
+  if (!selectedInvoice.value) return
+  isProcessingPayment.value = true
+  try {
+    await handlePayInvoice(selectedInvoice.value.id)
+    showPaymentModal.value = false
+  } finally {
+    isProcessingPayment.value = false
+  }
+}
+
+const printReceipt = (invoice: any) => {
+  selectedInvoice.value = invoice
+  showReceiptModal.value = true
+}
+
+const triggerNativePrint = () => {
+  window.print()
+}
+
+const switchTab = async (tab: 'patients' | 'appointments' | 'records' | 'billing') => {
   activeTab.value = tab
   if (tab === 'appointments') await loadAppointments()
   if (tab === 'records') await loadMedicalRecords()
+  if (tab === 'billing') await loadInvoices()
 }
 
 const openBookModal = () => {
@@ -327,6 +457,16 @@ onMounted(loadData)
         >
           Medical Records
         </button>
+        <button
+          @click="switchTab('billing')"
+          :class="`px-5 py-2.5 rounded-xl text-sm font-black uppercase tracking-widest transition-all ${
+            activeTab === 'billing'
+              ? 'bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 shadow-sm'
+              : 'text-gray-400 hover:text-gray-600 dark:hover:text-slate-300'
+          }`"
+        >
+          Billing & Invoices
+        </button>
       </div>
 
       <!-- ════════════════════════════════════════════════════ -->
@@ -338,26 +478,49 @@ onMounted(loadData)
             <span class="h-1.5 w-6 bg-emerald-600 rounded-full"></span>
             My Registered Patients
           </h3>
-          <button
-            @click="router.push('/register-patient')"
-            class="px-5 py-2.5 bg-emerald-600/10 text-emerald-600 dark:text-emerald-400 font-bold rounded-xl hover:bg-emerald-600 hover:text-white transition-all text-sm flex items-center gap-2"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              class="h-4 w-4"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
+          <div class="flex items-center gap-3">
+            <button
+              v-if="patients.length > 0"
+              @click="showExportModal = true"
+              class="px-5 py-2.5 bg-blue-600/10 text-blue-600 dark:text-blue-400 font-bold rounded-xl hover:bg-blue-600 hover:text-white transition-all text-sm flex items-center gap-2 border border-blue-600/10"
             >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="3"
-                d="M12 4v16m8-8H4"
-              />
-            </svg>
-            Register Patient
-          </button>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-4 w-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2.5"
+                  d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                />
+              </svg>
+              Export Vitals (CSV)
+            </button>
+            <button
+              @click="router.push('/register-patient')"
+              class="px-5 py-2.5 bg-emerald-600/10 text-emerald-600 dark:text-emerald-400 font-bold rounded-xl hover:bg-emerald-600 hover:text-white transition-all text-sm flex items-center gap-2"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-4 w-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="3"
+                  d="M12 4v16m8-8H4"
+                />
+              </svg>
+              Register Patient
+            </button>
+          </div>
         </div>
 
         <div v-if="isLoading" class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -461,9 +624,24 @@ onMounted(loadData)
               @click="router.push(`/patients/${patient.id}`)"
               class="w-full mb-4 py-2.5 bg-emerald-50 hover:bg-emerald-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-emerald-600 dark:text-emerald-400 text-xs font-black uppercase tracking-widest rounded-xl transition-all flex items-center justify-center gap-2 border border-emerald-100/50 dark:border-slate-700/50"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" />
-                <path stroke-linecap="round" stroke-linejoin="round" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" />
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-4 w-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                stroke-width="2.5"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"
+                />
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"
+                />
               </svg>
               View Vitals & Stats
             </button>
@@ -902,16 +1080,38 @@ onMounted(loadData)
               <!-- Prescription (if any) -->
               <div
                 v-if="record.prescription"
-                class="p-4 bg-indigo-50/50 dark:bg-indigo-900/10 rounded-2xl border border-indigo-100/50 dark:border-indigo-500/10"
+                class="p-4 bg-indigo-50/50 dark:bg-indigo-900/10 rounded-2xl border border-indigo-100/50 dark:border-indigo-500/10 flex flex-col justify-between"
               >
-                <p
-                  class="text-[10px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest mb-2"
+                <div>
+                  <p
+                    class="text-[10px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest mb-2"
+                  >
+                    Prescription
+                  </p>
+                  <p class="text-sm text-gray-700 dark:text-slate-300 font-medium leading-relaxed">
+                    {{ record.prescription }}
+                  </p>
+                </div>
+                <button
+                  @click="parsePrescriptionText(record.id)"
+                  class="mt-4 px-4 py-2 bg-indigo-600 hover:bg-indigo-750 text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all self-start flex items-center gap-1.5 shadow-sm"
                 >
-                  Prescription
-                </p>
-                <p class="text-sm text-gray-700 dark:text-slate-300 font-medium leading-relaxed">
-                  {{ record.prescription }}
-                </p>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    class="h-3.5 w-3.5"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2.5"
+                      d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17"
+                    />
+                  </svg>
+                  Order Prescribed Medicines
+                </button>
               </div>
 
               <!-- Notes (if any) -->
@@ -929,6 +1129,141 @@ onMounted(loadData)
                 >
                   "{{ record.notes }}"
                 </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ════════════════════════════════════════════════════ -->
+      <!--  TAB 4 — BILLING & INVOICES                        -->
+      <!-- ════════════════════════════════════════════════════ -->
+      <div v-else-if="activeTab === 'billing'" class="space-y-6">
+        <div class="flex items-center justify-between">
+          <h3 class="text-xl font-black text-gray-900 dark:text-white flex items-center gap-3">
+            <span class="h-1.5 w-6 bg-blue-600 rounded-full"></span>
+            Billing & Invoices
+          </h3>
+        </div>
+
+        <!-- Loading skeleton -->
+        <div v-if="isLoadingInvoices" class="space-y-4">
+          <div
+            v-for="i in 3"
+            :key="i"
+            class="bg-gray-50 dark:bg-slate-800/40 p-6 rounded-[2rem] border border-gray-100 dark:border-slate-800"
+          >
+            <div class="flex items-center gap-4">
+              <div class="skeleton w-12 h-12 rounded-2xl"></div>
+              <div class="flex-1 space-y-2">
+                <div class="skeleton h-4 w-1/3"></div>
+                <div class="skeleton h-3 w-1/4"></div>
+              </div>
+              <div class="skeleton h-6 w-20 rounded-xl"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Empty state -->
+        <div
+          v-else-if="invoices.length === 0"
+          class="flex flex-col items-center justify-center py-20 bg-gray-50/50 dark:bg-slate-800/30 rounded-[2.5rem] border-2 border-dashed border-gray-100 dark:border-slate-800 text-center px-6"
+        >
+          <div
+            class="w-20 h-20 bg-white dark:bg-slate-900 rounded-3xl shadow-premium flex items-center justify-center mb-6 text-gray-300 dark:text-slate-700"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-10 w-10"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+              />
+            </svg>
+          </div>
+          <h4 class="text-lg font-bold text-gray-900 dark:text-white mb-2">No invoices found</h4>
+          <p class="text-gray-500 dark:text-slate-400 text-sm max-w-xs font-medium">
+            You don't have any pending or paid invoices in your records at the moment.
+          </p>
+        </div>
+
+        <!-- Invoices List -->
+        <div v-else class="space-y-4">
+          <div
+            v-for="invoice in invoices"
+            :key="invoice.id"
+            class="card-animate group bg-white dark:bg-slate-900 p-6 rounded-[2rem] border border-gray-100 dark:border-slate-800 hover:border-blue-500/30 shadow-sm hover:shadow-premium transition-all duration-300"
+          >
+            <div class="flex items-center justify-between flex-wrap gap-4">
+              <div class="flex items-center gap-4">
+                <div
+                  class="w-12 h-12 rounded-2xl bg-blue-50 dark:bg-blue-950/30 flex items-center justify-center text-blue-600 dark:text-blue-400 font-black text-lg border border-blue-100/50 dark:border-blue-900/20"
+                >
+                  {{ invoice.invoice_type === 'consultation' ? '🩺' : '💊' }}
+                </div>
+                <div>
+                  <h4 class="font-black text-gray-900 dark:text-white capitalize">
+                    {{ invoice.invoice_type }} Invoice
+                  </h4>
+                  <p
+                    class="text-xs text-gray-400 dark:text-slate-500 font-bold tracking-wider mt-0.5"
+                  >
+                    ID: {{ invoice.id }} • Patient:
+                    {{ invoice.patient_name || invoice.patient_id?.substring(0, 8) }}
+                  </p>
+                </div>
+              </div>
+              <div class="flex items-center gap-4">
+                <div class="text-right">
+                  <p class="text-xl font-black text-gray-900 dark:text-white">
+                    ${{ Number(invoice.amount).toFixed(2) }}
+                  </p>
+                  <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">
+                    Created {{ formatDate(invoice.created_at) }}
+                  </p>
+                </div>
+                <span
+                  :class="`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest ${
+                    invoice.status === 'paid'
+                      ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400'
+                      : invoice.status === 'refunded'
+                        ? 'bg-gray-100 text-gray-700 dark:bg-slate-800 dark:text-slate-400'
+                        : 'bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-400'
+                  }`"
+                >
+                  {{ invoice.status }}
+                </span>
+              </div>
+            </div>
+
+            <!-- Action footer -->
+            <div
+              class="mt-4 pt-4 border-t border-gray-100/50 dark:border-slate-800/60 flex justify-between items-center gap-3"
+            >
+              <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                Billing Method: Simulated Payment Gateway
+              </span>
+              <div class="flex items-center gap-2">
+                <button
+                  v-if="invoice.status === 'paid'"
+                  @click="printReceipt(invoice)"
+                  class="px-4 py-2 bg-gray-50 hover:bg-gray-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-gray-700 dark:text-slate-300 text-xs font-black uppercase tracking-widest rounded-xl transition-all border border-gray-100 dark:border-slate-700 flex items-center gap-1.5"
+                >
+                  🖨️ Print Receipt
+                </button>
+                <button
+                  v-if="invoice.status === 'unpaid'"
+                  @click="openPaymentModal(invoice)"
+                  class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-black uppercase tracking-widest rounded-xl transition-all flex items-center gap-1.5 shadow-md shadow-blue-500/20"
+                >
+                  💳 Pay Now
+                </button>
               </div>
             </div>
           </div>
@@ -1235,24 +1570,41 @@ onMounted(loadData)
             </label>
 
             <!-- Loading state -->
-            <div v-if="isLoadingSlots" class="flex items-center gap-2 py-3 text-xs text-gray-500 dark:text-slate-400">
-              <div class="animate-spin rounded-full h-4 w-4 border-2 border-emerald-600 border-t-transparent"></div>
+            <div
+              v-if="isLoadingSlots"
+              class="flex items-center gap-2 py-3 text-xs text-gray-500 dark:text-slate-400"
+            >
+              <div
+                class="animate-spin rounded-full h-4 w-4 border-2 border-emerald-600 border-t-transparent"
+              ></div>
               <span>Checking slot availability...</span>
             </div>
 
             <!-- Warning states -->
-            <div v-else-if="!bookingDate" class="text-xs text-gray-400 dark:text-slate-500 italic py-2">
+            <div
+              v-else-if="!bookingDate"
+              class="text-xs text-gray-400 dark:text-slate-500 italic py-2"
+            >
               Please select a date to view available time slots.
             </div>
-            <div v-else-if="bookForm.appointment_type === 'consultation' && !bookForm.doctor_id" class="text-xs text-gray-400 dark:text-slate-500 italic py-2">
+            <div
+              v-else-if="bookForm.appointment_type === 'consultation' && !bookForm.doctor_id"
+              class="text-xs text-gray-400 dark:text-slate-500 italic py-2"
+            >
               Please select a doctor to view available time slots.
             </div>
-            <div v-else-if="availableSlots.length === 0" class="text-xs text-rose-500 font-medium py-2">
+            <div
+              v-else-if="availableSlots.length === 0"
+              class="text-xs text-rose-500 font-medium py-2"
+            >
               No slots available for this day. Please choose another date.
             </div>
 
             <!-- Slots Grid -->
-            <div v-else class="grid grid-cols-4 gap-2 max-h-40 overflow-y-auto p-1.5 border border-gray-100 dark:border-slate-800 rounded-2xl">
+            <div
+              v-else
+              class="grid grid-cols-4 gap-2 max-h-40 overflow-y-auto p-1.5 border border-gray-100 dark:border-slate-800 rounded-2xl"
+            >
               <button
                 v-for="slot in availableSlots"
                 :key="slot"
@@ -1262,7 +1614,7 @@ onMounted(loadData)
                   'py-2 px-3 text-xs font-bold rounded-xl border text-center transition-all duration-200 active:scale-95',
                   bookingSlot === slot
                     ? 'bg-emerald-600 text-white border-emerald-600 shadow-md shadow-emerald-600/15'
-                    : 'bg-white dark:bg-slate-800 text-gray-700 dark:text-slate-300 border-gray-200 dark:border-slate-700/50 hover:border-emerald-500/30'
+                    : 'bg-white dark:bg-slate-800 text-gray-700 dark:text-slate-300 border-gray-200 dark:border-slate-700/50 hover:border-emerald-500/30',
                 ]"
               >
                 {{ slot }}
@@ -1308,6 +1660,407 @@ onMounted(loadData)
       </div>
     </div>
   </Transition>
+
+  <!-- ════════════════════════════════════════════════════════ -->
+  <!--  EXPORT VITALS MODAL                                     -->
+  <!-- ════════════════════════════════════════════════════════ -->
+  <Transition name="fade">
+    <div
+      v-if="showExportModal"
+      class="fixed inset-0 z-50 flex items-center justify-center px-4 bg-slate-900/60 backdrop-blur-sm"
+      @click.self="showExportModal = false"
+    >
+      <div
+        class="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-gray-100 dark:border-slate-800 max-w-md w-full p-8 shadow-premium-xl animate-scale-up"
+      >
+        <!-- Modal Header -->
+        <div class="flex items-center justify-between mb-6">
+          <div>
+            <span
+              class="text-[10px] font-black text-blue-600 bg-blue-50 dark:bg-blue-950 dark:text-blue-400 px-3 py-1 rounded-full uppercase tracking-widest"
+            >
+              Data Export
+            </span>
+            <h3 class="text-xl font-black text-gray-900 dark:text-white mt-3 tracking-tight">
+              Export Vitals History
+            </h3>
+          </div>
+          <button
+            @click="showExportModal = false"
+            class="w-8 h-8 rounded-full bg-gray-50 dark:bg-slate-800 flex items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-slate-200 transition-colors"
+          >
+            ✕
+          </button>
+        </div>
+
+        <p class="text-xs text-gray-500 dark:text-slate-400 mb-6 leading-relaxed">
+          Select how you want to export the vitals history for all patients registered under your
+          profile. You can download the CSV directly to your browser or trigger a background job to
+          receive it via email.
+        </p>
+
+        <div class="space-y-3">
+          <button
+            @click="downloadVitalsDirect"
+            :disabled="exportingVitals"
+            class="w-full p-4 bg-gray-50 hover:bg-gray-100 dark:bg-slate-800 dark:hover:bg-slate-700/80 border border-gray-200 dark:border-slate-700/50 rounded-2xl flex items-center gap-4 text-left transition-all duration-200"
+          >
+            <div
+              class="w-10 h-10 bg-blue-100 dark:bg-blue-950 rounded-xl flex items-center justify-center text-blue-600 dark:text-blue-400 text-lg"
+            >
+              📥
+            </div>
+            <div class="flex-1">
+              <h4 class="text-xs font-black text-gray-900 dark:text-white uppercase tracking-wider">
+                Direct Download
+              </h4>
+              <p class="text-[10px] text-gray-400 mt-0.5">Instant CSV download in your browser</p>
+            </div>
+          </button>
+
+          <button
+            @click="triggerVitalsExportJob"
+            :disabled="exportingVitals"
+            class="w-full p-4 bg-gray-50 hover:bg-gray-100 dark:bg-slate-800 dark:hover:bg-slate-700/80 border border-gray-200 dark:border-slate-700/50 rounded-2xl flex items-center gap-4 text-left transition-all duration-200"
+          >
+            <div
+              class="w-10 h-10 bg-indigo-100 dark:bg-indigo-950 rounded-xl flex items-center justify-center text-indigo-600 dark:text-indigo-400 text-lg"
+            >
+              ✉️
+            </div>
+            <div class="flex-1">
+              <h4 class="text-xs font-black text-gray-900 dark:text-white uppercase tracking-wider">
+                Send to Email
+              </h4>
+              <p class="text-[10px] text-gray-400 mt-0.5">Asynchronous background mailing task</p>
+            </div>
+          </button>
+        </div>
+
+        <div class="flex gap-4 pt-6 mt-6 border-t border-gray-100 dark:border-slate-800">
+          <button
+            type="button"
+            @click="showExportModal = false"
+            class="w-full py-3.5 bg-gray-50 dark:bg-slate-800 text-gray-600 dark:text-slate-300 text-xs font-black uppercase tracking-widest rounded-xl hover:bg-gray-100 transition-all border border-gray-200 dark:border-slate-700"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+  </Transition>
+
+  <!-- ════════════════════════════════════════════════════════ -->
+  <!--  PRESCRIPTION SCANNER MODAL                              -->
+  <!-- ════════════════════════════════════════════════════════ -->
+  <Transition name="fade">
+    <div
+      v-if="showPrescriptionModal"
+      class="fixed inset-0 z-50 flex items-center justify-center px-4 bg-slate-900/60 backdrop-blur-sm"
+      @click.self="showPrescriptionModal = false"
+    >
+      <div
+        class="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-gray-100 dark:border-slate-800 max-w-lg w-full p-8 shadow-premium-xl animate-scale-up"
+      >
+        <!-- Modal Header -->
+        <div class="flex items-center justify-between mb-6">
+          <div>
+            <span
+              class="text-[10px] font-black text-indigo-600 bg-indigo-50 dark:bg-indigo-950 dark:text-indigo-400 px-3 py-1 rounded-full uppercase tracking-widest"
+            >
+              Prescription Integration
+            </span>
+            <h3 class="text-xl font-black text-gray-900 dark:text-white mt-3 tracking-tight">
+              Prescription Parser Scanner
+            </h3>
+          </div>
+          <button
+            @click="showPrescriptionModal = false"
+            class="w-8 h-8 rounded-full bg-gray-50 dark:bg-slate-800 flex items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-slate-200 transition-colors"
+          >
+            ✕
+          </button>
+        </div>
+
+        <!-- Scanning State -->
+        <div
+          v-if="isParsingPrescription"
+          class="flex flex-col items-center justify-center py-12 space-y-4"
+        >
+          <div class="relative w-16 h-16">
+            <div class="absolute inset-0 rounded-full border-4 border-indigo-600/20"></div>
+            <div
+              class="absolute inset-0 rounded-full border-4 border-indigo-600 border-t-transparent animate-spin"
+            ></div>
+            <div class="absolute inset-0 flex items-center justify-center text-xl">🔍</div>
+          </div>
+          <p
+            class="text-xs text-gray-500 dark:text-slate-400 uppercase tracking-widest font-black animate-pulse"
+          >
+            Scanning prescription text...
+          </p>
+        </div>
+
+        <div v-else>
+          <!-- Match count -->
+          <p class="text-xs text-gray-500 dark:text-slate-400 mb-6">
+            We scanned the doctor's prescription text and found
+            <span class="font-bold text-indigo-600 dark:text-indigo-400"
+              >{{ matchedMedicines.length }} matches</span
+            >
+            in our pharmacy catalog.
+          </p>
+
+          <!-- Empty state -->
+          <div
+            v-if="matchedMedicines.length === 0"
+            class="py-10 text-center border-2 border-dashed border-gray-100 dark:border-slate-800 rounded-2xl"
+          >
+            <p class="text-sm text-gray-400 dark:text-slate-500 font-medium">
+              No matching medicines found in our catalog.
+            </p>
+          </div>
+
+          <!-- Matches list -->
+          <div v-else class="space-y-3 max-h-60 overflow-y-auto pr-1">
+            <div
+              v-for="med in matchedMedicines"
+              :key="med.id"
+              class="p-4 bg-gray-50 dark:bg-slate-800/40 border border-gray-100 dark:border-slate-800 rounded-2xl flex items-center justify-between gap-4"
+            >
+              <div>
+                <h4
+                  class="text-xs font-black text-gray-900 dark:text-white uppercase tracking-wider"
+                >
+                  {{ med.name }}
+                </h4>
+                <p class="text-[10px] text-gray-400 mt-0.5">
+                  Category: {{ med.category }} • ${{ Number(med.price).toFixed(2) }}
+                </p>
+              </div>
+              <div class="text-right">
+                <span
+                  v-if="med.stock > 0"
+                  class="px-2.5 py-1 bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 text-[9px] font-black uppercase tracking-widest rounded-lg"
+                >
+                  In Stock ({{ med.stock }})
+                </span>
+                <span
+                  v-else
+                  class="px-2.5 py-1 bg-rose-100 dark:bg-rose-950 text-rose-700 dark:text-rose-400 text-[9px] font-black uppercase tracking-widest rounded-lg"
+                >
+                  Out of Stock
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Cart Action -->
+          <div class="flex gap-4 pt-6 mt-6 border-t border-gray-100 dark:border-slate-800">
+            <button
+              type="button"
+              @click="showPrescriptionModal = false"
+              class="flex-1 py-3.5 bg-gray-50 dark:bg-slate-800 text-gray-600 dark:text-slate-300 text-xs font-black uppercase tracking-widest rounded-xl hover:bg-gray-100 transition-all border border-gray-200 dark:border-slate-700"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              @click="addPrescribedToCart"
+              :disabled="matchedMedicines.filter((m) => m.stock > 0).length === 0"
+              class="flex-1 py-3.5 bg-indigo-600 text-white text-xs font-black uppercase tracking-widest rounded-xl hover:bg-indigo-700 transition-all disabled:opacity-60 disabled:cursor-not-allowed shadow-md shadow-indigo-500/20"
+            >
+              🛒 Add to Basket
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </Transition>
+
+  <!-- ════════════════════════════════════════════════════════ -->
+  <!--  SIMULATED PAYMENT MODAL                                 -->
+  <!-- ════════════════════════════════════════════════════════ -->
+  <Transition name="fade">
+    <div
+      v-if="showPaymentModal"
+      class="fixed inset-0 z-50 flex items-center justify-center px-4 bg-slate-900/60 backdrop-blur-sm"
+      @click.self="showPaymentModal = false"
+    >
+      <div
+        class="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-gray-100 dark:border-slate-800 max-w-md w-full p-8 shadow-premium-xl animate-scale-up"
+      >
+        <div class="flex items-center justify-between mb-6">
+          <div>
+            <span
+              class="text-[10px] font-black text-blue-600 bg-blue-50 dark:bg-blue-950 dark:text-blue-400 px-3 py-1 rounded-full uppercase tracking-widest"
+            >
+              Simulated Checkout
+            </span>
+            <h3 class="text-xl font-black text-gray-900 dark:text-white mt-3 tracking-tight">
+              Pay Invoice
+            </h3>
+          </div>
+          <button
+            @click="showPaymentModal = false"
+            class="w-8 h-8 rounded-full bg-gray-50 dark:bg-slate-800 flex items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-slate-200 transition-colors"
+          >
+            ✕
+          </button>
+        </div>
+
+        <div v-if="selectedInvoice" class="space-y-4">
+          <div
+            class="p-6 bg-blue-50/40 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900/30 rounded-2xl text-center"
+          >
+            <p
+              class="text-xs text-gray-400 dark:text-slate-500 uppercase tracking-widest font-bold"
+            >
+              Total Amount Due
+            </p>
+            <p class="text-3xl font-black text-blue-600 dark:text-blue-400 mt-2">
+              ${{ Number(selectedInvoice.amount).toFixed(2) }}
+            </p>
+            <p class="text-[10px] text-gray-400 mt-1 uppercase tracking-wider font-bold capitalize">
+              Type: {{ selectedInvoice.invoice_type }}
+            </p>
+          </div>
+
+          <div class="space-y-3">
+            <div class="flex justify-between text-xs">
+              <span class="text-gray-400 font-bold uppercase tracking-wider">Invoice ID</span>
+              <span class="text-gray-900 dark:text-white font-mono">{{ selectedInvoice.id }}</span>
+            </div>
+            <div class="flex justify-between text-xs">
+              <span class="text-gray-400 font-bold uppercase tracking-wider">Payment Method</span>
+              <span class="text-gray-900 dark:text-white font-black">Simulated Instant Check</span>
+            </div>
+          </div>
+
+          <div class="flex gap-4 pt-6 border-t border-gray-100 dark:border-slate-800">
+            <button
+              type="button"
+              @click="showPaymentModal = false"
+              class="flex-1 py-3.5 bg-gray-50 dark:bg-slate-800 text-gray-600 dark:text-slate-300 text-xs font-black uppercase tracking-widest rounded-xl hover:bg-gray-100 transition-all border border-gray-200 dark:border-slate-700"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              @click="triggerPaymentSimulation"
+              :disabled="isProcessingPayment"
+              class="flex-1 py-3.5 bg-blue-600 text-white text-xs font-black uppercase tracking-widest rounded-xl hover:bg-blue-700 shadow-lg shadow-blue-500/20 transition-all disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            >
+              <div
+                v-if="isProcessingPayment"
+                class="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"
+              ></div>
+              {{ isProcessingPayment ? 'Processing...' : 'Simulate Payment' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </Transition>
+
+  <!-- ════════════════════════════════════════════════════════ -->
+  <!--  PRINTABLE RECEIPT OVERLAY / MODAL                       -->
+  <!-- ════════════════════════════════════════════════════════ -->
+  <Transition name="fade">
+    <div
+      v-if="showReceiptModal"
+      class="fixed inset-0 z-50 flex items-center justify-center px-4 bg-slate-900/60 backdrop-blur-sm"
+      @click.self="showReceiptModal = false"
+    >
+      <div
+        class="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-gray-100 dark:border-slate-800 max-w-lg w-full p-10 shadow-premium-xl animate-scale-up print-container"
+      >
+        <div class="flex items-center justify-between mb-8 print:hidden">
+          <h3 class="text-xl font-black text-gray-900 dark:text-white tracking-tight">
+            Receipt / Proof of Payment
+          </h3>
+          <button
+            @click="showReceiptModal = false"
+            class="w-8 h-8 rounded-full bg-gray-50 dark:bg-slate-800 flex items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-slate-200 transition-colors"
+          >
+            ✕
+          </button>
+        </div>
+
+        <div v-if="selectedInvoice" class="space-y-6 text-gray-900 dark:text-white">
+          <!-- Logo & Header -->
+          <div class="text-center">
+            <h2 class="text-2xl font-black tracking-tight text-emerald-600">
+              MEDIFLOW CLINICAL GROUP
+            </h2>
+            <p class="text-[10px] text-gray-400 uppercase tracking-widest font-black mt-1">
+              Hospital Management billing System
+            </p>
+          </div>
+
+          <div
+            class="border-t border-b border-dashed border-gray-200 dark:border-slate-800 py-4 space-y-2"
+          >
+            <div class="flex justify-between text-xs">
+              <span class="text-gray-400 uppercase tracking-wider font-bold">Receipt ID</span>
+              <span class="font-mono">{{ selectedInvoice.id }}</span>
+            </div>
+            <div class="flex justify-between text-xs">
+              <span class="text-gray-400 uppercase tracking-wider font-bold">Transaction Date</span>
+              <span>{{
+                formatDate(selectedInvoice.updated_at || selectedInvoice.created_at)
+              }}</span>
+            </div>
+            <div class="flex justify-between text-xs">
+              <span class="text-gray-400 uppercase tracking-wider font-bold">Status</span>
+              <span
+                class="text-emerald-600 dark:text-emerald-400 uppercase font-black tracking-widest"
+                >SUCCESSFULLY PAID</span
+              >
+            </div>
+          </div>
+
+          <div class="space-y-3">
+            <h4 class="text-xs font-black text-gray-400 uppercase tracking-widest">
+              Billing Breakdown
+            </h4>
+            <div class="flex justify-between text-sm py-2">
+              <span class="capitalize font-bold text-gray-700 dark:text-slate-300"
+                >{{ selectedInvoice.invoice_type }} charges</span
+              >
+              <span class="font-black">${{ Number(selectedInvoice.amount).toFixed(2) }}</span>
+            </div>
+            <div class="h-px bg-gray-100 dark:bg-slate-800"></div>
+            <div class="flex justify-between text-base font-black">
+              <span>Total Paid</span>
+              <span class="text-emerald-600">${{ Number(selectedInvoice.amount).toFixed(2) }}</span>
+            </div>
+          </div>
+
+          <p class="text-[9px] text-gray-400 text-center italic mt-8">
+            Thank you for choosing MediFlow. This is an electronically generated proof of receipt.
+          </p>
+
+          <div class="flex gap-4 pt-6 border-t border-gray-100 dark:border-slate-800 print:hidden">
+            <button
+              type="button"
+              @click="showReceiptModal = false"
+              class="flex-1 py-3.5 bg-gray-50 dark:bg-slate-800 text-gray-600 dark:text-slate-300 text-xs font-black uppercase tracking-widest rounded-xl hover:bg-gray-100 transition-all border border-gray-200 dark:border-slate-700"
+            >
+              Close
+            </button>
+            <button
+              type="button"
+              @click="triggerNativePrint"
+              class="flex-1 py-3.5 bg-emerald-600 text-white text-xs font-black uppercase tracking-widest rounded-xl hover:bg-emerald-700 shadow-lg shadow-emerald-500/20 transition-all flex items-center justify-center gap-1.5"
+            >
+              🖨️ Print Receipt
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </Transition>
 </template>
 
 <style scoped>
@@ -1331,5 +2084,25 @@ onMounted(loadData)
 }
 .animate-scale-up {
   animation: scaleUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .print-container,
+  .print-container * {
+    visibility: visible;
+  }
+  .print-container {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    border: none;
+    box-shadow: none;
+    background: white;
+    color: black;
+  }
 }
 </style>

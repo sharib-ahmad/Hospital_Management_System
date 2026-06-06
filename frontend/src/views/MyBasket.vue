@@ -153,9 +153,7 @@ onMounted(loadData)
           />
         </svg>
       </div>
-      <h3 class="text-xl font-black text-gray-900 dark:text-white mb-2">
-        Your basket is empty
-      </h3>
+      <h3 class="text-xl font-black text-gray-900 dark:text-white mb-2">Your basket is empty</h3>
       <p class="text-gray-500 dark:text-slate-400 text-sm max-w-xs font-medium mb-8">
         Add medicines from the MediStore pharmacy catalog first.
       </p>
@@ -203,7 +201,9 @@ onMounted(loadData)
               <div class="flex items-center gap-2">
                 <button
                   type="button"
-                  @click="updateCartQuantity(item.medicine.id, item.quantity - 1, item.medicine.stock)"
+                  @click="
+                    updateCartQuantity(item.medicine.id, item.quantity - 1, item.medicine.stock)
+                  "
                   class="w-8 h-8 rounded-xl bg-white dark:bg-slate-850 flex items-center justify-center font-bold text-gray-500 hover:text-gray-700 dark:text-slate-400 dark:hover:text-slate-200 border border-gray-200 dark:border-slate-700 text-sm shadow-sm transition-all active:scale-90"
                 >
                   -
@@ -213,7 +213,9 @@ onMounted(loadData)
                 </span>
                 <button
                   type="button"
-                  @click="updateCartQuantity(item.medicine.id, item.quantity + 1, item.medicine.stock)"
+                  @click="
+                    updateCartQuantity(item.medicine.id, item.quantity + 1, item.medicine.stock)
+                  "
                   class="w-8 h-8 rounded-xl bg-white dark:bg-slate-850 flex items-center justify-center font-bold text-gray-500 hover:text-gray-700 dark:text-slate-400 dark:hover:text-slate-200 border border-gray-200 dark:border-slate-700 text-sm shadow-sm transition-all active:scale-90"
                 >
                   +
@@ -232,15 +234,28 @@ onMounted(loadData)
                 class="p-2 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/20 border border-transparent hover:border-rose-100 dark:hover:border-rose-950/30 rounded-xl transition-all"
                 title="Remove item"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="h-4.5 w-4.5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2.5"
+                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                  />
                 </svg>
               </button>
             </div>
           </div>
         </div>
 
-        <div class="mt-8 pt-6 border-t border-gray-100 dark:border-slate-800 flex justify-between items-center">
+        <div
+          class="mt-8 pt-6 border-t border-gray-100 dark:border-slate-800 flex justify-between items-center"
+        >
           <span class="text-sm font-black text-gray-400 uppercase tracking-wider">Subtotal</span>
           <span class="text-3xl font-black text-emerald-600 dark:text-emerald-400 tracking-tight">
             ${{ cartTotal.toFixed(2) }}

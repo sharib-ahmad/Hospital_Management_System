@@ -23,3 +23,8 @@ class MedicalRecordsController:
     @staticmethod
     def get_record_by_id(record_id):
         return MedicalRecordsService.get_record_by_id(record_id)
+
+    @staticmethod
+    def parse_prescription(record_id):
+        return MedicalRecordsService.parse_prescription(record_id)
+

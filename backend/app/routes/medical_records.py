@@ -50,3 +50,14 @@ class MedicalRecordDetail(Resource):
     def get(self, record_id):
         """Get a single medical record by ID"""
         return MedicalRecordsController.get_record_by_id(record_id)
+
+
+@medical_records_ns.route('/<string:record_id>/parse-prescription')
+@medical_records_ns.param('record_id', 'The medical record UUID')
+class ParsePrescription(Resource):
+    @medical_records_ns.doc('parse_prescription', security='Bearer Auth')
+    @role_required(UserRole.USER)
+    def get(self, record_id):
+        """Parse the medical record's prescription text and match available medicines"""
+        return MedicalRecordsController.parse_prescription(record_id)
+

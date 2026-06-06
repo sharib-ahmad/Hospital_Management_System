@@ -105,6 +105,16 @@ class PatientVitalsService:
                 if doctor.user:
                     referral_doc_name = doctor.user.full_name
 
+        # Trigger In-App Notification to assigned doctor
+        if patient.assigned_doctor_id:
+            from .notification import NotificationService
+            NotificationService.create_notification(
+                user_id=patient.assigned_doctor_id,
+                title="Patient Vitals Recorded",
+                message=f"Vitals have been updated/recorded for patient {patient.full_name}.",
+                category="vitals"
+            )
+            
         db.session.commit()
 
         success_message = "Patient vitals recorded successfully"
@@ -146,3 +156,46 @@ class PatientVitalsService:
             return handle_response(success=False, message="No vitals recorded for this patient", status_code=404)
 
         return handle_response(success=True, data=vitals, message="Patient vitals retrieved successfully")
+
+    @staticmethod
+    def generate_vitals_csv_string(user_id):
+        """
+        Generates a CSV string containing vital records for all patients registered under user_id.
+        """
+        import csv
+        import io
+        
+        patients = Patient.query.filter_by(user_id=user_id).all()
+        output = io.StringIO()
+        writer = csv.writer(output)
+        
+        # Write CSV Header
+        writer.writerow([
+            'Patient Name', 'Relationship', 'Systolic BP (mmHg)', 
+            'Diastolic BP (mmHg)', 'Blood Sugar (mg/dL)', 'Pulse Rate (bpm)', 
+            'Temperature (F)', 'Respiration Rate (breaths/min)', 
+            'Notes', 'Recorded At', 'Nurse Code'
+        ])
+        
+        for p in patients:
+            # Sort vitals in chronological order for export
+            sorted_vitals = sorted(p.patient_vitals, key=lambda v: v.recorded_at)
+            for v in sorted_vitals:
+                nurse_code = v.nurse.nurse_code if v.nurse else 'N/A'
+                rel_val = p.relation.value if (p.relation and hasattr(p.relation, 'value')) else str(p.relation or 'Self')
+                writer.writerow([
+                    p.full_name,
+                    rel_val,
+                    v.systolic_bp,
+                    v.diastolic_bp,
+                    v.blood_sugar,
+                    v.pulse_rate,
+                    v.temperature,
+                    v.respiration_rate,
+                    v.notes or '',
+                    v.recorded_at.strftime('%Y-%m-%d %H:%M:%S'),
+                    nurse_code
+                ])
+                
+        return output.getvalue()
+

@@ -1,14 +1,77 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { useCartStore } from '../stores/cart'
 import ThemeToggle from '../components/ThemeToggle.vue'
+import api from '../utils/axios'
 
 const auth = useAuthStore()
 const cartStore = useCartStore()
 const router = useRouter()
 const isSidebarOpen = ref(false)
+
+// Notifications state
+const notifications = ref<any[]>([])
+const isNotificationsOpen = ref(false)
+let pollingInterval: any = null
+
+const fetchNotifications = async () => {
+  if (!auth.user) return
+  try {
+    const res = await api.get('/notifications')
+    notifications.value = res.data.data || []
+  } catch (err) {
+    console.error('Failed to fetch notifications', err)
+  }
+}
+
+const unreadCount = computed(() => {
+  return notifications.value.filter((n: any) => !n.is_read).length
+})
+
+const toggleNotifications = () => {
+  isNotificationsOpen.value = !isNotificationsOpen.value
+  if (isNotificationsOpen.value) {
+    fetchNotifications()
+  }
+}
+
+const markRead = async (id: number) => {
+  try {
+    await api.put(`/notifications/${id}/read`)
+    const idx = notifications.value.findIndex((n: any) => n.id === id)
+    if (idx !== -1) notifications.value[idx].is_read = true
+  } catch (err) {
+    console.error('Failed to mark notification read', err)
+  }
+}
+
+const markAllRead = async () => {
+  try {
+    await api.put('/notifications/read-all')
+    notifications.value.forEach((n: any) => (n.is_read = true))
+  } catch (err) {
+    console.error('Failed to mark all notifications read', err)
+  }
+}
+
+const getCategoryColor = (category: string) => {
+  switch (category) {
+    case 'billing':
+      return 'bg-blue-500'
+    case 'order':
+      return 'bg-purple-500'
+    case 'appointment':
+      return 'bg-emerald-500'
+    case 'application':
+      return 'bg-amber-500'
+    case 'vitals':
+      return 'bg-rose-500'
+    default:
+      return 'bg-gray-400'
+  }
+}
 
 const toggleSidebar = () => {
   isSidebarOpen.value = !isSidebarOpen.value
@@ -36,10 +99,15 @@ const handleResize = () => {
 onMounted(() => {
   handleResize()
   window.addEventListener('resize', handleResize)
+  if (auth.user) {
+    fetchNotifications()
+    pollingInterval = setInterval(fetchNotifications, 15000)
+  }
 })
 
 onUnmounted(() => {
   window.removeEventListener('resize', handleResize)
+  if (pollingInterval) clearInterval(pollingInterval)
 })
 
 const navigation = {
@@ -304,6 +372,109 @@ const currentNav = navigation[auth.user?.role as keyof typeof navigation] || nav
           </div>
 
           <div class="flex items-center gap-4 sm:gap-8">
+            <!-- Notification Bell -->
+            <div class="relative">
+              <button
+                @click="toggleNotifications"
+                class="p-2.5 text-gray-500 hover:text-gray-900 dark:text-slate-400 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-slate-800 rounded-xl transition-all relative"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="h-6 w-6"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+                  />
+                </svg>
+                <span
+                  v-if="unreadCount > 0"
+                  class="absolute top-1.5 right-1.5 h-3 w-3 bg-rose-500 rounded-full border border-white dark:border-slate-900 animate-pulse"
+                ></span>
+              </button>
+
+              <!-- Dropdown -->
+              <div
+                v-if="isNotificationsOpen"
+                class="absolute right-0 mt-3 w-80 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border border-gray-100 dark:border-slate-800/80 rounded-2xl shadow-premium p-4 z-50 animate-in fade-in slide-in-from-top-4"
+              >
+                <div
+                  class="flex items-center justify-between border-b border-gray-100 dark:border-slate-800/80 pb-3 mb-3"
+                >
+                  <h3
+                    class="text-sm font-black text-gray-900 dark:text-white uppercase tracking-wider"
+                  >
+                    Notifications ({{ unreadCount }})
+                  </h3>
+                  <button
+                    v-if="unreadCount > 0"
+                    @click="markAllRead"
+                    class="text-[10px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-widest hover:underline"
+                  >
+                    Mark all read
+                  </button>
+                </div>
+
+                <div class="max-h-72 overflow-y-auto space-y-2.5 pr-1">
+                  <div
+                    v-for="n in notifications.slice(0, 15)"
+                    :key="n.id"
+                    class="p-3 rounded-xl border transition-all text-left flex items-start gap-3 relative group"
+                    :class="
+                      n.is_read
+                        ? 'bg-transparent border-gray-100/50 dark:border-slate-800/30 opacity-70'
+                        : 'bg-emerald-500/5 border-emerald-500/10'
+                    "
+                  >
+                    <div
+                      :class="`w-2 h-2 rounded-full mt-1.5 shrink-0 ${getCategoryColor(n.category)}`"
+                    ></div>
+                    <div class="flex-1 min-w-0">
+                      <h4 class="text-xs font-bold text-gray-900 dark:text-white truncate">
+                        {{ n.title }}
+                      </h4>
+                      <p
+                        class="text-[11px] text-gray-500 dark:text-slate-400 mt-0.5 leading-relaxed"
+                      >
+                        {{ n.message }}
+                      </p>
+                      <span class="text-[9px] text-gray-400 dark:text-slate-500 block mt-1">
+                        {{ n.created_at }}
+                      </span>
+                    </div>
+                    <button
+                      v-if="!n.is_read"
+                      @click="markRead(n.id)"
+                      class="opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-all rounded-md"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        class="h-3.5 w-3.5"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        stroke-width="3"
+                      >
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </button>
+                  </div>
+
+                  <div
+                    v-if="notifications.length === 0"
+                    class="py-8 text-center text-xs text-gray-400 dark:text-slate-500 font-medium"
+                  >
+                    No notifications
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <ThemeToggle />
             <div class="h-8 w-px bg-gray-200 dark:bg-slate-800"></div>
             <div class="flex items-center gap-4 group cursor-pointer">

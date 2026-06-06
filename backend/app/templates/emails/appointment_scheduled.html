@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Appointment Confirmed</title>
+    <style>
+        body { font-family: 'Outfit', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8fafc; color: #1e293b; margin: 0; padding: 20px; }
+        .container { max-width: 600px; background: #ffffff; border-radius: 24px; padding: 40px; margin: 0 auto; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; }
+        .header { text-align: center; border-bottom: 2px solid #f1f5f9; padding-bottom: 24px; margin-bottom: 30px; }
+        .logo { font-size: 24px; font-weight: 800; color: #0d9488; text-transform: uppercase; letter-spacing: 2px; }
+        .info-grid { background-color: #f8fafc; border-radius: 16px; padding: 24px; margin-bottom: 24px; border: 1px solid #e2e8f0; }
+        .info-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #e2e8f0; }
+        .info-row:last-child { border-bottom: none; }
+        .label { font-weight: bold; color: #64748b; }
+        .value { font-weight: 600; color: #0f172a; }
+        .badge { background-color: #dbeafe; color: #1e40af; padding: 4px 12px; border-radius: 9999px; font-size: 12px; font-weight: 700; text-transform: uppercase; }
+        .footer { text-align: center; font-size: 12px; color: #94a3b8; margin-top: 40px; border-top: 1px solid #f1f5f9; padding-top: 20px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">🏥 MediFlow</div>
+            <h2>Appointment Confirmed</h2>
+            <p>Your appointment is scheduled and confirmed. Please find details below.</p>
+        </div>
+        
+        <div class="info-grid">
+            <div class="info-row">
+                <span class="label">Patient Name:</span>
+                <span class="value">{{ patient_name }}</span>
+            </div>
+            <div class="info-row">
+                <span class="label">Consultant:</span>
+                <span class="value">{% if doctor_name %}Dr. {{ doctor_name }}{% else %}N/A - Standalone Check{% endif %}</span>
+            </div>
+            {% if specialization %}
+            <div class="info-row">
+                <span class="label">Specialization:</span>
+                <span class="value">{{ specialization }}</span>
+            </div>
+            {% endif %}
+            <div class="info-row">
+                <span class="label">Date & Time:</span>
+                <span class="value">{{ appointment_date }}</span>
+            </div>
+            <div class="info-row">
+                <span class="label">Type:</span>
+                <span class="value"><span class="badge">{{ appointment_type }}</span></span>
+            </div>
+            <div class="info-row">
+                <span class="label">Consultation Fee:</span>
+                <span class="value">${{ "%.2f"|format(consultation_fee) }}</span>
+            </div>
+            {% if reason %}
+            <div class="info-row">
+                <span class="label">Reason:</span>
+                <span class="value" style="max-width: 250px; text-align: right;">{{ reason }}</span>
+            </div>
+            {% endif %}
+        </div>
+        
+        <p>If you need to reschedule or cancel this appointment, please do so via the patient portal at least 24 hours prior to the slot time.</p>
+        
+        <div class="footer">
+            <p>This is an automated message from MediFlow Hospital Management System.</p>
+            <p>&copy; 2026 MediFlow Inc. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>

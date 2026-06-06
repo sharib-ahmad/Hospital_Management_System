@@ -106,3 +106,48 @@ class MedicalRecordsService:
             return handle_response(success=False, message="Unauthorized", status_code=403)
 
         return handle_response(success=True, data=record, message="Medical record retrieved successfully")
+
+    @staticmethod
+    def parse_prescription(record_id):
+        """
+        Parses a medical record's prescription text and matches it against available medicines.
+        """
+        record = MedicalRecord.query.get(record_id)
+        if not record:
+            return handle_response(success=False, message="Medical record not found", status_code=404)
+            
+        # Permission check
+        if current_user.role == UserRole.USER:
+            patient = Patient.query.filter_by(id=record.patient_id, user_id=current_user.id).first()
+            if not patient:
+                return handle_response(success=False, message="Unauthorized", status_code=403)
+                
+        prescription_text = record.prescription or ""
+        if not prescription_text:
+            return handle_response(success=True, data=[], message="Prescription text is empty")
+            
+        from ..models.medistore import Medicine
+        
+        all_medicines = Medicine.query.all()
+        matched_medicines = []
+        
+        # Scan for matching names
+        text_lower = prescription_text.lower()
+        for med in all_medicines:
+            med_name_lower = med.name.lower()
+            if med_name_lower in text_lower:
+                matched_medicines.append({
+                    'id': str(med.id),
+                    'name': med.name,
+                    'price': float(med.price),
+                    'stock': med.stock,
+                    'category': med.category,
+                    'manufacturer': med.manufacturer
+                })
+                
+        return handle_response(
+            success=True,
+            data=matched_medicines,
+            message=f"Found {len(matched_medicines)} matching medicines from prescription"
+        )
+

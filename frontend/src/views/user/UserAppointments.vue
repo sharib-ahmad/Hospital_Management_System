@@ -66,12 +66,9 @@ const fetchSlots = async () => {
 }
 
 import { watch } from 'vue'
-watch(
-  [bookingDate, () => bookForm.value.doctor_id, () => bookForm.value.appointment_type],
-  () => {
-    fetchSlots()
-  }
-)
+watch([bookingDate, () => bookForm.value.doctor_id, () => bookForm.value.appointment_type], () => {
+  fetchSlots()
+})
 
 // Load all required data
 const loadData = async () => {
@@ -661,24 +658,41 @@ onMounted(loadData)
                   </label>
 
                   <!-- Loading state -->
-                  <div v-if="isLoadingSlots" class="flex items-center gap-2 py-3 text-xs text-gray-500 dark:text-slate-400">
-                    <div class="animate-spin rounded-full h-4 w-4 border-2 border-emerald-600 border-t-transparent"></div>
+                  <div
+                    v-if="isLoadingSlots"
+                    class="flex items-center gap-2 py-3 text-xs text-gray-500 dark:text-slate-400"
+                  >
+                    <div
+                      class="animate-spin rounded-full h-4 w-4 border-2 border-emerald-600 border-t-transparent"
+                    ></div>
                     <span>Checking slot availability...</span>
                   </div>
 
                   <!-- Warning states -->
-                  <div v-else-if="!bookingDate" class="text-xs text-gray-400 dark:text-slate-500 italic py-2">
+                  <div
+                    v-else-if="!bookingDate"
+                    class="text-xs text-gray-400 dark:text-slate-500 italic py-2"
+                  >
                     Please select a date to view available time slots.
                   </div>
-                  <div v-else-if="bookForm.appointment_type === 'consultation' && !bookForm.doctor_id" class="text-xs text-gray-400 dark:text-slate-500 italic py-2">
+                  <div
+                    v-else-if="bookForm.appointment_type === 'consultation' && !bookForm.doctor_id"
+                    class="text-xs text-gray-400 dark:text-slate-500 italic py-2"
+                  >
                     Please select a doctor to view available time slots.
                   </div>
-                  <div v-else-if="availableSlots.length === 0" class="text-xs text-rose-500 font-medium py-2">
+                  <div
+                    v-else-if="availableSlots.length === 0"
+                    class="text-xs text-rose-500 font-medium py-2"
+                  >
                     No slots available for this day. Please choose another date.
                   </div>
 
                   <!-- Slots Grid -->
-                  <div v-else class="grid grid-cols-4 gap-2 max-h-40 overflow-y-auto p-1.5 border border-gray-100 dark:border-slate-800 rounded-2xl">
+                  <div
+                    v-else
+                    class="grid grid-cols-4 gap-2 max-h-40 overflow-y-auto p-1.5 border border-gray-100 dark:border-slate-800 rounded-2xl"
+                  >
                     <button
                       v-for="slot in availableSlots"
                       :key="slot"
@@ -688,7 +702,7 @@ onMounted(loadData)
                         'py-2 px-3 text-xs font-bold rounded-xl border text-center transition-all duration-200 active:scale-95',
                         bookingSlot === slot
                           ? 'bg-emerald-600 text-white border-emerald-600 shadow-md shadow-emerald-600/15'
-                          : 'bg-white dark:bg-slate-800 text-gray-700 dark:text-slate-300 border-gray-200 dark:border-slate-700/50 hover:border-emerald-500/30'
+                          : 'bg-white dark:bg-slate-800 text-gray-700 dark:text-slate-300 border-gray-200 dark:border-slate-700/50 hover:border-emerald-500/30',
                       ]"
                     >
                       {{ slot }}

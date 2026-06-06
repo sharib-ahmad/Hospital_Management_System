@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, watch, onBeforeUnmount } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import PortalBase from './PortalBase.vue'
 import api from '../../utils/axios'
 import { useNotificationStore } from '../../stores/notification'
 import FormField from '../../components/FormField.vue'
+import { Chart } from 'chart.js/auto'
 
 const notification = useNotificationStore()
 const route = useRoute()
@@ -12,7 +13,7 @@ const router = useRouter()
 const appointments = ref<any[]>([])
 const assignedPatients = ref<any[]>([])
 const isLoading = ref(true)
-const activeTab = ref('consultations') // 'consultations' | 'patients' | 'records'
+const activeTab = ref('consultations') // 'consultations' | 'patients' | 'records' | 'analytics'
 
 // Sync activeTab with route path
 const syncTabWithRoute = () => {
@@ -96,7 +97,7 @@ const loadPatientVitals = async (patientId: string) => {
   try {
     const res = await api.get(`/vitals/${patientId}`)
     const data = res.data.data || res.data
-    selectedPatientVitals.value = Array.isArray(data) ? data[0] : (data || null)
+    selectedPatientVitals.value = Array.isArray(data) ? data[0] : data || null
   } catch {
     selectedPatientVitals.value = null
   } finally {
@@ -345,6 +346,145 @@ const getStatusColor = (status: string) => {
   }
 }
 
+// ───────── Analytics Tab ─────────
+const analyticsData = ref<any>(null)
+const isLoadingAnalytics = ref(false)
+
+const trendsCanvasRef = ref<HTMLCanvasElement | null>(null)
+const diagnosesCanvasRef = ref<HTMLCanvasElement | null>(null)
+const statusCanvasRef = ref<HTMLCanvasElement | null>(null)
+
+let trendsChart: Chart | null = null
+let diagnosesChart: Chart | null = null
+let statusChart: Chart | null = null
+
+const fetchDoctorAnalytics = async () => {
+  isLoadingAnalytics.value = true
+  try {
+    const res = await api.get('/analytics/doctor')
+    analyticsData.value = res.data.data
+  } catch (err) {
+    notification.error('Failed to load clinical analytics')
+  } finally {
+    isLoadingAnalytics.value = false
+    if (analyticsData.value) {
+      setTimeout(() => {
+        renderAnalyticsCharts()
+      }, 50)
+    }
+  }
+}
+
+const renderAnalyticsCharts = () => {
+  const isDark = document.documentElement.classList.contains('dark')
+  const textColor = isDark ? '#94a3b8' : '#475569'
+  const gridColor = isDark ? 'rgba(71, 85, 105, 0.4)' : 'rgba(203, 213, 225, 0.9)'
+
+  // 1. Trends Chart
+  if (trendsCanvasRef.value) {
+    if (trendsChart) trendsChart.destroy()
+    trendsChart = new Chart(trendsCanvasRef.value, {
+      type: 'line',
+      data: {
+        labels: analyticsData.value.consultation_trends.labels,
+        datasets: [
+          {
+            label: 'Completed Consultations',
+            data: analyticsData.value.consultation_trends.data,
+            borderColor: '#10b981',
+            backgroundColor: 'rgba(16, 185, 129, 0.05)',
+            tension: 0.4,
+            fill: true,
+            borderWidth: 3,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { labels: { color: textColor } },
+        },
+        scales: {
+          x: { ticks: { color: textColor }, grid: { display: false } },
+          y: { ticks: { color: textColor }, grid: { color: gridColor } },
+        },
+      },
+    })
+  }
+
+  // 2. Diagnoses Chart
+  if (diagnosesCanvasRef.value) {
+    if (diagnosesChart) diagnosesChart.destroy()
+    diagnosesChart = new Chart(diagnosesCanvasRef.value, {
+      type: 'bar',
+      data: {
+        labels: analyticsData.value.diagnosis_distribution.labels,
+        datasets: [
+          {
+            label: 'Diagnoses Count',
+            data: analyticsData.value.diagnosis_distribution.data,
+            backgroundColor: '#6366f1',
+            borderRadius: 8,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+        },
+        scales: {
+          x: { ticks: { color: textColor }, grid: { display: false } },
+          y: { ticks: { color: textColor }, grid: { color: gridColor } },
+        },
+      },
+    })
+  }
+
+  // 3. Status Distribution Chart
+  if (statusCanvasRef.value) {
+    if (statusChart) statusChart.destroy()
+    const rate = analyticsData.value.fill_rate
+    statusChart = new Chart(statusCanvasRef.value, {
+      type: 'doughnut',
+      data: {
+        labels: ['Completed', 'Confirmed', 'Pending', 'Cancelled'],
+        datasets: [
+          {
+            data: [rate.completed, rate.confirmed, rate.pending, rate.cancelled],
+            backgroundColor: ['#10b981', '#3b82f6', '#f59e0b', '#ef4444'],
+            borderWidth: 0,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'bottom',
+            labels: { color: textColor, padding: 15 },
+          },
+        },
+      },
+    })
+  }
+}
+
+watch(activeTab, async (newTab) => {
+  if (newTab === 'analytics') {
+    await fetchDoctorAnalytics()
+  }
+})
+
+onBeforeUnmount(() => {
+  if (trendsChart) trendsChart.destroy()
+  if (diagnosesChart) diagnosesChart.destroy()
+  if (statusChart) statusChart.destroy()
+})
+
 onMounted(loadData)
 </script>
 
@@ -384,6 +524,16 @@ onMounted(loadData)
           }`"
         >
           Medical Records
+        </button>
+        <button
+          @click="activeTab = 'analytics'"
+          :class="`px-6 py-2.5 rounded-xl text-sm font-black uppercase tracking-widest transition-all ${
+            activeTab === 'analytics'
+              ? 'bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 shadow-sm'
+              : 'text-gray-400 hover:text-gray-600 dark:hover:text-slate-300'
+          }`"
+        >
+          Analytics
         </button>
       </div>
 
@@ -620,9 +770,24 @@ onMounted(loadData)
               @click="router.push(`/patients/${patient.id}`)"
               class="w-full mt-4 mb-3 py-2.5 bg-emerald-50 hover:bg-emerald-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-emerald-600 dark:text-emerald-400 text-xs font-black uppercase tracking-widest rounded-xl transition-all flex items-center justify-center gap-2 border border-emerald-100/50 dark:border-slate-700/50"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" />
-                <path stroke-linecap="round" stroke-linejoin="round" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" />
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-4 w-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                stroke-width="2.5"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"
+                />
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"
+                />
               </svg>
               View Vitals & Stats
             </button>
@@ -875,6 +1040,74 @@ onMounted(loadData)
               <p class="text-xs text-gray-500 dark:text-slate-400 italic leading-relaxed">
                 {{ record.notes }}
               </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ─────────────────────────────────────────────────── -->
+      <!-- Tab 4: Analytics -->
+      <!-- ─────────────────────────────────────────────────── -->
+      <div v-else-if="activeTab === 'analytics'" class="space-y-8">
+        <div class="flex items-center justify-between mb-2">
+          <h3 class="text-xl font-black text-gray-900 dark:text-white flex items-center gap-3">
+            <span class="h-1.5 w-6 bg-emerald-600 rounded-full"></span>
+            Clinical Analytics & Trends
+          </h3>
+        </div>
+
+        <div
+          v-if="isLoadingAnalytics"
+          class="flex flex-col items-center justify-center py-20 space-y-4"
+        >
+          <div
+            class="animate-spin rounded-full h-12 w-12 border-[3px] border-emerald-600 border-t-transparent"
+          ></div>
+          <p class="text-xs text-gray-400 dark:text-slate-500 uppercase tracking-widest font-black">
+            Generating reports...
+          </p>
+        </div>
+
+        <div v-else-if="analyticsData" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <!-- Consultation Trends Line Chart -->
+          <div
+            class="lg:col-span-2 bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-[2rem] p-6 shadow-premium relative"
+          >
+            <h4
+              class="text-xs font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-6"
+            >
+              Consultation Volume (Last 6 Months)
+            </h4>
+            <div class="h-64 relative">
+              <canvas ref="trendsCanvasRef"></canvas>
+            </div>
+          </div>
+
+          <!-- Status Fill Rate Doughnut Chart -->
+          <div
+            class="bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-[2rem] p-6 shadow-premium relative"
+          >
+            <h4
+              class="text-xs font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-6"
+            >
+              Appointment Status Fill Rate
+            </h4>
+            <div class="h-64 relative">
+              <canvas ref="statusCanvasRef"></canvas>
+            </div>
+          </div>
+
+          <!-- Diagnoses Bar Chart -->
+          <div
+            class="lg:col-span-3 bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-[2rem] p-6 shadow-premium relative"
+          >
+            <h4
+              class="text-xs font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-6"
+            >
+              Top 5 Clinical Diagnoses Distribution
+            </h4>
+            <div class="h-64 relative">
+              <canvas ref="diagnosesCanvasRef"></canvas>
             </div>
           </div>
         </div>

@@ -183,7 +183,9 @@ onMounted(loadData)
     </div>
 
     <!-- Main Section -->
-    <div class="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-gray-100 dark:border-slate-800 p-10 min-h-[500px] shadow-premium flex flex-col">
+    <div
+      class="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-gray-100 dark:border-slate-800 p-10 min-h-[500px] shadow-premium flex flex-col"
+    >
       <!-- Navigation Tab Bar -->
       <div class="flex items-center gap-6 border-b border-gray-100 dark:border-slate-800 mb-8 pb-4">
         <button
@@ -291,20 +293,32 @@ onMounted(loadData)
                   </h4>
                 </div>
               </div>
-              <p class="text-xs text-gray-500 dark:text-slate-400 font-medium leading-relaxed mb-6 line-clamp-3 min-h-[4.5rem]">
+              <p
+                class="text-xs text-gray-500 dark:text-slate-400 font-medium leading-relaxed mb-6 line-clamp-3 min-h-[4.5rem]"
+              >
                 {{ med.description || 'No detailed instructions provided.' }}
               </p>
-              
+
               <div class="flex items-baseline gap-2 mb-6 justify-between">
                 <div>
-                  <span class="text-[9px] font-black text-gray-400 uppercase tracking-widest block mb-0.5">Price</span>
-                  <p class="text-xl font-black text-emerald-600 dark:text-emerald-400 tracking-tight">
+                  <span
+                    class="text-[9px] font-black text-gray-400 uppercase tracking-widest block mb-0.5"
+                    >Price</span
+                  >
+                  <p
+                    class="text-xl font-black text-emerald-600 dark:text-emerald-400 tracking-tight"
+                  >
                     ${{ Number(med.price).toFixed(2) }}
                   </p>
                 </div>
                 <div class="text-right">
-                  <span class="text-[9px] font-black text-gray-400 uppercase tracking-widest block mb-0.5">Availability</span>
-                  <p :class="`text-[10px] font-black uppercase tracking-widest ${med.stock > 0 ? 'text-teal-600 dark:text-teal-400' : 'text-rose-500'}`">
+                  <span
+                    class="text-[9px] font-black text-gray-400 uppercase tracking-widest block mb-0.5"
+                    >Availability</span
+                  >
+                  <p
+                    :class="`text-[10px] font-black uppercase tracking-widest ${med.stock > 0 ? 'text-teal-600 dark:text-teal-400' : 'text-rose-500'}`"
+                  >
                     {{ med.stock > 0 ? `Stock: ${med.stock}` : 'Out of stock' }}
                   </p>
                 </div>

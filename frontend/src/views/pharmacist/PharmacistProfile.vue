@@ -228,8 +228,6 @@ onMounted(loadProfile)
           </h3>
 
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
-
-
             <!-- Experience -->
             <div
               class="p-5 bg-gray-50 dark:bg-slate-800/50 rounded-2xl border border-gray-100 dark:border-slate-700/50"

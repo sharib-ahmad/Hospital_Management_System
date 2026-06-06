@@ -130,8 +130,44 @@ class AppointmentService:
         )
         
         db.session.add(appointment)
+        db.session.flush() # Populate ID
+        
+        # Trigger In-App Notifications and Invoices
+        if appointment.status == AppointmentStatus.CONFIRMED:
+            if appointment.appointment_type == 'consultation' and appointment.consultation_fee > 0:
+                from .invoice import InvoiceService
+                InvoiceService.create_invoice(
+                    patient_id=appointment.patient_id,
+                    user_id=appointment.patient.user_id,
+                    amount=appointment.consultation_fee,
+                    invoice_type='consultation',
+                    appointment_id=appointment.id
+                )
+                
+            from .notification import NotificationService
+            NotificationService.create_notification(
+                user_id=appointment.patient.user_id,
+                title="Appointment Confirmed",
+                message=f"Your appointment with Dr. {appointment.doctor_name} has been confirmed for {appointment.appointment_date.strftime('%Y-%m-%d %H:%M')}.",
+                category="appointment"
+            )
+            
+        elif appointment.status == AppointmentStatus.PENDING:
+            from .notification import NotificationService
+            NotificationService.create_notification(
+                user_id=appointment.patient.user_id,
+                title="Appointment Pending Review",
+                message=f"Your appointment booking request has been submitted and is pending clinical review.",
+                category="appointment"
+            )
+            
         db.session.commit()
         
+        # Trigger Celery email task
+        if appointment.status == AppointmentStatus.CONFIRMED:
+            from ..tasks.email_tasks import send_appointment_email
+            send_appointment_email.delay(appointment.id)
+            
         return handle_response(success=True, data=appointment, message="Appointment booked successfully", status_code=201)
 
     @staticmethod
@@ -168,11 +204,52 @@ class AppointmentService:
                  return handle_response(success=False, message="Patients can only cancel appointments", status_code=403)
 
         if 'status' in validated_data:
-            appointment.status = validated_data['status']
+            new_status = validated_data['status']
+            old_status = appointment.status
+            appointment.status = new_status
+            
+            # If status transitions to CONFIRMED, create invoice and notify
+            if new_status == AppointmentStatus.CONFIRMED and old_status != AppointmentStatus.CONFIRMED:
+                if appointment.appointment_type == 'consultation' and appointment.consultation_fee > 0:
+                    from ..models.invoice import Invoice
+                    existing_inv = Invoice.query.filter_by(appointment_id=appointment.id).first()
+                    if not existing_inv:
+                        from .invoice import InvoiceService
+                        InvoiceService.create_invoice(
+                            patient_id=appointment.patient_id,
+                            user_id=appointment.patient.user_id,
+                            amount=appointment.consultation_fee,
+                            invoice_type='consultation',
+                            appointment_id=appointment.id
+                        )
+                
+                from .notification import NotificationService
+                NotificationService.create_notification(
+                    user_id=appointment.patient.user_id,
+                    title="Appointment Confirmed",
+                    message=f"Your appointment with Dr. {appointment.doctor_name} has been confirmed for {appointment.appointment_date.strftime('%Y-%m-%d %H:%M')}.",
+                    category="appointment"
+                )
+                
+            elif new_status == AppointmentStatus.CANCELLED and old_status != AppointmentStatus.CANCELLED:
+                from .notification import NotificationService
+                NotificationService.create_notification(
+                    user_id=appointment.patient.user_id,
+                    title="Appointment Cancelled",
+                    message=f"Your appointment on {appointment.appointment_date.strftime('%Y-%m-%d %H:%M')} has been cancelled.",
+                    category="appointment"
+                )
+                
         if 'reason' in validated_data:
             appointment.reason = validated_data['reason']
             
         db.session.commit()
+        
+        # Trigger Celery Task to email status updates
+        if 'status' in validated_data and validated_data['status'] in (AppointmentStatus.CONFIRMED, AppointmentStatus.CANCELLED):
+            from ..tasks.email_tasks import send_appointment_email
+            send_appointment_email.delay(appointment.id)
+            
         return handle_response(success=True, data=appointment, message="Appointment updated successfully")
 
     @staticmethod

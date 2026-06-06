@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Clinical Vitals Export</title>
+    <style>
+        body { font-family: 'Outfit', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8fafc; color: #1e293b; margin: 0; padding: 20px; }
+        .container { max-width: 600px; background: #ffffff; border-radius: 24px; padding: 40px; margin: 0 auto; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; }
+        .header { text-align: center; border-bottom: 2px solid #f1f5f9; padding-bottom: 24px; margin-bottom: 30px; }
+        .logo { font-size: 24px; font-weight: 800; color: #0d9488; text-transform: uppercase; letter-spacing: 2px; }
+        .card { background-color: #f0f9ff; border: 1px solid #bae6fd; border-radius: 16px; padding: 24px; margin-bottom: 24px; }
+        .footer { text-align: center; font-size: 12px; color: #94a3b8; margin-top: 40px; border-top: 1px solid #f1f5f9; padding-top: 20px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">🏥 MediFlow</div>
+            <h2>Patient Vital Signs Export</h2>
+        </div>
+        
+        <p>Dear {{ user_name }},</p>
+        
+        <div class="card">
+            <h3 style="margin-top: 0; color: #0369a1;">Your Export is Ready</h3>
+            <p>We have successfully compiled the historical vital records for all patients registered under your profile.</p>
+            <p>The consolidated records have been formatted and attached as a **CSV file** to this email. You can open it using Excel, Google Sheets, or any text editor.</p>
+        </div>
+        
+        <p><strong>Export Parameters:</strong></p>
+        <ul>
+            <li><strong>Generated Date:</strong> {{ export_date }}</li>
+            <li><strong>Format:</strong> Comma-Separated Values (.csv)</li>
+            <li><strong>Security Notice:</strong> This file contains Protected Health Information (PHI). Please store or share it securely.</li>
+        </ul>
+        
+        <div class="footer">
+            <p>This is an automated message from MediFlow Hospital Management System.</p>
+            <p>&copy; 2026 MediFlow Inc. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>

@@ -139,9 +139,13 @@ onMounted(loadOrders)
     </div>
 
     <!-- Main Content Section -->
-    <div class="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-gray-100 dark:border-slate-800 p-10 shadow-premium flex flex-col">
+    <div
+      class="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-gray-100 dark:border-slate-800 p-10 shadow-premium flex flex-col"
+    >
       <!-- Dashboard Header & Tabs -->
-      <div class="flex flex-col lg:flex-row items-center justify-between gap-6 border-b border-gray-100 dark:border-slate-800 pb-6 mb-8">
+      <div
+        class="flex flex-col lg:flex-row items-center justify-between gap-6 border-b border-gray-100 dark:border-slate-800 pb-6 mb-8"
+      >
         <h3 class="text-xl font-black text-gray-900 dark:text-white flex items-center gap-3">
           <span class="h-1.5 w-6 bg-emerald-600 rounded-full"></span>
           All Orders Catalog
@@ -149,14 +153,7 @@ onMounted(loadOrders)
 
         <div class="flex items-center gap-2 overflow-x-auto w-full lg:w-auto pb-2 scrollbar-none">
           <button
-            v-for="status in [
-              'all',
-              'pending',
-              'processing',
-              'shipped',
-              'delivered',
-              'cancelled',
-            ]"
+            v-for="status in ['all', 'pending', 'processing', 'shipped', 'delivered', 'cancelled']"
             :key="status"
             @click="selectedFilter = status"
             :class="`px-4 py-2 text-xs font-black rounded-full uppercase tracking-wider transition-all border ${
@@ -196,9 +193,7 @@ onMounted(loadOrders)
             class="flex items-start justify-between flex-wrap gap-4 border-b border-gray-100 dark:border-slate-800 pb-4 mb-4"
           >
             <div>
-              <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">
-                Order ID
-              </p>
+              <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Order ID</p>
               <h4 class="text-sm font-black text-gray-900 dark:text-white mt-0.5 font-mono">
                 {{ order.id }}
               </h4>
@@ -216,7 +211,9 @@ onMounted(loadOrders)
           <!-- Customer and Delivery Details -->
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6 text-xs">
             <div>
-              <h5 class="font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-2">
+              <h5
+                class="font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-2"
+              >
                 Customer Info
               </h5>
               <p class="text-gray-900 dark:text-white font-black">
@@ -239,7 +236,9 @@ onMounted(loadOrders)
               </p>
             </div>
             <div>
-              <h5 class="font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-2">
+              <h5
+                class="font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-2"
+              >
                 Delivery Details
               </h5>
               <p class="text-gray-900 dark:text-white font-medium">
@@ -252,7 +251,9 @@ onMounted(loadOrders)
           <div
             class="bg-gray-50/50 dark:bg-slate-800/40 p-4 rounded-2xl border border-gray-100 dark:border-slate-700/50 space-y-3 mb-6"
           >
-            <h5 class="text-[9px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-2">
+            <h5
+              class="text-[9px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-2"
+            >
               Cart Prescription Items
             </h5>
             <div
@@ -282,9 +283,7 @@ onMounted(loadOrders)
               >
                 {{ order.status }}
               </span>
-              <p
-                class="text-2xl font-black text-emerald-600 dark:text-emerald-400 tracking-tight"
-              >
+              <p class="text-2xl font-black text-emerald-600 dark:text-emerald-400 tracking-tight">
                 ${{ Number(order.total_price).toFixed(2) }}
               </p>
             </div>

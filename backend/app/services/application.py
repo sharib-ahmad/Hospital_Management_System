@@ -204,6 +204,16 @@ class ApplicationService:
         application.status = ApplicationStatus.REJECTED
         if reason:
             application.reason = f"REJECTED: {reason}"
+            
+        # Trigger In-App Notification
+        from .notification import NotificationService
+        NotificationService.create_notification(
+            user_id=application.user_id,
+            title="Application Rejected",
+            message=f"Your application for role {application.role_applied.value} has been rejected.",
+            category="application"
+        )
+        
         db.session.commit()
 
         return handle_response(success=True, message="Application rejected successfully.")

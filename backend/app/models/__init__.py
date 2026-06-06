@@ -10,3 +10,7 @@ from .applications import Application
 from .patient_vitals import PatientVital
 from .medistore import Medicine, PharmacyOrder, PharmacyOrderItem, PharmacyOrderStatus
 from .pharmacist import Pharmacist
+from .invoice import Invoice
+from .lab_report import LabReport
+from .notification import Notification
+

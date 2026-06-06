@@ -116,6 +116,20 @@ def process_application_approval(self, application_id, approver_id=None):
 
         db.session.commit()
         
+        # Trigger In-App Notification
+        from ..services.notification import NotificationService
+        NotificationService.create_notification(
+            user_id=application.user_id,
+            title="Application Approved",
+            message=f"Your application for role {application.role_applied.value} has been approved.",
+            category="application"
+        )
+        
+        # Trigger Email send if it was a PATIENT application (Item 2)
+        if application.role_applied == UserRole.PATIENT:
+            from .email_tasks import send_patient_approval_email
+            send_patient_approval_email.delay(application.id)
+        
         if department_cache_invalidated:
             # Clear the department list cache to update staff counts
             from ..controllers.department_controller import DEPARTMENTS_CACHE_KEY

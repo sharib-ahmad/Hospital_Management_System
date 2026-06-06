@@ -17,6 +17,18 @@ const vitals = ref<any>(null)
 const vitalsHistory = ref<any[]>([])
 const isLoading = ref(true)
 
+// Lab Reports state
+const labReports = ref<any[]>([])
+const isLoadingReports = ref(false)
+const showUploadModal = ref(false)
+const uploadForm = ref({
+  title: '',
+  notes: '',
+})
+const selectedFile = ref<File | null>(null)
+const isUploadingReport = ref(false)
+const dragActive = ref(false)
+
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 let chartInstance: Chart | null = null
 
@@ -89,7 +101,7 @@ const loadData = async () => {
     try {
       const res = await api.get(`/vitals/${patientId}`)
       const data = res.data.data || res.data
-      vitalsHistory.value = Array.isArray(data) ? data : (data ? [data] : [])
+      vitalsHistory.value = Array.isArray(data) ? data : data ? [data] : []
       vitals.value = vitalsHistory.value[0] || null
     } catch {
       vitalsHistory.value = []
@@ -348,7 +360,98 @@ const formatDateTime = (dateString: string) => {
   })
 }
 
-onMounted(loadData)
+const fetchLabReports = async () => {
+  const patientId = route.params.id
+  isLoadingReports.value = true
+  try {
+    const res = await api.get(`/lab-reports/patient/${patientId}`)
+    labReports.value = res.data.data || []
+  } catch (err) {
+    console.error('Failed to load lab reports', err)
+  } finally {
+    isLoadingReports.value = false
+  }
+}
+
+const handleFileSelect = (e: Event) => {
+  const target = e.target as HTMLInputElement
+  if (target.files && target.files.length > 0) {
+    const file = target.files[0]
+    if (file) {
+      selectedFile.value = file
+    }
+  }
+}
+
+const handleDragOver = (e: DragEvent) => {
+  e.preventDefault()
+  dragActive.value = true
+}
+
+const handleDragLeave = () => {
+  dragActive.value = false
+}
+
+const handleDrop = (e: DragEvent) => {
+  e.preventDefault()
+  dragActive.value = false
+  if (e.dataTransfer?.files && e.dataTransfer.files.length > 0) {
+    const file = e.dataTransfer.files[0]
+    if (file) {
+      selectedFile.value = file
+    }
+  }
+}
+
+const handleUploadReport = async () => {
+  if (!selectedFile.value || !uploadForm.value.title) {
+    notification.error('Title and file are required')
+    return
+  }
+  isUploadingReport.value = true
+  const formData = new FormData()
+  formData.append('patient_id', route.params.id as string)
+  formData.append('title', uploadForm.value.title)
+  formData.append('notes', uploadForm.value.notes)
+  formData.append('file', selectedFile.value)
+
+  try {
+    await api.post('/lab-reports', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    })
+    notification.success('Lab report uploaded successfully!')
+    showUploadModal.value = false
+    uploadForm.value = { title: '', notes: '' }
+    selectedFile.value = null
+    await fetchLabReports()
+  } catch (err: any) {
+    notification.error(err.response?.data?.message || 'Failed to upload report')
+  } finally {
+    isUploadingReport.value = false
+  }
+}
+
+const downloadReportFile = async (report: any) => {
+  try {
+    const res = await api.get(`/lab-reports/${report.id}/file`, { responseType: 'blob' })
+    const url = window.URL.createObjectURL(new Blob([res.data]))
+    const link = document.createElement('a')
+    link.href = url
+    link.setAttribute('download', report.file_name || 'report.pdf')
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  } catch (err) {
+    notification.error('Failed to download report file')
+  }
+}
+
+onMounted(async () => {
+  await loadData()
+  await fetchLabReports()
+})
 
 onBeforeUnmount(() => {
   if (chartInstance) {
@@ -386,7 +489,9 @@ onBeforeUnmount(() => {
 
     <!-- General Loader -->
     <div v-if="isLoading" class="flex flex-col items-center justify-center py-32 space-y-4">
-      <div class="animate-spin rounded-full h-12 w-12 border-[3px] border-emerald-600 border-t-transparent"></div>
+      <div
+        class="animate-spin rounded-full h-12 w-12 border-[3px] border-emerald-600 border-t-transparent"
+      ></div>
       <p class="text-xs text-gray-400 dark:text-slate-500 uppercase tracking-widest font-black">
         Retrieving clinical records...
       </p>
@@ -395,16 +500,22 @@ onBeforeUnmount(() => {
     <div v-else-if="patient" class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
       <!-- Left: Patient Summary Info -->
       <div class="lg:col-span-1 space-y-6">
-        <div class="card-animate bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-[2.5rem] p-8 shadow-premium text-center">
+        <div
+          class="card-animate bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-[2.5rem] p-8 shadow-premium text-center"
+        >
           <!-- Avatar -->
-          <div class="w-24 h-24 rounded-3xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white font-black text-4xl flex items-center justify-center shadow-lg shadow-emerald-500/10 mx-auto mb-6">
+          <div
+            class="w-24 h-24 rounded-3xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white font-black text-4xl flex items-center justify-center shadow-lg shadow-emerald-500/10 mx-auto mb-6"
+          >
             {{ patient.full_name?.charAt(0) || 'P' }}
           </div>
-          
+
           <h3 class="text-xl font-black text-gray-900 dark:text-white tracking-tight">
             {{ patient.full_name }}
           </h3>
-          <p class="text-xs text-gray-400 dark:text-slate-500 mt-1 font-bold uppercase tracking-wider">
+          <p
+            class="text-xs text-gray-400 dark:text-slate-500 mt-1 font-bold uppercase tracking-wider"
+          >
             Patient profile
           </p>
 
@@ -415,35 +526,116 @@ onBeforeUnmount(() => {
           <div class="space-y-4 text-left">
             <div class="flex justify-between text-xs">
               <span class="text-gray-400 font-bold uppercase tracking-wider">Gender</span>
-              <span class="text-gray-900 dark:text-white font-black capitalize">{{ patient.gender }}</span>
+              <span class="text-gray-900 dark:text-white font-black capitalize">{{
+                patient.gender
+              }}</span>
             </div>
             <div class="flex justify-between text-xs">
               <span class="text-gray-400 font-bold uppercase tracking-wider">DOB</span>
-              <span class="text-gray-900 dark:text-white font-black">{{ patient.date_of_birth }}</span>
+              <span class="text-gray-900 dark:text-white font-black">{{
+                patient.date_of_birth
+              }}</span>
             </div>
             <div class="flex justify-between text-xs">
               <span class="text-gray-400 font-bold uppercase tracking-wider">Blood Group</span>
-              <span class="text-rose-600 dark:text-rose-400 font-black">{{ patient.blood_group || 'N/A' }}</span>
+              <span class="text-rose-600 dark:text-rose-400 font-black">{{
+                patient.blood_group || 'N/A'
+              }}</span>
             </div>
             <div class="flex justify-between text-xs" v-if="patient.relation">
               <span class="text-gray-400 font-bold uppercase tracking-wider">Relation</span>
               <span class="text-gray-900 dark:text-white font-black">{{ patient.relation }}</span>
             </div>
             <div class="flex justify-between text-xs" v-if="patient.assigned_doctor_name">
-              <span class="text-gray-400 font-bold uppercase tracking-wider">Assigned Physician</span>
-              <span class="text-teal-600 dark:text-teal-400 font-black">Dr. {{ patient.assigned_doctor_name }}</span>
+              <span class="text-gray-400 font-bold uppercase tracking-wider"
+                >Assigned Physician</span
+              >
+              <span class="text-teal-600 dark:text-teal-400 font-black"
+                >Dr. {{ patient.assigned_doctor_name }}</span
+              >
             </div>
           </div>
         </div>
 
         <!-- Medical History Card -->
-        <div class="card-animate bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-[2.5rem] p-8 shadow-premium">
-          <h4 class="text-xs font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-4">
+        <div
+          class="card-animate bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-[2.5rem] p-8 shadow-premium"
+        >
+          <h4
+            class="text-xs font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-4"
+          >
             Medical History
           </h4>
           <p class="text-sm text-gray-600 dark:text-slate-300 font-medium leading-relaxed">
-            {{ patient.medical_history || 'No historical medical records or pre-existing conditions registered.' }}
+            {{
+              patient.medical_history ||
+              'No historical medical records or pre-existing conditions registered.'
+            }}
           </p>
+        </div>
+
+        <!-- Lab Reports Panel -->
+        <div
+          class="card-animate bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-[2.5rem] p-8 shadow-premium space-y-6"
+        >
+          <div class="flex items-center justify-between">
+            <h4
+              class="text-xs font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest"
+            >
+              Lab & Clinical Reports
+            </h4>
+            <button
+              v-if="auth.user?.role !== 'admin'"
+              @click="showUploadModal = true"
+              class="px-3 py-1.5 bg-emerald-600/10 text-emerald-600 dark:text-emerald-400 font-black rounded-xl hover:bg-emerald-600 hover:text-white transition-all text-[10px] uppercase tracking-wider"
+            >
+              + Upload
+            </button>
+          </div>
+
+          <!-- Reports List -->
+          <div v-if="isLoadingReports" class="space-y-3">
+            <div v-for="i in 2" :key="i" class="skeleton h-12 rounded-xl"></div>
+          </div>
+          <div
+            v-else-if="labReports.length === 0"
+            class="text-center py-6 border border-dashed border-gray-100 dark:border-slate-800 rounded-2xl"
+          >
+            <p class="text-xs text-gray-400 dark:text-slate-500 font-medium">
+              No lab reports uploaded yet.
+            </p>
+          </div>
+          <div v-else class="space-y-3">
+            <div
+              v-for="report in labReports"
+              :key="report.id"
+              class="p-4 bg-gray-50 dark:bg-slate-800/40 border border-gray-100 dark:border-slate-800 rounded-2xl flex items-center justify-between gap-3 group"
+            >
+              <div class="min-w-0 flex-1">
+                <h5
+                  class="text-xs font-black text-gray-800 dark:text-slate-200 truncate uppercase tracking-wide"
+                >
+                  {{ report.title }}
+                </h5>
+                <p class="text-[9px] text-gray-400 mt-0.5">
+                  Uploaded {{ formatDate(report.created_at) }}
+                </p>
+                <p
+                  v-if="report.notes"
+                  class="text-[10px] text-gray-500 dark:text-slate-400 mt-1 italic truncate"
+                >
+                  "{{ report.notes }}"
+                </p>
+              </div>
+              <button
+                @click="downloadReportFile(report)"
+                class="p-2 bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 hover:border-emerald-500 text-gray-500 hover:text-emerald-600 rounded-xl transition-all shadow-sm shrink-0"
+                title="Download Report File"
+              >
+                📥
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -454,14 +646,28 @@ onBeforeUnmount(() => {
           v-if="!vitals"
           class="card-animate flex flex-col items-center justify-center py-20 bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-[2.5rem] shadow-premium text-center px-6"
         >
-          <div class="w-16 h-16 bg-amber-50 dark:bg-amber-950/20 rounded-2xl flex items-center justify-center text-amber-500 mb-6">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          <div
+            class="w-16 h-16 bg-amber-50 dark:bg-amber-950/20 rounded-2xl flex items-center justify-center text-amber-500 mb-6"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-8 w-8"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+              />
             </svg>
           </div>
           <h3 class="text-lg font-black text-gray-900 dark:text-white mb-2">No Vitals Captured</h3>
           <p class="text-xs text-gray-400 dark:text-slate-500 max-w-xs font-medium">
-            Clinical vitals have not been captured for this patient yet. Please ask a nurse to perform a screening checkup.
+            Clinical vitals have not been captured for this patient yet. Please ask a nurse to
+            perform a screening checkup.
           </p>
         </div>
 
@@ -469,57 +675,110 @@ onBeforeUnmount(() => {
           <!-- Clinical Gauge Cards Grid -->
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <!-- Blood Pressure Card -->
-            <div class="card-animate bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-3xl p-6 shadow-sm hover:shadow-premium transition-all">
+            <div
+              class="card-animate bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-3xl p-6 shadow-sm hover:shadow-premium transition-all"
+            >
               <div class="flex items-center justify-between mb-3">
-                <p class="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest">Blood Pressure</p>
-                <span :class="`px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-wider ${formatBloodPressureStatus(vitals.systolic_bp).color}`">
+                <p
+                  class="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest"
+                >
+                  Blood Pressure
+                </p>
+                <span
+                  :class="`px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-wider ${formatBloodPressureStatus(vitals.systolic_bp).color}`"
+                >
                   {{ formatBloodPressureStatus(vitals.systolic_bp).label }}
                 </span>
               </div>
-              <p class="text-2xl font-black text-rose-600 dark:text-rose-400">{{ vitals.systolic_bp }}/{{ vitals.diastolic_bp }} <span class="text-xs font-bold text-gray-400">mmHg</span></p>
-              <p class="text-[9px] text-gray-400 mt-2 font-medium">Optimal Baseline: &lt;120 / &lt;80 mmHg</p>
+              <p class="text-2xl font-black text-rose-600 dark:text-rose-400">
+                {{ vitals.systolic_bp }}/{{ vitals.diastolic_bp }}
+                <span class="text-xs font-bold text-gray-400">mmHg</span>
+              </p>
+              <p class="text-[9px] text-gray-400 mt-2 font-medium">
+                Optimal Baseline: &lt;120 / &lt;80 mmHg
+              </p>
             </div>
 
             <!-- Blood Sugar Card -->
-            <div class="card-animate bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-3xl p-6 shadow-sm hover:shadow-premium transition-all">
+            <div
+              class="card-animate bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-3xl p-6 shadow-sm hover:shadow-premium transition-all"
+            >
               <div class="flex items-center justify-between mb-3">
-                <p class="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest">Blood Glucose</p>
-                <span :class="`px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-wider ${formatSugarStatus(vitals.blood_sugar).color}`">
+                <p
+                  class="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest"
+                >
+                  Blood Glucose
+                </p>
+                <span
+                  :class="`px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-wider ${formatSugarStatus(vitals.blood_sugar).color}`"
+                >
                   {{ formatSugarStatus(vitals.blood_sugar).label }}
                 </span>
               </div>
-              <p class="text-2xl font-black text-teal-600 dark:text-teal-400">{{ vitals.blood_sugar }} <span class="text-xs font-bold text-gray-400">mg/dL</span></p>
-              <p class="text-[9px] text-gray-400 mt-2 font-medium">Optimal Baseline: 70 - 140 mg/dL</p>
+              <p class="text-2xl font-black text-teal-600 dark:text-teal-400">
+                {{ vitals.blood_sugar }} <span class="text-xs font-bold text-gray-400">mg/dL</span>
+              </p>
+              <p class="text-[9px] text-gray-400 mt-2 font-medium">
+                Optimal Baseline: 70 - 140 mg/dL
+              </p>
             </div>
 
             <!-- Pulse Rate Card -->
-            <div class="card-animate bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-3xl p-6 shadow-sm hover:shadow-premium transition-all">
+            <div
+              class="card-animate bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-3xl p-6 shadow-sm hover:shadow-premium transition-all"
+            >
               <div class="flex items-center justify-between mb-3">
-                <p class="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest">Heart Rate (Pulse)</p>
-                <span :class="`px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-wider ${formatPulseStatus(vitals.pulse_rate).color}`">
+                <p
+                  class="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest"
+                >
+                  Heart Rate (Pulse)
+                </p>
+                <span
+                  :class="`px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-wider ${formatPulseStatus(vitals.pulse_rate).color}`"
+                >
                   {{ formatPulseStatus(vitals.pulse_rate).label }}
                 </span>
               </div>
-              <p class="text-2xl font-black text-emerald-600 dark:text-emerald-400">{{ vitals.pulse_rate }} <span class="text-xs font-bold text-gray-400">bpm</span></p>
-              <p class="text-[9px] text-gray-400 mt-2 font-medium">Optimal Baseline: 60 - 100 bpm</p>
+              <p class="text-2xl font-black text-emerald-600 dark:text-emerald-400">
+                {{ vitals.pulse_rate }} <span class="text-xs font-bold text-gray-400">bpm</span>
+              </p>
+              <p class="text-[9px] text-gray-400 mt-2 font-medium">
+                Optimal Baseline: 60 - 100 bpm
+              </p>
             </div>
 
             <!-- Body Temperature Card -->
-            <div class="card-animate bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-3xl p-6 shadow-sm hover:shadow-premium transition-all">
+            <div
+              class="card-animate bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-3xl p-6 shadow-sm hover:shadow-premium transition-all"
+            >
               <div class="flex items-center justify-between mb-3">
-                <p class="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest">Core Temperature</p>
-                <span :class="`px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-wider ${formatTempStatus(vitals.temperature).color}`">
+                <p
+                  class="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest"
+                >
+                  Core Temperature
+                </p>
+                <span
+                  :class="`px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-wider ${formatTempStatus(vitals.temperature).color}`"
+                >
                   {{ formatTempStatus(vitals.temperature).label }}
                 </span>
               </div>
-              <p class="text-2xl font-black text-indigo-600 dark:text-indigo-400">{{ vitals.temperature }} <span class="text-xs font-bold text-gray-400">°F</span></p>
-              <p class="text-[9px] text-gray-400 mt-2 font-medium">Optimal Baseline: 97.8 - 99.0 °F</p>
+              <p class="text-2xl font-black text-indigo-600 dark:text-indigo-400">
+                {{ vitals.temperature }} <span class="text-xs font-bold text-gray-400">°F</span>
+              </p>
+              <p class="text-[9px] text-gray-400 mt-2 font-medium">
+                Optimal Baseline: 97.8 - 99.0 °F
+              </p>
             </div>
           </div>
 
           <!-- Chart Card -->
-          <div class="card-animate bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-[2.5rem] p-8 shadow-premium">
-            <h4 class="text-xs font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-6 flex items-center gap-2">
+          <div
+            class="card-animate bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-[2.5rem] p-8 shadow-premium"
+          >
+            <h4
+              class="text-xs font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-6 flex items-center gap-2"
+            >
               <span class="h-1.5 w-4 bg-teal-600 rounded-full"></span>
               Deviation Radar Chart (Relative to optimal baseline)
             </h4>
@@ -529,15 +788,25 @@ onBeforeUnmount(() => {
           </div>
 
           <!-- Vitals Timeline Chart Card -->
-          <div class="card-animate bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-[2.5rem] p-8 shadow-premium" v-if="vitalsHistory.length > 1">
+          <div
+            class="card-animate bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-[2.5rem] p-8 shadow-premium"
+            v-if="vitalsHistory.length > 1"
+          >
             <div class="flex items-center justify-between flex-wrap gap-4 mb-6">
               <div>
-                <h4 class="text-xs font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                <h4
+                  class="text-xs font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest flex items-center gap-2"
+                >
                   <span class="h-1.5 w-4 bg-indigo-600 rounded-full"></span>
                   Clinical Vitals Timeline Variation
                 </h4>
                 <p class="text-[10px] text-gray-400 dark:text-slate-500 mt-1 font-medium">
-                  Showing {{ showFullHistory ? 'full screening history' : `last ${filteredHistory.length} records` }}
+                  Showing
+                  {{
+                    showFullHistory
+                      ? 'full screening history'
+                      : `last ${filteredHistory.length} records`
+                  }}
                 </p>
               </div>
 
@@ -552,13 +821,15 @@ onBeforeUnmount(() => {
                 </button>
 
                 <!-- Segment Selector -->
-                <div class="flex items-center p-0.5 bg-gray-100 dark:bg-slate-800 rounded-lg gap-0.5 border border-gray-200/40 dark:border-slate-700/40">
+                <div
+                  class="flex items-center p-0.5 bg-gray-100 dark:bg-slate-800 rounded-lg gap-0.5 border border-gray-200/40 dark:border-slate-700/40"
+                >
                   <button
                     v-for="m in [
                       { id: 'bp', label: 'BP' },
                       { id: 'sugar', label: 'Sugar' },
                       { id: 'cardio', label: 'Cardio' },
-                      { id: 'temp', label: 'Temp' }
+                      { id: 'temp', label: 'Temp' },
                     ]"
                     :key="m.id"
                     @click="selectedTimelineMetric = m.id as any"
@@ -581,15 +852,23 @@ onBeforeUnmount(() => {
           </div>
 
           <!-- Notes Card -->
-          <div class="card-animate bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-[2.5rem] p-8 shadow-premium">
-            <h4 class="text-xs font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-4">
+          <div
+            class="card-animate bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-[2.5rem] p-8 shadow-premium"
+          >
+            <h4
+              class="text-xs font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-4"
+            >
               Clinical Screening Notes
             </h4>
             <p class="text-sm text-gray-600 dark:text-slate-300 font-medium leading-relaxed italic">
-              "{{ vitals.notes || 'No additional screening notes provided by the recording nurse.' }}"
+              "{{
+                vitals.notes || 'No additional screening notes provided by the recording nurse.'
+              }}"
             </p>
             <div class="h-px bg-gray-100 dark:bg-slate-800/80 my-4"></div>
-            <p class="text-[10px] text-gray-400 dark:text-slate-500 font-bold uppercase tracking-wider">
+            <p
+              class="text-[10px] text-gray-400 dark:text-slate-500 font-bold uppercase tracking-wider"
+            >
               Screening Performed on: {{ formatDateTime(vitals.recorded_at) }}
             </p>
           </div>
@@ -597,4 +876,150 @@ onBeforeUnmount(() => {
       </div>
     </div>
   </DashboardLayout>
+
+  <!-- ════════════════════════════════════════════════════════ -->
+  <!--  UPLOAD LAB REPORT MODAL                                 -->
+  <!-- ════════════════════════════════════════════════════════ -->
+  <Transition name="fade">
+    <div
+      v-if="showUploadModal"
+      class="fixed inset-0 z-50 flex items-center justify-center px-4 bg-slate-900/60 backdrop-blur-sm"
+      @click.self="showUploadModal = false"
+    >
+      <div
+        class="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-gray-100 dark:border-slate-800 max-w-md w-full p-8 shadow-premium-xl animate-scale-up"
+      >
+        <div class="flex items-center justify-between mb-6">
+          <div>
+            <span
+              class="text-[10px] font-black text-emerald-600 bg-emerald-50 dark:bg-emerald-950 dark:text-emerald-400 px-3 py-1 rounded-full uppercase tracking-widest"
+            >
+              Clinical Registry
+            </span>
+            <h3 class="text-xl font-black text-gray-900 dark:text-white mt-3 tracking-tight">
+              Upload Lab Report
+            </h3>
+          </div>
+          <button
+            @click="showUploadModal = false"
+            class="w-8 h-8 rounded-full bg-gray-50 dark:bg-slate-800 flex items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-slate-200 transition-colors"
+          >
+            ✕
+          </button>
+        </div>
+
+        <form @submit.prevent="handleUploadReport" class="space-y-4">
+          <!-- Report Title -->
+          <div class="w-full space-y-1.5">
+            <label
+              class="block text-xs font-bold text-gray-600 dark:text-slate-400 uppercase tracking-wider"
+            >
+              Report Title / Description <span class="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              v-model="uploadForm.title"
+              required
+              placeholder="e.g. Blood Count, Chest X-Ray"
+              class="appearance-none block w-full px-4 py-3 border border-gray-200 dark:border-slate-700/50 rounded-2xl shadow-sm outline-none bg-white dark:bg-slate-800/50 text-gray-900 dark:text-white text-xs placeholder-gray-400 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10"
+            />
+          </div>
+
+          <!-- Notes -->
+          <div class="w-full space-y-1.5">
+            <label
+              class="block text-xs font-bold text-gray-600 dark:text-slate-400 uppercase tracking-wider"
+            >
+              Notes
+            </label>
+            <textarea
+              v-model="uploadForm.notes"
+              rows="2"
+              placeholder="Add optional notes or clinical observations..."
+              class="appearance-none block w-full px-4 py-3 border border-gray-200 dark:border-slate-700/50 rounded-2xl shadow-sm outline-none bg-white dark:bg-slate-800/50 text-gray-900 dark:text-white text-xs placeholder-gray-400 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 resize-none"
+            ></textarea>
+          </div>
+
+          <!-- Drag & Drop Zone -->
+          <div class="w-full space-y-1.5">
+            <label
+              class="block text-xs font-bold text-gray-600 dark:text-slate-400 uppercase tracking-wider"
+            >
+              Attach Report File (PDF/Image) <span class="text-red-500">*</span>
+            </label>
+            <div
+              @dragover="handleDragOver"
+              @dragleave="handleDragLeave"
+              @drop="handleDrop"
+              :class="`border-2 border-dashed rounded-2xl p-6 text-center transition-all ${
+                dragActive
+                  ? 'border-emerald-500 bg-emerald-50/20 dark:bg-emerald-950/20'
+                  : 'border-gray-200 dark:border-slate-800 hover:border-emerald-500/50'
+              }`"
+            >
+              <div v-if="!selectedFile" class="space-y-2">
+                <span class="text-2xl block">📄</span>
+                <p
+                  class="text-[11px] text-gray-500 dark:text-slate-400 font-bold uppercase tracking-wider"
+                >
+                  Drag and drop file here
+                </p>
+                <p class="text-[10px] text-gray-400">or</p>
+                <label
+                  class="inline-block px-3 py-1.5 bg-gray-50 hover:bg-gray-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-gray-700 dark:text-slate-300 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all cursor-pointer border border-gray-200 dark:border-slate-700"
+                >
+                  Browse File
+                  <input
+                    type="file"
+                    @change="handleFileSelect"
+                    class="hidden"
+                    accept="application/pdf,image/*"
+                  />
+                </label>
+              </div>
+              <div v-else class="flex items-center justify-between gap-3 text-left">
+                <div class="min-w-0 flex-1">
+                  <p class="text-xs font-black text-gray-800 dark:text-slate-200 truncate">
+                    {{ selectedFile.name }}
+                  </p>
+                  <p class="text-[10px] text-gray-400 font-medium">
+                    {{ (selectedFile.size / 1024).toFixed(1) }} KB
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  @click="selectedFile = null"
+                  class="p-1 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition-colors"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Actions -->
+          <div class="flex gap-4 pt-4">
+            <button
+              type="button"
+              @click="showUploadModal = false"
+              class="flex-1 py-3 bg-gray-50 dark:bg-slate-800 text-gray-600 dark:text-slate-300 text-xs font-black uppercase tracking-widest rounded-xl hover:bg-gray-100 transition-all border border-gray-200 dark:border-slate-700"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              :disabled="isUploadingReport || !selectedFile || !uploadForm.title"
+              class="flex-1 py-3 bg-emerald-600 text-white text-xs font-black uppercase tracking-widest rounded-xl hover:bg-emerald-700 transition-all disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-1.5 shadow-md shadow-emerald-500/15"
+            >
+              <div
+                v-if="isUploadingReport"
+                class="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"
+              ></div>
+              {{ isUploadingReport ? 'Uploading...' : 'Upload Report' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </Transition>
 </template>

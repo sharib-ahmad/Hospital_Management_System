@@ -92,6 +92,26 @@ class PharmacyService:
                 item.order_id = order.id
                 db.session.add(item)
                 
+            # Create Invoice inside the same transaction
+            patient_id = data.patient_id
+            if not patient_id:
+                # Find patient subprofile for self or first matching patient subprofile
+                from ..models.patient import Patient
+                from ..utils.enum import Relationship
+                pat = Patient.query.filter_by(user_id=user_id, relation=Relationship.SELF).first()
+                if not pat:
+                    pat = Patient.query.filter_by(user_id=user_id).first()
+                patient_id = pat.id if pat else None
+                
+            from .invoice import InvoiceService
+            InvoiceService.create_invoice(
+                patient_id=patient_id,
+                user_id=user_id,
+                amount=total_price,
+                invoice_type='pharmacy',
+                order_id=order.id
+            )
+            
             db.session.commit()
             return handle_response(success=True, data=order, message="Pharmacy order placed successfully", status_code=201)
 
@@ -106,7 +126,22 @@ class PharmacyService:
             return handle_response(success=False, message="Order not found", status_code=404)
             
         order.status = status
+        
+        # Trigger In-App Notification
+        from .notification import NotificationService
+        NotificationService.create_notification(
+            user_id=order.user_id,
+            title="Order Status Updated",
+            message=f"Your pharmacy order status has changed to {status.value}.",
+            category="order"
+        )
+        
         db.session.commit()
+        
+        # Trigger Celery Task to email the user
+        from ..tasks.email_tasks import send_order_status_email
+        send_order_status_email.delay(order.id)
+        
         return handle_response(success=True, data=order, message="Order status updated successfully")
 
     @staticmethod

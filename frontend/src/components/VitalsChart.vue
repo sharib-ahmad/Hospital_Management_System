@@ -265,30 +265,42 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="card-animate bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-[2.5rem] p-8 shadow-premium">
+  <div
+    class="card-animate bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-[2.5rem] p-8 shadow-premium"
+  >
     <!-- Header -->
     <div class="flex items-center justify-between flex-wrap gap-4 mb-6">
       <div>
-        <h3 class="text-base font-black text-gray-900 dark:text-white uppercase tracking-widest flex items-center gap-2">
+        <h3
+          class="text-base font-black text-gray-900 dark:text-white uppercase tracking-widest flex items-center gap-2"
+        >
           <span class="h-1.5 w-6 bg-teal-600 rounded-full"></span>
           Clinical Vitals Dashboard
         </h3>
         <p class="text-xs text-gray-400 dark:text-slate-500 mt-1 font-medium">
-          <template v-if="role === 'user'">Vitals trends for your registered family profiles</template>
-          <template v-if="role === 'doctor'">Comparative vitals analytics for your assigned consultations</template>
-          <template v-if="role === 'nurse'">Visualizing patient vitals recorded during your shifts</template>
+          <template v-if="role === 'user'"
+            >Vitals trends for your registered family profiles</template
+          >
+          <template v-if="role === 'doctor'"
+            >Comparative vitals analytics for your assigned consultations</template
+          >
+          <template v-if="role === 'nurse'"
+            >Visualizing patient vitals recorded during your shifts</template
+          >
           <template v-if="role === 'admin'">Enterprise-wide patient vitals overview</template>
         </p>
       </div>
 
       <!-- Segment Selector tabs -->
-      <div class="flex items-center p-1 bg-gray-100 dark:bg-slate-800/60 rounded-xl gap-0.5 border border-gray-200/40 dark:border-slate-700/40">
+      <div
+        class="flex items-center p-1 bg-gray-100 dark:bg-slate-800/60 rounded-xl gap-0.5 border border-gray-200/40 dark:border-slate-700/40"
+      >
         <button
           v-for="m in [
             { id: 'bp', label: 'BP' },
             { id: 'sugar', label: 'Sugar' },
             { id: 'cardio', label: 'Cardio' },
-            { id: 'temp', label: 'Temp' }
+            { id: 'temp', label: 'Temp' },
           ]"
           :key="m.id"
           @click="selectedMetric = m.id as any"
@@ -305,8 +317,12 @@ onBeforeUnmount(() => {
 
     <!-- Loader -->
     <div v-if="isLoading" class="flex flex-col items-center justify-center py-24 space-y-4">
-      <div class="animate-spin rounded-full h-8 w-8 border-[2px] border-teal-600 border-t-transparent"></div>
-      <p class="text-xs text-gray-400 dark:text-slate-500 uppercase tracking-widest font-black">Loading Vitals Stats...</p>
+      <div
+        class="animate-spin rounded-full h-8 w-8 border-[2px] border-teal-600 border-t-transparent"
+      ></div>
+      <p class="text-xs text-gray-400 dark:text-slate-500 uppercase tracking-widest font-black">
+        Loading Vitals Stats...
+      </p>
     </div>
 
     <!-- Empty State -->
@@ -314,15 +330,36 @@ onBeforeUnmount(() => {
       v-else-if="chartPatients.length === 0"
       class="flex flex-col items-center justify-center py-16 bg-gray-50/50 dark:bg-slate-800/30 rounded-3xl border border-dashed border-gray-100 dark:border-slate-800"
     >
-      <div class="w-14 h-14 bg-white dark:bg-slate-900 rounded-2xl shadow-sm flex items-center justify-center mb-4 text-gray-300 dark:text-slate-700">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" />
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" />
+      <div
+        class="w-14 h-14 bg-white dark:bg-slate-900 rounded-2xl shadow-sm flex items-center justify-center mb-4 text-gray-300 dark:text-slate-700"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="h-6 w-6"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"
+          />
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"
+          />
         </svg>
       </div>
-      <h4 class="text-sm font-bold text-gray-800 dark:text-slate-200 mb-1">No vitals data to plot</h4>
+      <h4 class="text-sm font-bold text-gray-800 dark:text-slate-200 mb-1">
+        No vitals data to plot
+      </h4>
       <p class="text-xs text-gray-400 dark:text-slate-500 text-center max-w-xs px-4">
-        Once vitals have been captured and saved, clinical charts will materialize here automatically.
+        Once vitals have been captured and saved, clinical charts will materialize here
+        automatically.
       </p>
     </div>
 
@@ -330,34 +367,82 @@ onBeforeUnmount(() => {
       <!-- Summary Stats row -->
       <div v-if="averageStats" class="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <!-- BP Average -->
-        <div class="bg-gray-50/60 dark:bg-slate-800/30 border border-gray-100 dark:border-slate-800 rounded-2xl p-4">
-          <p class="text-[9px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest">Avg Blood Pressure</p>
-          <p class="text-lg font-black text-rose-600 dark:text-rose-400 leading-none mt-1.5">{{ averageStats.avgBP }} <span class="text-[10px] text-gray-400 font-bold ml-0.5">mmHg</span></p>
+        <div
+          class="bg-gray-50/60 dark:bg-slate-800/30 border border-gray-100 dark:border-slate-800 rounded-2xl p-4"
+        >
+          <p
+            class="text-[9px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest"
+          >
+            Avg Blood Pressure
+          </p>
+          <p class="text-lg font-black text-rose-600 dark:text-rose-400 leading-none mt-1.5">
+            {{ averageStats.avgBP }}
+            <span class="text-[10px] text-gray-400 font-bold ml-0.5">mmHg</span>
+          </p>
         </div>
         <!-- Glucose Average -->
-        <div class="bg-gray-50/60 dark:bg-slate-800/30 border border-gray-100 dark:border-slate-800 rounded-2xl p-4">
-          <p class="text-[9px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest">Avg Blood Glucose</p>
-          <p class="text-lg font-black text-teal-600 dark:text-teal-400 leading-none mt-1.5">{{ averageStats.avgSugar }} <span class="text-[10px] text-gray-400 font-bold ml-0.5">mg/dL</span></p>
+        <div
+          class="bg-gray-50/60 dark:bg-slate-800/30 border border-gray-100 dark:border-slate-800 rounded-2xl p-4"
+        >
+          <p
+            class="text-[9px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest"
+          >
+            Avg Blood Glucose
+          </p>
+          <p class="text-lg font-black text-teal-600 dark:text-teal-400 leading-none mt-1.5">
+            {{ averageStats.avgSugar }}
+            <span class="text-[10px] text-gray-400 font-bold ml-0.5">mg/dL</span>
+          </p>
         </div>
         <!-- High BP Alert -->
-        <div class="bg-gray-50/60 dark:bg-slate-800/30 border border-gray-100 dark:border-slate-800 rounded-2xl p-4 flex items-center justify-between">
+        <div
+          class="bg-gray-50/60 dark:bg-slate-800/30 border border-gray-100 dark:border-slate-800 rounded-2xl p-4 flex items-center justify-between"
+        >
           <div>
-            <p class="text-[9px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest">Hypertension Alerts</p>
-            <p class="text-lg font-black leading-none mt-1.5" :class="averageStats.highBPCount > 0 ? 'text-rose-600 animate-pulse' : 'text-gray-900 dark:text-white'">
+            <p
+              class="text-[9px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest"
+            >
+              Hypertension Alerts
+            </p>
+            <p
+              class="text-lg font-black leading-none mt-1.5"
+              :class="
+                averageStats.highBPCount > 0
+                  ? 'text-rose-600 animate-pulse'
+                  : 'text-gray-900 dark:text-white'
+              "
+            >
               {{ averageStats.highBPCount }}
             </p>
           </div>
-          <span v-if="averageStats.highBPCount > 0" class="h-2 w-2 rounded-full bg-rose-500 animate-ping"></span>
+          <span
+            v-if="averageStats.highBPCount > 0"
+            class="h-2 w-2 rounded-full bg-rose-500 animate-ping"
+          ></span>
         </div>
         <!-- High Sugar Alert -->
-        <div class="bg-gray-50/60 dark:bg-slate-800/30 border border-gray-100 dark:border-slate-800 rounded-2xl p-4 flex items-center justify-between">
+        <div
+          class="bg-gray-50/60 dark:bg-slate-800/30 border border-gray-100 dark:border-slate-800 rounded-2xl p-4 flex items-center justify-between"
+        >
           <div>
-            <p class="text-[9px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest">Hyperglycemia Alerts</p>
-            <p class="text-lg font-black leading-none mt-1.5" :class="averageStats.highSugarCount > 0 ? 'text-amber-600' : 'text-gray-900 dark:text-white'">
+            <p
+              class="text-[9px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest"
+            >
+              Hyperglycemia Alerts
+            </p>
+            <p
+              class="text-lg font-black leading-none mt-1.5"
+              :class="
+                averageStats.highSugarCount > 0 ? 'text-amber-600' : 'text-gray-900 dark:text-white'
+              "
+            >
               {{ averageStats.highSugarCount }}
             </p>
           </div>
-          <span v-if="averageStats.highSugarCount > 0" class="h-2 w-2 rounded-full bg-amber-500"></span>
+          <span
+            v-if="averageStats.highSugarCount > 0"
+            class="h-2 w-2 rounded-full bg-amber-500"
+          ></span>
         </div>
       </div>
 

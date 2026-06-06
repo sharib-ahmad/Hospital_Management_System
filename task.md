@@ -1,28 +1,48 @@
-# Task Tracker - Clinical Vitals & Doctor Referral Workflow
+# Task Tracker - Background Jobs, Emailing, and Core Integrations
 
-## 1. Database & Backend Models
-- [x] Add `vitals_checked` and `appointment_type` to `Appointment` model
-- [x] Make `doctor_id` nullable in `Appointment` model
-- [x] Run migration queries on local PostgreSQL database
+## 1. Database & Models
+- [x] Create `Invoice` model in `backend/app/models/invoice.py`
+- [x] Create `LabReport` model in `backend/app/models/lab_report.py`
+- [x] Create `Notification` model in `backend/app/models/notification.py`
+- [x] Register new models in `backend/app/models/__init__.py`
 
-## 2. Backend Services & Routes
-- [x] Update `AppointmentService` to support `'vitals_check'` booking (no doctor required)
-- [x] Update `AppointmentModels` in `flask-restx` to reflect nullable `doctor_id` and new types
-- [x] Update `PatientVitalsService` to handle `appointment_id` and `refer_to_department_id`
-- [x] Implement doctor auto-referral allocation logic when department referral is requested
+## 2. Configuration & Email Subsystem
+- [x] Update `backend/app/celeryConfig.py` with timezone 'Asia/Kolkata' and import paths
+- [x] Implement `Mailer` utility in `backend/app/utils/mailer.py`
+- [x] Create HTML Jinja2 email templates in `backend/app/templates/emails/`
+  - [x] `order_status.html`
+  - [x] `patient_approval.html`
+  - [x] `appointment_scheduled.html`
+  - [x] `doctor_daily_agenda.html`
+  - [x] `nurse_daily_agenda.html`
+  - [x] `vitals_export.html`
 
-## 3. Frontend Development
-- [x] **User Portal**: Allow booking "Vitals Checkup Only" and submit `appointment_type='vitals_check'`
-- [x] **Nurse Portal**:
-  - [x] Add "Vitals Checkup Requests" list with Approval/Rejection actions
-  - [x] Add prioritized queue of active appointments "Awaiting Vitals Check"
-  - [x] Add "Refer to Doctor" toggle and Department selector to the "Record Vitals" form
-- [x] **Doctor Portal**:
-  - [x] Add visual warning badges for "Awaiting Vitals Check"
-  - [x] Block consultation completion unless `vitals_checked` is true
-  - [x] Display recorded vital signs parameters inside the doctor's consultation modal
+## 3. Background Celery Tasks
+- [x] Implement Celery email tasks in `backend/app/tasks/email_tasks.py`
+- [x] Implement Celery cleanup tasks in `backend/app/tasks/cleanup_tasks.py`
 
-## 4. Verification & Clean-up
-- [x] Run type-checking (`npm run type-check`) to verify compilation
-- [x] Run format check (`npm run format`) using oxfmt
-- [ ] Perform E2E manual flow test verification
+## 4. Services & API Routes
+- [x] Add `generate_vitals_csv_string` in `backend/app/services/patient_vitals.py`
+- [x] Add export endpoints to `backend/app/routes/patient_vitals.py` and controller
+- [x] Implement Prescription parser service and route
+- [x] Implement Invoices service, controller, and routes (with payment simulator)
+- [x] Implement Lab Reports service, controller, and upload/download routes
+- [x] Implement Notification feeds routes and Mark as Read triggers
+- [x] Add Invoice creation and Notification triggers inside:
+  - [x] `PharmacyService` (order billing)
+  - [x] `AppointmentService` (consultation billing)
+  - [x] `PatientVitalsService` (nurse check alerts)
+  - [x] `ApplicationService` (approval notifications)
+
+## 5. Frontend Portal Upgrades
+- [ ] Implement Notification Bell component in Dashboard layout header
+- [ ] Integrate Vitals Export options (Download / Email) in `UserPortal.vue`
+- [ ] Add **Billing & Invoices** tab with simulation pay & receipts inside `UserPortal.vue`
+- [ ] Add **Order Prescribed Medicines** button and modal inside `UserPortal.vue`
+- [ ] Add **Lab & Clinical Reports** file drop-zone inside `PatientVitalsDetailView.vue`
+- [ ] Add interactive Chart.js dashboards inside Doctor & Admin portals
+
+## 6. Verification
+- [ ] Verify MailHog captures all trigger templates
+- [ ] E2E check of billing, prescription parsing, report uploads, notifications, and analytics
+- [ ] Run type check (`npm run type-check`) and format code (`npm run format`)

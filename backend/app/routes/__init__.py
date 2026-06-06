@@ -9,6 +9,10 @@ from .medistore import medistore_ns
 from .medical_records import medical_records_ns
 from .patient_vitals import vitals_ns
 from .pharmacist import pharmacist_ns
+from .invoice import invoice_ns
+from .notification import notification_ns
+from .lab_report import lab_reports_ns
+from .analytics import analytics_ns
 
 def register_routes(api):
     """
@@ -25,3 +29,7 @@ def register_routes(api):
     api.add_namespace(medistore_ns, path='/medistore')
     api.add_namespace(medical_records_ns, path='/medical-records')
     api.add_namespace(vitals_ns, path='/vitals')
+    api.add_namespace(invoice_ns, path='/invoices')
+    api.add_namespace(notification_ns, path='/notifications')
+    api.add_namespace(lab_reports_ns, path='/lab-reports')
+    api.add_namespace(analytics_ns, path='/analytics')

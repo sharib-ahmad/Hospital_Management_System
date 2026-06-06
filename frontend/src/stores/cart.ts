@@ -10,9 +10,7 @@ interface CartItem {
 export const useCartStore = defineStore('cart', () => {
   const notification = useNotificationStore()
 
-  const items = ref<CartItem[]>(
-    JSON.parse(localStorage.getItem('medistore_cart') || '[]')
-  )
+  const items = ref<CartItem[]>(JSON.parse(localStorage.getItem('medistore_cart') || '[]'))
 
   const cartCount = computed(() => {
     return items.value.reduce((sum, item) => sum + item.quantity, 0)
