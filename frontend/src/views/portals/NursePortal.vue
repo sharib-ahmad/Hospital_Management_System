@@ -162,7 +162,8 @@ const loadVitalsForPatient = async (patientId: string) => {
   loadingVitals.value[patientId] = true
   try {
     const res = await api.get(`/vitals/${patientId}`)
-    patientVitals.value[patientId] = res.data.data || res.data
+    const data = res.data.data || res.data
+    patientVitals.value[patientId] = Array.isArray(data) ? data[0] : data
   } catch {
     // no vitals yet — leave undefined
   } finally {

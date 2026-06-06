@@ -4,7 +4,8 @@ from ..utils.time import utc_now
 class PatientVital(db.Model):
     __tablename__ = 'patient_vitals'
     
-    patient_id = db.Column(db.UUID(as_uuid=True), db.ForeignKey('patients.id'), primary_key=True)
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    patient_id = db.Column(db.UUID(as_uuid=True), db.ForeignKey('patients.id'), nullable=False)
     recorded_by = db.Column(db.UUID(as_uuid=True), db.ForeignKey('nurses.id'), nullable=False)
 
     systolic_bp = db.Column(db.Integer)

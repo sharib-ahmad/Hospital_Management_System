@@ -39,8 +39,7 @@ class PatientVitalsService:
             notes=data.get('notes'),
         )
 
-        # db.session.merge handles INSERT or UPDATE based on the primary key
-        merged_vital = db.session.merge(vital)
+        db.session.add(vital)
         
         # Link to active appointment if provided
         appt_id_str = data.get('appointment_id')
@@ -116,7 +115,7 @@ class PatientVitalsService:
 
         return handle_response(
             success=True,
-            data=merged_vital,
+            data=vital,
             message=success_message,
             status_code=200
         )
@@ -142,8 +141,8 @@ class PatientVitalsService:
         elif role not in (UserRole.ADMIN, UserRole.NURSE):
             return handle_response(success=False, message="Unauthorized", status_code=403)
 
-        vital = PatientVital.query.get(patient_id)
-        if not vital:
+        vitals = PatientVital.query.filter_by(patient_id=patient_id).order_by(PatientVital.recorded_at.desc()).all()
+        if not vitals:
             return handle_response(success=False, message="No vitals recorded for this patient", status_code=404)
 
-        return handle_response(success=True, data=vital, message="Patient vitals retrieved successfully")
+        return handle_response(success=True, data=vitals, message="Patient vitals retrieved successfully")

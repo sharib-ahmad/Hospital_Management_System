@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, computed, onBeforeUnmount } from 'vue'
+import { ref, onMounted, computed, onBeforeUnmount, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { Chart } from 'chart.js/auto'
 import DashboardLayout from '../layouts/DashboardLayout.vue'
@@ -14,9 +14,17 @@ const auth = useAuthStore()
 
 const patient = ref<any>(null)
 const vitals = ref<any>(null)
+const vitalsHistory = ref<any[]>([])
 const isLoading = ref(true)
+
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 let chartInstance: Chart | null = null
+
+const timelineCanvasRef = ref<HTMLCanvasElement | null>(null)
+let timelineChartInstance: Chart | null = null
+
+const showFullHistory = ref(false)
+const selectedTimelineMetric = ref<'bp' | 'sugar' | 'cardio' | 'temp'>('bp')
 
 const formatBloodPressureStatus = (systolic: number) => {
   if (systolic >= 140) return { label: 'High (Hypertension)', color: 'bg-rose-500 text-white' }
@@ -41,6 +49,14 @@ const formatTempStatus = (temp: number) => {
   if (temp < 96.0) return { label: 'Low (Hypothermia)', color: 'bg-amber-500 text-white' }
   return { label: 'Normal / Optimal', color: 'bg-emerald-600 text-white' }
 }
+
+const filteredHistory = computed(() => {
+  const chron = [...vitalsHistory.value].reverse()
+  if (showFullHistory.value) {
+    return chron
+  }
+  return chron.slice(-20)
+})
 
 const loadData = async () => {
   isLoading.value = true
@@ -72,8 +88,11 @@ const loadData = async () => {
     // 2. Load latest vitals
     try {
       const res = await api.get(`/vitals/${patientId}`)
-      vitals.value = res.data.data || res.data
+      const data = res.data.data || res.data
+      vitalsHistory.value = Array.isArray(data) ? data : (data ? [data] : [])
+      vitals.value = vitalsHistory.value[0] || null
     } catch {
+      vitalsHistory.value = []
       vitals.value = null
     }
   } catch (error) {
@@ -83,6 +102,7 @@ const loadData = async () => {
     if (vitals.value) {
       setTimeout(() => {
         renderChart()
+        renderTimelineChart()
       }, 50)
     }
   }
@@ -161,7 +181,7 @@ const renderChart = () => {
             font: { family: 'Outfit, sans-serif', weight: 'bold', size: 10 },
           },
           ticks: {
-            display: false, // Clean look
+            display: false,
           },
           suggestedMin: 10,
         },
@@ -169,6 +189,144 @@ const renderChart = () => {
     },
   })
 }
+
+const renderTimelineChart = () => {
+  if (timelineChartInstance) {
+    timelineChartInstance.destroy()
+  }
+
+  if (!timelineCanvasRef.value || filteredHistory.value.length === 0) return
+
+  const isDark = document.documentElement.classList.contains('dark')
+  const textColor = isDark ? '#94a3b8' : '#475569'
+  const gridColor = isDark ? 'rgba(71, 85, 105, 0.4)' : 'rgba(203, 213, 225, 0.9)'
+
+  const labels = filteredHistory.value.map((v) => {
+    return new Date(v.recorded_at).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    })
+  })
+
+  let datasets: any[] = []
+
+  if (selectedTimelineMetric.value === 'bp') {
+    datasets = [
+      {
+        label: 'Systolic BP (Normal: <120)',
+        data: filteredHistory.value.map((v) => v.systolic_bp),
+        borderColor: '#f43f5e',
+        backgroundColor: 'rgba(244, 63, 94, 0.05)',
+        fill: true,
+        tension: 0.35,
+        borderWidth: 3,
+        pointBackgroundColor: '#f43f5e',
+      },
+      {
+        label: 'Diastolic BP (Normal: <80)',
+        data: filteredHistory.value.map((v) => v.diastolic_bp),
+        borderColor: '#f59e0b',
+        backgroundColor: 'rgba(245, 158, 11, 0.05)',
+        fill: true,
+        tension: 0.35,
+        borderWidth: 3,
+        pointBackgroundColor: '#f59e0b',
+      },
+    ]
+  } else if (selectedTimelineMetric.value === 'sugar') {
+    datasets = [
+      {
+        label: 'Blood Glucose (Normal: 70-140)',
+        data: filteredHistory.value.map((v) => v.blood_sugar),
+        borderColor: '#0d9488',
+        backgroundColor: 'rgba(13, 148, 136, 0.05)',
+        fill: true,
+        tension: 0.35,
+        borderWidth: 3,
+        pointBackgroundColor: '#0d9488',
+      },
+    ]
+  } else if (selectedTimelineMetric.value === 'cardio') {
+    datasets = [
+      {
+        label: 'Pulse Rate (Normal: 60-100)',
+        data: filteredHistory.value.map((v) => v.pulse_rate),
+        borderColor: '#10b981',
+        backgroundColor: 'rgba(16, 185, 129, 0.05)',
+        fill: true,
+        tension: 0.35,
+        borderWidth: 3,
+        pointBackgroundColor: '#10b981',
+      },
+      {
+        label: 'Respiration Rate (Normal: 12-20)',
+        data: filteredHistory.value.map((v) => v.respiration_rate),
+        borderColor: '#6366f1',
+        backgroundColor: 'rgba(99, 102, 241, 0.05)',
+        fill: true,
+        tension: 0.35,
+        borderWidth: 3,
+        pointBackgroundColor: '#6366f1',
+      },
+    ]
+  } else if (selectedTimelineMetric.value === 'temp') {
+    datasets = [
+      {
+        label: 'Core Temp (Normal: 98.6)',
+        data: filteredHistory.value.map((v) => v.temperature),
+        borderColor: '#ec4899',
+        backgroundColor: 'rgba(236, 72, 153, 0.05)',
+        fill: true,
+        tension: 0.35,
+        borderWidth: 3,
+        pointBackgroundColor: '#ec4899',
+      },
+    ]
+  }
+
+  timelineChartInstance = new Chart(timelineCanvasRef.value, {
+    type: 'line',
+    data: {
+      labels,
+      datasets,
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          labels: {
+            color: textColor,
+            font: { family: 'Outfit, sans-serif', weight: 'bold', size: 11 },
+          },
+        },
+      },
+      scales: {
+        x: {
+          grid: { display: false },
+          ticks: {
+            color: textColor,
+            font: { family: 'Outfit, sans-serif', size: 9 },
+          },
+        },
+        y: {
+          grid: { color: gridColor },
+          ticks: {
+            color: textColor,
+            font: { family: 'Outfit, sans-serif', size: 10 },
+          },
+          suggestedMin: selectedTimelineMetric.value === 'temp' ? 95 : 0,
+        },
+      },
+    },
+  })
+}
+
+watch([selectedTimelineMetric, showFullHistory], () => {
+  renderTimelineChart()
+})
 
 const formatDate = (dateString: string) => {
   if (!dateString) return '—'
@@ -195,6 +353,9 @@ onMounted(loadData)
 onBeforeUnmount(() => {
   if (chartInstance) {
     chartInstance.destroy()
+  }
+  if (timelineChartInstance) {
+    timelineChartInstance.destroy()
   }
 })
 </script>
@@ -364,6 +525,58 @@ onBeforeUnmount(() => {
             </h4>
             <div class="h-80 w-full relative">
               <canvas ref="canvasRef"></canvas>
+            </div>
+          </div>
+
+          <!-- Vitals Timeline Chart Card -->
+          <div class="card-animate bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-[2.5rem] p-8 shadow-premium" v-if="vitalsHistory.length > 1">
+            <div class="flex items-center justify-between flex-wrap gap-4 mb-6">
+              <div>
+                <h4 class="text-xs font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                  <span class="h-1.5 w-4 bg-indigo-600 rounded-full"></span>
+                  Clinical Vitals Timeline Variation
+                </h4>
+                <p class="text-[10px] text-gray-400 dark:text-slate-500 mt-1 font-medium">
+                  Showing {{ showFullHistory ? 'full screening history' : `last ${filteredHistory.length} records` }}
+                </p>
+              </div>
+
+              <!-- Controls -->
+              <div class="flex items-center gap-3">
+                <!-- History length toggle -->
+                <button
+                  @click="showFullHistory = !showFullHistory"
+                  class="px-3 py-1.5 rounded-lg bg-gray-50 hover:bg-gray-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-gray-500 dark:text-slate-400 text-[9px] font-black uppercase tracking-wider transition-all border border-gray-100 dark:border-slate-700"
+                >
+                  {{ showFullHistory ? 'Show Recent Only' : 'Show Full Stats' }}
+                </button>
+
+                <!-- Segment Selector -->
+                <div class="flex items-center p-0.5 bg-gray-100 dark:bg-slate-800 rounded-lg gap-0.5 border border-gray-200/40 dark:border-slate-700/40">
+                  <button
+                    v-for="m in [
+                      { id: 'bp', label: 'BP' },
+                      { id: 'sugar', label: 'Sugar' },
+                      { id: 'cardio', label: 'Cardio' },
+                      { id: 'temp', label: 'Temp' }
+                    ]"
+                    :key="m.id"
+                    @click="selectedTimelineMetric = m.id as any"
+                    :class="`px-2.5 py-1 rounded-md text-[8px] font-black uppercase tracking-wider transition-all ${
+                      selectedTimelineMetric === m.id
+                        ? 'bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-sm'
+                        : 'text-gray-400 hover:text-gray-600 dark:hover:text-slate-300'
+                    }`"
+                  >
+                    {{ m.label }}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Timeline Chart Canvas -->
+            <div class="h-80 w-full relative">
+              <canvas ref="timelineCanvasRef"></canvas>
             </div>
           </div>
 

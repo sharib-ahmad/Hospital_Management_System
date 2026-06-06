@@ -95,7 +95,8 @@ const loadPatientVitals = async (patientId: string) => {
   isLoadingVitals.value = true
   try {
     const res = await api.get(`/vitals/${patientId}`)
-    selectedPatientVitals.value = res.data.data || res.data || null
+    const data = res.data.data || res.data
+    selectedPatientVitals.value = Array.isArray(data) ? data[0] : (data || null)
   } catch {
     selectedPatientVitals.value = null
   } finally {

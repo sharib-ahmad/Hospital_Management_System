@@ -83,8 +83,9 @@ const loadData = async () => {
       try {
         const res = await api.get(`/vitals/${p.id}`)
         const data = res.data.data || res.data
-        if (data && data.patient_id) {
-          patientVitals.value[p.id] = data
+        const singleVital = Array.isArray(data) ? data[0] : data
+        if (singleVital && singleVital.patient_id) {
+          patientVitals.value[p.id] = singleVital
         }
       } catch {
         // no vitals recorded yet

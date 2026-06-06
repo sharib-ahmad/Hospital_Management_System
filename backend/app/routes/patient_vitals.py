@@ -24,8 +24,8 @@ class PatientVitalRecord(Resource):
 @vitals_ns.param('patient_id', 'The patient UUID')
 class PatientVitalDetail(Resource):
     @vitals_ns.doc('get_patient_vitals', security='Bearer Auth')
-    @vitals_ns.marshal_with(patient_vital_models.vital_response)
-    @role_required(UserRole.ADMIN, UserRole.DOCTOR, UserRole.NURSE)
+    @vitals_ns.marshal_with(patient_vital_models.vital_list_response)
+    @role_required(UserRole.ADMIN, UserRole.DOCTOR, UserRole.NURSE, UserRole.USER)
     def get(self, patient_id):
-        """Get the latest vitals for a patient (Admin/Doctor/Nurse only)"""
+        """Get the vitals history for a patient (Admin/Doctor/Nurse/User)"""
         return PatientVitalsController.get_vitals_for_patient(patient_id)
