@@ -178,10 +178,24 @@ const togglePatient = (patientId: string) => {
   }
 }
 
+// Auto-resolve active appointment when patient selection changes
+watch(vitalsPatientId, (newPatientId) => {
+  if (newPatientId) {
+    const appt = getPatientAppointment(newPatientId)
+    vitalsAppointmentId.value = appt ? appt.id : ''
+  } else {
+    vitalsAppointmentId.value = ''
+  }
+})
+
+const activeAppointment = computed(() => {
+  if (!vitalsPatientId.value) return null
+  return getPatientAppointment(vitalsPatientId.value)
+})
+
 const isCurrentAppointmentVitalsCheck = computed(() => {
-  if (!vitalsAppointmentId.value) return true
-  const appt = appointments.value.find((a) => a.id === vitalsAppointmentId.value)
-  return appt ? appt.appointment_type === 'vitals_check' : true
+  if (!activeAppointment.value) return true
+  return activeAppointment.value.appointment_type === 'vitals_check'
 })
 
 // ─── Data Loading ─────────────────────────────────────────────────────────────
@@ -264,7 +278,7 @@ const handleVitalsSubmit = async () => {
       respiration_rate: Number(vitalsRespiration.value),
       notes: vitalsNotes.value,
       appointment_id: vitalsAppointmentId.value || null,
-      refer_to_department_id: referToDoctor.value ? vitalsReferToDept.value : null,
+      refer_to_department_id: (isCurrentAppointmentVitalsCheck.value && referToDoctor.value) ? vitalsReferToDept.value : null,
     }
     const res = await api.post('/vitals', payload)
     lastRecordedVitals.value = res.data.data || payload
@@ -1387,6 +1401,30 @@ onMounted(loadData)
                 {{ p.full_name }}
               </option>
             </select>
+
+            <!-- Active Appointment Info -->
+            <div v-if="activeAppointment" class="mt-2 flex items-center gap-2 text-xs flex-wrap">
+              <span class="text-gray-400 dark:text-slate-500 font-medium">Linked Active Appointment:</span>
+              <span
+                :class="`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                  activeAppointment.appointment_type === 'vitals_check'
+                    ? 'bg-teal-50 text-teal-700 dark:bg-teal-950/40 dark:text-teal-400'
+                    : 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400'
+                }`"
+              >
+                {{
+                  activeAppointment.appointment_type === 'vitals_check'
+                    ? 'Vitals Screening'
+                    : `Consultation with Dr. ${activeAppointment.doctor_name || 'Assigned Physician'}`
+                }}
+              </span>
+              <span class="text-gray-400 dark:text-slate-500 font-bold">
+                on {{ formatDate(activeAppointment.appointment_date) }}
+              </span>
+            </div>
+            <div v-else-if="vitalsPatientId" class="mt-2 text-xs text-amber-600 dark:text-amber-400 font-medium">
+              No active appointment found in queue. This will be recorded as a Walk-in Vitals Check.
+            </div>
           </div>
 
           <!-- BP Row -->
