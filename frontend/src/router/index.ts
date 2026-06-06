@@ -31,6 +31,7 @@ import DoctorProfile from '../views/doctor/DoctorProfile.vue'
 import NurseProfile from '../views/nurse/NurseProfile.vue'
 import UserAppointments from '../views/user/UserAppointments.vue'
 import UserMedicalRecords from '../views/user/UserMedicalRecords.vue'
+import PatientVitalsDetailView from '../views/PatientVitalsDetailView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -164,6 +165,12 @@ const router = createRouter({
       name: 'user-records',
       component: UserMedicalRecords,
       meta: { requiresAuth: true, role: 'user' },
+    },
+    {
+      path: '/patients/:id',
+      name: 'patient-details-stats',
+      component: PatientVitalsDetailView,
+      meta: { requiresAuth: true },
     },
     // Catch-all 404
     {

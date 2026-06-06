@@ -3,7 +3,6 @@ import { ref, onMounted, computed } from 'vue'
 import PortalBase from './PortalBase.vue'
 import api from '../../utils/axios'
 import { useNotificationStore } from '../../stores/notification'
-import VitalsChart from '../../components/VitalsChart.vue'
 
 const notification = useNotificationStore()
 
@@ -207,8 +206,6 @@ onMounted(loadStats)
         </div>
       </div>
 
-      <!-- Clinical Vitals Chart -->
-      <VitalsChart role="admin" class="mt-8" />
     </template>
 
     <template #sidebar>

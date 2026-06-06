@@ -5,8 +5,6 @@ import PortalBase from './PortalBase.vue'
 import FormField from '../../components/FormField.vue'
 import api from '../../utils/axios'
 import { useNotificationStore } from '../../stores/notification'
-import VitalsChart from '../../components/VitalsChart.vue'
-
 const router = useRouter()
 const notification = useNotificationStore()
 
@@ -407,6 +405,17 @@ onMounted(loadData)
               <span v-else class="block mt-2 text-amber-500"> Doctor: Pending Assignment </span>
             </p>
 
+            <button
+              @click="router.push(`/patients/${patient.id}`)"
+              class="w-full mb-4 py-2.5 bg-emerald-50 hover:bg-emerald-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-emerald-600 dark:text-emerald-400 text-xs font-black uppercase tracking-widest rounded-xl transition-all flex items-center justify-center gap-2 border border-emerald-100/50 dark:border-slate-700/50"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" />
+              </svg>
+              View Vitals & Stats
+            </button>
+
             <div
               class="pt-6 border-t border-gray-100 dark:border-slate-800 flex items-center justify-between"
             >
@@ -511,9 +520,6 @@ onMounted(loadData)
             </div>
           </div>
         </div>
-
-        <!-- Clinical Vitals Chart -->
-        <VitalsChart v-if="!isLoading && patients.length > 0" :patients="patients" role="user" class="mt-8" />
       </div>
 
       <!-- ════════════════════════════════════════════════════ -->

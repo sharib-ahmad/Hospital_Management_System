@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import PortalBase from './PortalBase.vue'
 import api from '../../utils/axios'
 import { useNotificationStore } from '../../stores/notification'
 import FormField from '../../components/FormField.vue'
-import VitalsChart from '../../components/VitalsChart.vue'
 
 const notification = useNotificationStore()
 const route = useRoute()
+const router = useRouter()
 const appointments = ref<any[]>([])
 const assignedPatients = ref<any[]>([])
 const isLoading = ref(true)
@@ -615,6 +615,17 @@ onMounted(loadData)
               </div>
             </div>
 
+            <button
+              @click="router.push(`/patients/${patient.id}`)"
+              class="w-full mt-4 mb-3 py-2.5 bg-emerald-50 hover:bg-emerald-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-emerald-600 dark:text-emerald-400 text-xs font-black uppercase tracking-widest rounded-xl transition-all flex items-center justify-center gap-2 border border-emerald-100/50 dark:border-slate-700/50"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" />
+              </svg>
+              View Vitals & Stats
+            </button>
+
             <div v-if="getPatientActiveAppointment(patient.id)" class="w-full">
               <div
                 class="p-4 bg-teal-50/50 dark:bg-teal-900/10 border border-teal-100/50 dark:border-teal-500/10 rounded-2xl flex items-center justify-between"
@@ -655,9 +666,6 @@ onMounted(loadData)
             </button>
           </div>
         </div>
-
-        <!-- Clinical Vitals Chart -->
-        <VitalsChart v-if="!isLoading && assignedPatients.length > 0" :patients="assignedPatients" role="doctor" class="mt-8" />
       </div>
 
       <!-- ─────────────────────────────────────────────────── -->

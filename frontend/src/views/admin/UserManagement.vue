@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import DashboardLayout from '../../layouts/DashboardLayout.vue'
 import { useNotificationStore } from '../../stores/notification'
 import api from '../../utils/axios'
 
 type TabType = 'users' | 'patients' | 'doctors' | 'nurses'
 
+const router = useRouter()
 const notification = useNotificationStore()
 const activeTab = ref<TabType>('users')
 const isLoading = ref(false)
@@ -34,6 +36,11 @@ const openDetails = (item: any) => {
 const closeDetails = () => {
   isModalOpen.value = false
   selectedItem.value = null
+}
+
+const viewPatientStats = (item: any) => {
+  closeDetails()
+  router.push(`/patients/${item.id}`)
 }
 
 const filteredData = computed(() => {
@@ -570,12 +577,21 @@ onMounted(() => loadData('users'))
                 : 'N/A'
             }}
           </p>
-          <button
-            @click="closeDetails"
-            class="px-8 py-3 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black rounded-2xl shadow-xl shadow-emerald-500/25 transition-all uppercase tracking-widest active:scale-95"
-          >
-            Done
-          </button>
+          <div class="flex items-center gap-2">
+            <button
+              v-if="activeTab === 'patients'"
+              @click="viewPatientStats(selectedItem)"
+              class="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-black rounded-2xl shadow-xl shadow-indigo-500/25 transition-all uppercase tracking-widest active:scale-95"
+            >
+              View Vitals & Stats
+            </button>
+            <button
+              @click="closeDetails"
+              class="px-8 py-3 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black rounded-2xl shadow-xl shadow-emerald-500/25 transition-all uppercase tracking-widest active:scale-95"
+            >
+              Done
+            </button>
+          </div>
         </div>
       </div>
     </div>
