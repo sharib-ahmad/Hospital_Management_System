@@ -28,7 +28,7 @@ const processQueue = (error: any, token: string | null = null) => {
 instance.interceptors.request.use(
   (config) => {
     const authStore = useAuthStore()
-    if (authStore.accessToken) {
+    if (authStore.accessToken && !config.url?.includes('/auth/refresh')) {
       config.headers.Authorization = `Bearer ${authStore.accessToken}`
     }
     return config
