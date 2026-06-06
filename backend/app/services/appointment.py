@@ -125,6 +125,20 @@ class AppointmentService:
         if not appointment:
             return handle_response(success=False, message="Appointment not found", status_code=404)
             
+        # Resolve status string to Enum if present
+        if 'status' in validated_data and validated_data['status'] is not None:
+            status_val = validated_data['status']
+            if isinstance(status_val, str):
+                matched_status = None
+                for s in AppointmentStatus:
+                    if s.value == status_val or s.name == status_val.upper():
+                        matched_status = s
+                        break
+                if matched_status:
+                    validated_data['status'] = matched_status
+                else:
+                    return handle_response(success=False, message=f"Invalid appointment status: {status_val}", status_code=400)
+
         # Permission check
         if current_user.role == UserRole.DOCTOR and appointment.doctor_id != current_user.id:
             return handle_response(success=False, message="Unauthorized to update this appointment", status_code=403)
