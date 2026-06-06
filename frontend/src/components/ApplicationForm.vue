@@ -49,7 +49,7 @@ const loadDepartments = async () => {
 }
 
 onMounted(() => {
-  if (props.role === 'doctor' || props.role === 'nurse' || props.role === 'pharmacist') {
+  if (props.role === 'doctor' || props.role === 'nurse') {
     loadDepartments()
   }
 })
@@ -65,6 +65,9 @@ const validate = () => {
     if (!form.value.license_number) newErrors.license_number = 'License number is required'
     if (form.value.license_number.length < 12)
       newErrors.license_number = 'License number must be at least 12 characters'
+  }
+
+  if (props.role === 'doctor' || props.role === 'nurse') {
     if (!form.value.department_id) newErrors.department_id = 'Department is required'
   }
 
@@ -125,7 +128,6 @@ const handleSubmit = async () => {
         ...basePayload,
         experience_years: form.value.experience_years,
         license_number: form.value.license_number,
-        department_id: form.value.department_id,
         shift: form.value.shift,
       }
     }
@@ -290,7 +292,7 @@ const handleSubmit = async () => {
         required
       />
 
-      <div class="space-y-1.5">
+      <div v-if="role === 'doctor' || role === 'nurse'" class="space-y-1.5">
         <label class="block text-sm font-semibold text-gray-700 dark:text-slate-300"
           >Department</label
         >

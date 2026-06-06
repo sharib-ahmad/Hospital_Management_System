@@ -93,7 +93,6 @@ def process_application_approval(self, application_id, approver_id=None):
                 emergency_contact_number=application.emergency_contact_number
             )
             db.session.add(new_profile)
-            department_cache_invalidated = True
 
         elif application.role_applied == UserRole.PATIENT:
             # For patients, we do NOT change the user's role. 

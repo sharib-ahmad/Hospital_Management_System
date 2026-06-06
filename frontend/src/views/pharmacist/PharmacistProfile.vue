@@ -117,7 +117,6 @@ const saveProfile = async () => {
       gender: profile.value?.gender,
       blood_group: profile.value?.blood_group,
       emergency_contact_number: profile.value?.emergency_contact_number,
-      department_id: (profile.value as any)?.department_id,
     })
     profile.value = res.data.data ?? res.data
     notification.success('Profile updated successfully')
@@ -229,19 +228,7 @@ onMounted(loadProfile)
           </h3>
 
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
-            <!-- Department -->
-            <div
-              class="p-5 bg-gray-50 dark:bg-slate-800/50 rounded-2xl border border-gray-100 dark:border-slate-700/50"
-            >
-              <p
-                class="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-1.5"
-              >
-                Department
-              </p>
-              <p class="text-sm font-bold text-gray-900 dark:text-white">
-                {{ profile.department_name || '—' }}
-              </p>
-            </div>
+
 
             <!-- Experience -->
             <div

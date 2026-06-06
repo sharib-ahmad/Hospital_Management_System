@@ -7,7 +7,7 @@ class Pharmacist(db.Model):
 
     id = db.Column(db.UUID(as_uuid=True), db.ForeignKey('users.id'), primary_key=True)
     pharmacist_code = db.Column(db.String(20), unique=True, nullable=False) # e.g., "PHM-2606-A1B"
-    department_id = db.Column(db.String(12), db.ForeignKey('departments.id'), nullable=False)
+    department_id = db.Column(db.String(12), db.ForeignKey('departments.id'), nullable=True)
     
     date_of_birth = db.Column(db.Date, nullable=False)
     gender = db.Column(db.Enum(Gender, name="gender_types"), nullable=False)

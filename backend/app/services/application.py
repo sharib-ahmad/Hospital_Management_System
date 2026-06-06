@@ -110,11 +110,6 @@ class ApplicationService:
         if existing_application and existing_application.status == ApplicationStatus.PENDING:
             return handle_response(success=False, message="You have already applied for pharmacist role", status_code=400)
 
-        # Validate department
-        department = Department.query.get(validated_data.department_id)
-        if not department:
-            return handle_response(success=False, message=f"Department with ID {validated_data.department_id} does not exist", status_code=404)
-
         application = Application(
             user_id=user.id,
             role_applied=UserRole.PHARMACIST,

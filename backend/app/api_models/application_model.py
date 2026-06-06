@@ -65,7 +65,6 @@ class ApplicationModels:
             **self.base_application_fields,
             'experience_years': fields.Integer(required=True),
             'license_number': fields.String(required=True),
-            'department_id': fields.String(required=True),
             'shift': fields.String(required=True)
         })
 

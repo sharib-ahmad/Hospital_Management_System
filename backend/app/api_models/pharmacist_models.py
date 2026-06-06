@@ -13,7 +13,6 @@ class PharmacistModels:
             'blood_group': EnumField(BloodGroup, required=True),
             'emergency_contact_number': fields.String(required=True),
             'is_available': fields.Boolean,
-            'department_id': fields.String(required=True),
             'availability': fields.Raw(description="Weekly availability configuration JSON")
         })
 
@@ -27,7 +26,6 @@ class PharmacistModels:
             'address': fields.String(attribute='user.address'),
             'phone_number': fields.String(attribute='user.phone_number'),
             'pincode': fields.String(attribute='user.pincode'),
-            'department_name': fields.String(attribute='department.name'),
             'created_at': fields.DateTime(readOnly=True),
             'updated_at': fields.DateTime(readOnly=True)
         })

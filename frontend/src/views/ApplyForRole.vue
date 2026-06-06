@@ -131,7 +131,7 @@ const handleSuccess = () => {
         </p>
       </div>
 
-      <div class="grid md:grid-cols-2 gap-10 max-w-4xl mx-auto">
+      <div class="grid md:grid-cols-3 gap-10 max-w-4xl mx-auto">
         <div
           v-for="role in roles"
           :key="role.id"

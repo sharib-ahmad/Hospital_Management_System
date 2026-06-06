@@ -21,12 +21,6 @@ class PharmacistService:
         pharmacist = Pharmacist.query.filter_by(pharmacist_code=pharmacist_code).first()
         if not pharmacist:
             return None
-        
-        # Validate department if it's being updated
-        if hasattr(data, 'department_id') and data.department_id is not None:
-            department = Department.query.get(data.department_id)
-            if not department:
-                return "DEPARTMENT_NOT_FOUND"
 
         for key, value in data.dict(exclude_unset=True).items():
             if hasattr(pharmacist, key) and value is not None:
