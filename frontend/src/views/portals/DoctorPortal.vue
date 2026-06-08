@@ -83,8 +83,44 @@ const writeRecord = ref({
   treatment: '',
   prescription: '',
   notes: '',
+  file_name: '',
+  file_path: '',
 })
 const isSubmittingRecord = ref(false)
+const isUploadingFile = ref(false)
+
+const handleFileUpload = async (event: Event) => {
+  const target = event.target as HTMLInputElement
+  const file = target.files?.[0]
+  if (!file) return
+  isUploadingFile.value = true
+  
+  const formData = new FormData()
+  formData.append('file', file)
+  
+  try {
+    const res = await api.post('/medical-records/upload', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    })
+    const data = res.data.data
+    writeRecord.value.file_name = data.file_name
+    writeRecord.value.file_path = data.file_path
+    notification.success('File uploaded and attached successfully')
+  } catch (error: any) {
+    const message = error.response?.data?.message || 'Failed to upload file'
+    notification.error(message)
+    target.value = ''
+  } finally {
+    isUploadingFile.value = false
+  }
+}
+
+const clearAttachedFile = () => {
+  writeRecord.value.file_name = ''
+  writeRecord.value.file_path = ''
+}
 const recentlyWrittenPatientId = ref<string | null>(null)
 
 // ───────── Patient Vitals Integration ─────────
@@ -129,6 +165,8 @@ const openWriteRecordModal = async () => {
     treatment: '',
     prescription: '',
     notes: '',
+    file_name: '',
+    file_path: '',
   }
   selectedPatientVitals.value = null
   showWriteRecordModal.value = true
@@ -163,6 +201,8 @@ const handleWriteRecordSubmit = async () => {
       treatment: writeRecord.value.treatment,
       prescription: writeRecord.value.prescription,
       notes: writeRecord.value.notes,
+      file_name: writeRecord.value.file_name || null,
+      file_path: writeRecord.value.file_path || null,
     }
     if (writeRecord.value.appointment_id) {
       payload.appointment_id = writeRecord.value.appointment_id
@@ -182,6 +222,81 @@ const handleWriteRecordSubmit = async () => {
   } finally {
     isSubmittingRecord.value = false
   }
+}
+
+const downloadRecordFile = async (record: any) => {
+  try {
+    const res = await api.get(`/medical-records/${record.id}/file`, { responseType: 'blob' })
+    const url = window.URL.createObjectURL(new Blob([res.data]))
+    const link = document.createElement('a')
+    link.href = url
+    link.setAttribute('download', record.file_name || 'attachment.pdf')
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  } catch (err) {
+    notification.error('Failed to download record attachment file')
+  }
+}
+
+const notesTextareaRef = ref<HTMLTextAreaElement | null>(null)
+
+const insertFormat = (formatType: string) => {
+  const el = notesTextareaRef.value
+  if (!el) return
+  
+  const start = el.selectionStart
+  const end = el.selectionEnd
+  const text = writeRecord.value.notes || ''
+  
+  const before = text.substring(0, start)
+  const selected = text.substring(start, end)
+  const after = text.substring(end)
+  
+  let newText = ''
+  let newCursorPos = start
+  
+  switch (formatType) {
+    case 'bold':
+      newText = `${before}**${selected || 'bold text'}**${after}`
+      newCursorPos = start + (selected ? selected.length + 4 : 11)
+      break
+    case 'italic':
+      newText = `${before}_${selected || 'italic text'}_${after}`
+      newCursorPos = start + (selected ? selected.length + 2 : 12)
+      break
+    case 'header':
+      newText = `${before}\n### ${selected || 'Header'}\n${after}`
+      newCursorPos = start + (selected ? selected.length + 6 : 11)
+      break
+    case 'list':
+      newText = `${before}\n- ${selected || 'list item'}\n${after}`
+      newCursorPos = start + (selected ? selected.length + 4 : 13)
+      break
+  }
+  
+  writeRecord.value.notes = newText
+  
+  setTimeout(() => {
+    el.focus()
+    el.setSelectionRange(newCursorPos, newCursorPos)
+  }, 0)
+}
+
+const renderMarkdown = (text: string) => {
+  if (!text) return ''
+  let html = text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+  
+  html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+  html = html.replace(/_(.*?)_/g, '<em>$1</em>')
+  html = html.replace(/^### (.*?)$/gm, '<h4 class="text-xs font-black mt-2 mb-1 text-gray-800 dark:text-slate-100">$1</h4>')
+  html = html.replace(/^- (.*?)$/gm, '<li class="list-disc ml-4 text-[11px] text-gray-600 dark:text-slate-350">$1</li>')
+  html = html.replace(/\n/g, '<br />')
+  
+  return html
 }
 
 // ───────── Patient History Modal ─────────
@@ -1458,15 +1573,84 @@ onMounted(loadData)
 
           <!-- Notes -->
           <div class="w-full space-y-1.5">
-            <label class="block text-sm font-bold text-gray-600 dark:text-slate-400"
-              >Additional Notes</label
-            >
+            <div class="flex items-center justify-between">
+              <label class="block text-sm font-bold text-gray-600 dark:text-slate-400"
+                >Additional Notes</label
+              >
+              <!-- Markdown formatting toolbar -->
+              <div class="flex items-center gap-1 bg-gray-50 dark:bg-slate-800 px-2 py-0.5 rounded-xl border border-gray-200/50 dark:border-slate-700/50">
+                <button
+                  type="button"
+                  @click="insertFormat('bold')"
+                  title="Bold"
+                  class="p-1 hover:bg-gray-200 dark:hover:bg-slate-700 text-xs font-bold rounded-lg text-gray-600 dark:text-slate-350 w-6 h-6 flex items-center justify-center transition-colors"
+                >
+                  B
+                </button>
+                <button
+                  type="button"
+                  @click="insertFormat('italic')"
+                  title="Italic"
+                  class="p-1 hover:bg-gray-200 dark:hover:bg-slate-700 text-xs italic rounded-lg text-gray-600 dark:text-slate-350 w-6 h-6 flex items-center justify-center transition-colors"
+                >
+                  I
+                </button>
+                <button
+                  type="button"
+                  @click="insertFormat('header')"
+                  title="Header"
+                  class="p-1 hover:bg-gray-200 dark:hover:bg-slate-700 text-xs font-black rounded-lg text-gray-600 dark:text-slate-350 w-6 h-6 flex items-center justify-center transition-colors"
+                >
+                  H
+                </button>
+                <button
+                  type="button"
+                  @click="insertFormat('list')"
+                  title="Bullet List"
+                  class="p-1 hover:bg-gray-200 dark:hover:bg-slate-700 text-xs rounded-lg text-gray-600 dark:text-slate-350 w-6 h-6 flex items-center justify-center transition-colors"
+                >
+                  •
+                </button>
+              </div>
+            </div>
             <textarea
+              ref="notesTextareaRef"
               v-model="writeRecord.notes"
               rows="2"
-              placeholder="Any additional observations or follow-up notes..."
+              placeholder="Any additional observations or follow-up notes (supports formatting)..."
               class="appearance-none block w-full px-4 py-3.5 border border-gray-200 dark:border-slate-700/50 rounded-2xl shadow-sm transition-all sm:text-sm outline-none bg-white dark:bg-slate-800/50 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-500 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 resize-none"
             ></textarea>
+          </div>
+
+          <!-- File Attachment (Upload Prescription / Reports) -->
+          <div class="w-full space-y-1.5">
+            <label class="block text-sm font-bold text-gray-600 dark:text-slate-400"
+              >Attach Prescription/Report File <span class="text-gray-400 text-xs font-normal ml-1">(optional, PDF/Image)</span></label
+            >
+            <div class="flex items-center gap-3">
+              <input
+                type="file"
+                accept=".pdf,image/*"
+                @change="handleFileUpload"
+                class="hidden"
+                id="record-file-upload"
+              />
+              <label
+                for="record-file-upload"
+                class="cursor-pointer px-4 py-3 bg-gray-50 dark:bg-slate-800 text-gray-700 dark:text-slate-300 rounded-xl border border-gray-200 dark:border-slate-700 text-sm hover:bg-gray-100 dark:hover:bg-slate-700 transition duration-150 flex items-center gap-2"
+              >
+                <span v-if="isUploadingFile" class="animate-spin h-4 w-4 rounded-full border-2 border-emerald-600 border-t-transparent"></span>
+                <span v-else>📁</span>
+                <span>{{ isUploadingFile ? 'Uploading...' : 'Choose File' }}</span>
+              </label>
+              
+              <div v-if="writeRecord.file_name" class="flex items-center gap-2 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 px-3 py-1.5 rounded-xl border border-emerald-100 dark:border-emerald-900/50 text-xs truncate max-w-xs">
+                <span class="truncate">{{ writeRecord.file_name }}</span>
+                <button type="button" @click="clearAttachedFile" class="text-red-500 hover:text-red-700 focus:outline-none">
+                  ✕
+                </button>
+              </div>
+            </div>
           </div>
 
           <div class="flex gap-4 pt-4">
@@ -1606,7 +1790,25 @@ onMounted(loadData)
                   {{ med.trim() }}
                 </span>
               </div>
-              <p v-if="record.notes" class="text-xs text-gray-400 italic">{{ record.notes }}</p>
+              <div v-if="record.notes" class="text-xs text-gray-500 dark:text-slate-400 mt-2 bg-white/40 dark:bg-slate-900/40 p-3 rounded-xl border border-gray-100 dark:border-slate-800/80 leading-relaxed" v-html="renderMarkdown(record.notes)"></div>
+              
+              <!-- Attached file download -->
+              <div v-if="record.file_path" class="mt-3 flex items-center justify-between p-3 bg-white dark:bg-slate-900/60 border border-gray-100 dark:border-slate-800 rounded-xl">
+                <div class="flex items-center gap-2 min-w-0">
+                  <span class="text-base">📄</span>
+                  <div class="min-w-0">
+                    <p class="text-xs font-bold text-gray-800 dark:text-slate-200 truncate">{{ record.file_name || 'Attachment' }}</p>
+                    <p class="text-[9px] text-gray-400 uppercase font-black tracking-wider">Medical Record Attachment</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  @click="downloadRecordFile(record)"
+                  class="px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/30 dark:hover:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 text-[9px] font-black uppercase tracking-wider rounded-lg border border-emerald-100 dark:border-emerald-900/50 transition-colors shadow-sm shrink-0"
+                >
+                  Download
+                </button>
+              </div>
             </div>
           </div>
         </div>

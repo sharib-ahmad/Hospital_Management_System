@@ -229,6 +229,37 @@ const downloadVitalsDirect = async () => {
   }
 }
 
+const downloadRecordFile = async (record: any) => {
+  try {
+    const res = await api.get(`/medical-records/${record.id}/file`, { responseType: 'blob' })
+    const url = window.URL.createObjectURL(new Blob([res.data]))
+    const link = document.createElement('a')
+    link.href = url
+    link.setAttribute('download', record.file_name || 'attachment.pdf')
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  } catch (err) {
+    notification.error('Failed to download prescription attachment file')
+  }
+}
+
+const renderMarkdown = (text: string) => {
+  if (!text) return ''
+  let html = text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+  
+  html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+  html = html.replace(/_(.*?)_/g, '<em>$1</em>')
+  html = html.replace(/^### (.*?)$/gm, '<h4 class="text-xs font-black mt-2 mb-1 text-gray-800 dark:text-slate-100">$1</h4>')
+  html = html.replace(/^- (.*?)$/gm, '<li class="list-disc ml-4 text-[11px] text-gray-600 dark:text-slate-350">$1</li>')
+  html = html.replace(/\n/g, '<br />')
+  
+  return html
+}
+
 const triggerVitalsExportJob = async () => {
   exportingVitals.value = true
   try {
@@ -1125,10 +1156,31 @@ onMounted(loadData)
                   Notes
                 </p>
                 <p
-                  class="text-sm text-gray-700 dark:text-slate-300 font-medium leading-relaxed italic"
+                  class="text-sm text-gray-700 dark:text-slate-350 font-medium leading-relaxed"
+                  v-html="renderMarkdown(record.notes)"
                 >
-                  "{{ record.notes }}"
                 </p>
+              </div>
+
+              <!-- Attached File (if any) -->
+              <div
+                v-if="record.file_path"
+                class="col-span-full p-4 bg-emerald-50/50 dark:bg-emerald-900/10 rounded-2xl border border-emerald-100/50 dark:border-emerald-500/10 flex items-center justify-between mt-2"
+              >
+                <div class="flex items-center gap-2 min-w-0">
+                  <span class="text-xl">📄</span>
+                  <div class="min-w-0">
+                    <p class="text-xs font-bold text-gray-800 dark:text-slate-200 truncate">{{ record.file_name || 'Prescription attachment' }}</p>
+                    <p class="text-[9px] text-gray-400 dark:text-slate-500 uppercase font-black tracking-wider">Physician Prescription Attachment</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  @click="downloadRecordFile(record)"
+                  class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black uppercase tracking-wider rounded-xl transition-all shadow-sm shrink-0"
+                >
+                  Download File
+                </button>
               </div>
             </div>
           </div>

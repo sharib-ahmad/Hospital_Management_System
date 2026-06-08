@@ -3,11 +3,15 @@ import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { useCartStore } from '../stores/cart'
+import { useNotificationStore } from '../stores/notification'
 import ThemeToggle from '../components/ThemeToggle.vue'
+import CommandPalette from '../components/CommandPalette.vue'
 import api from '../utils/axios'
+import { webSocketService } from '../utils/websocket'
 
 const auth = useAuthStore()
 const cartStore = useCartStore()
+const notificationStore = useNotificationStore()
 const router = useRouter()
 const isSidebarOpen = ref(false)
 
@@ -15,7 +19,6 @@ const isSidebarOpen = ref(false)
 const notifications = ref<any[]>([])
 const isNotificationsOpen = ref(false)
 const notificationContainer = ref<HTMLElement | null>(null)
-let pollingInterval: any = null
 
 const fetchNotifications = async () => {
   if (!auth.user) return
@@ -147,14 +150,19 @@ onMounted(() => {
   document.addEventListener('click', handleClickOutside)
   if (auth.user) {
     fetchNotifications()
-    pollingInterval = setInterval(fetchNotifications, 15000)
+    webSocketService.connect(auth.user.id, (newNotification) => {
+      notifications.value.unshift(newNotification)
+      notificationStore.success(`🔔 ${newNotification.title}: ${newNotification.message}`)
+    })
   }
 })
 
 onUnmounted(() => {
   window.removeEventListener('resize', handleResize)
   document.removeEventListener('click', handleClickOutside)
-  if (pollingInterval) clearInterval(pollingInterval)
+  if (auth.user) {
+    webSocketService.disconnect(auth.user.id)
+  }
 })
 
 const navigation = {
@@ -551,6 +559,7 @@ const currentNav = navigation[auth.user?.role as keyof typeof navigation] || nav
         <slot></slot>
       </main>
     </div>
+    <CommandPalette />
   </div>
 </template>
 

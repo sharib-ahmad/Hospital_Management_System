@@ -15,6 +15,8 @@ class MedicalRecord(db.Model):
     treatment = db.Column(db.Text)
     prescription = db.Column(db.Text)
     notes = db.Column(db.Text)
+    file_path = db.Column(db.String(255), nullable=True)
+    file_name = db.Column(db.String(120), nullable=True)
     
     created_at = db.Column(db.DateTime, default=utc_now)
     updated_at = db.Column(db.DateTime, default=utc_now, onupdate=utc_now)

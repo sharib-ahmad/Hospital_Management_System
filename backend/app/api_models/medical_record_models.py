@@ -22,6 +22,8 @@ class MedicalRecordModels:
             'treatment': fields.String,
             'prescription': fields.String,
             'notes': fields.String,
+            'file_name': fields.String,
+            'file_path': fields.String,
             'created_at': fields.DateTime(readOnly=True),
             'updated_at': fields.DateTime(readOnly=True),
             # Joined data

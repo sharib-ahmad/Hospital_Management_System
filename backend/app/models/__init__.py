@@ -14,4 +14,5 @@ from .invoice import Invoice
 from .lab_report import LabReport
 from .notification import Notification
 from .event import Event
+from .audit_log import AuditLog
 

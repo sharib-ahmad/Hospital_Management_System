@@ -1,7 +1,8 @@
-from flask import Flask
+from flask import Flask, request
 from flask_cors import CORS
 from .config import config_dict
-from .extensions import db, jwt, api, celery, cache
+from .extensions import db, jwt, api, celery, cache, socketio
+from flask_socketio import join_room, leave_room
 from . import security
 
 def create_app(config_name="development"):
@@ -17,6 +18,27 @@ def create_app(config_name="development"):
     jwt.init_app(app)
     api.init_app(app)
     cache.init_app(app)
+    socketio.init_app(app)
+
+    # Socket.IO Event Handlers
+    
+    @socketio.on('connect')
+    def handle_connect():
+        app.logger.info(f"Socket client connected: {request.sid}")
+
+    @socketio.on('join')
+    def handle_join(data):
+        user_id = data.get('user_id')
+        if user_id:
+            join_room(str(user_id))
+            app.logger.info(f"Socket client {request.sid} joined room: {user_id}")
+
+    @socketio.on('leave')
+    def handle_leave(data):
+        user_id = data.get('user_id')
+        if user_id:
+            leave_room(str(user_id))
+            app.logger.info(f"Socket client {request.sid} left room: {user_id}")
     
     
     # Initialize Celery

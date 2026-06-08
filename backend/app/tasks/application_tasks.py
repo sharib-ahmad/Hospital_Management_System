@@ -143,6 +143,17 @@ def process_application_approval(self, application_id, approver_id=None):
             from ..controllers.department_controller import DEPARTMENTS_CACHE_KEY
             cache.delete(DEPARTMENTS_CACHE_KEY)
             
+        from ..services.audit import AuditService
+        AuditService.log_action(
+            user_id=approver_id,
+            action="APPROVE_APPLICATION",
+            details={
+                "application_id": str(application_id),
+                "role_applied": application.role_applied.value if application.role_applied else None,
+                "target_user_id": str(application.user_id)
+            }
+        )
+
         logger.info(f"Successfully processed approval for application {application_id}")
 
     except Exception as e:

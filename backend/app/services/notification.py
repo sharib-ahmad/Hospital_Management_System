@@ -17,6 +17,22 @@ class NotificationService:
         )
         db.session.add(notification)
         db.session.commit()
+        
+        # Emit Socket.IO event to the user's room
+        try:
+            from ..extensions import socketio
+            socketio.emit('new_notification', {
+                'id': notification.id,
+                'title': notification.title,
+                'message': notification.message,
+                'is_read': notification.is_read,
+                'category': notification.category,
+                'created_at': notification.created_at.strftime('%Y-%m-%d %H:%M:%S')
+            }, room=str(user_id))
+        except Exception as e:
+            from ..extensions import logger
+            logger.error(f"Failed to emit WebSocket notification: {str(e)}")
+            
         return notification
 
     @staticmethod

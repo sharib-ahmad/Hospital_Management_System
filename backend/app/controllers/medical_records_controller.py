@@ -28,3 +28,11 @@ class MedicalRecordsController:
     def parse_prescription(record_id):
         return MedicalRecordsService.parse_prescription(record_id)
 
+    @staticmethod
+    def upload_file(file):
+        return MedicalRecordsService.upload_file(file)
+
+    @staticmethod
+    def get_file(record_id):
+        return MedicalRecordsService.get_file(record_id)
+

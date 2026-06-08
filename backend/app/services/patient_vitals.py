@@ -6,6 +6,7 @@ from ..models.nurse import Nurse
 from ..utils.enum import UserRole
 from ..utils.response import handle_response
 from flask_jwt_extended import current_user
+from .audit import AuditService
 import uuid
 
 
@@ -123,6 +124,12 @@ class PatientVitalsService:
         elif refer_to_dept_id and not referral_created:
             success_message += ". Referral requested but no clinician found in department"
 
+        AuditService.log_action(
+            user_id=current_user.id,
+            action="RECORD_VITALS",
+            details={"patient_id": patient_id_str}
+        )
+
         return handle_response(
             success=True,
             data=vital,
@@ -154,6 +161,12 @@ class PatientVitalsService:
         vitals = PatientVital.query.filter_by(patient_id=patient_id).order_by(PatientVital.recorded_at.desc()).all()
         if not vitals:
             return handle_response(success=False, message="No vitals recorded for this patient", status_code=404)
+
+        AuditService.log_action(
+            user_id=current_user.id,
+            action="VIEW_PATIENT_VITALS",
+            details={"patient_id": str(patient_id)}
+        )
 
         return handle_response(success=True, data=vitals, message="Patient vitals retrieved successfully")
 
@@ -197,5 +210,9 @@ class PatientVitalsService:
                     nurse_code
                 ])
                 
+        AuditService.log_action(
+            user_id=user_id,
+            action="DOWNLOAD_VITALS_CSV"
+        )
         return output.getvalue()
 

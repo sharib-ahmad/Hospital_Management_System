@@ -3,6 +3,7 @@ from flask_jwt_extended import JWTManager
 from flask_restx import Api
 from flask_caching import Cache
 from celery import Celery
+from flask_socketio import SocketIO
 import logging
 
 db = SQLAlchemy()
@@ -10,6 +11,7 @@ jwt = JWTManager()
 celery = Celery()
 celery.set_default() 
 cache = Cache()
+socketio = SocketIO(cors_allowed_origins="*", manage_session=False)
 logger = logging.getLogger(__name__)
 
 api = Api(version='1.0.0',

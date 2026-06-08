@@ -79,3 +79,4 @@ instance/
 *.ntvs*
 *.njsproj
 *.sln
+celerybeat-schedule*
