@@ -1,114 +1,272 @@
 # 🏥 Hospital Management System (HMS)
 
-## 📌 Overview
+A state-of-the-art, secure, and production-grade Hospital Management System (HMS). This platform replaces manual clinical registers with an API-first digital system, facilitating seamless and real-time coordination between Patients, Doctors, Nurses, Pharmacists, and Administrative staff.
 
-A full-stack Hospital Management System (HMS) designed to replace manual registers with an API-first digital solution. The system facilitates coordination between patients, doctors, nurses, and administrative staff, ensuring data integrity, patient vital tracking, clinical history logs, and schedule management.
+---
 
-> 🚀 **Status:** Core features fully implemented. Production ready.
+## 📌 Architecture Overview
+The platform uses a decoupled client-server architecture:
+* **Backend:** A high-performance Python (Flask) RESTful API orchestrated with **Flask-RESTX** for OpenAPI/Swagger documentation, and supported by **Celery** (with Redis) for asynchronous task scheduling and background workers.
+* **Frontend:** A responsive Single Page Application (SPA) built with **Vue 3** (TypeScript + Composition API), styled using **Tailwind CSS 4**, and built on **Vite**.
 
 ---
 
 ## 🧱 Tech Stack
 
-### 🔹 Backend (API-First)
-* **Framework:** Python (Flask)
-* **API Engine:** Flask-RESTX (Swagger/OpenAPI Documentation)
-* **Database/ORM:** Flask-SQLAlchemy (PostgreSQL compatible)
-* **Validation:** Pydantic (Data schemas)
-* **Environment:** Managed via **uv** (high-performance Python packaging and runtime tool)
-* **Caching:** Flask-Caching with Redis integration
-* **Async Tasks:** Celery + Redis (Background processing)
+### 🔹 Backend
+* **Core:** Python 3.12+ (managed via `uv` package manager)
+* **Web & Routing:** Flask + Flask-RESTX (Swagger documentation engine)
+* **Database & ORM:** Flask-SQLAlchemy (PostgreSQL / SQLite compatible)
+* **Real-time Sync:** Flask-SocketIO + simple-websocket (WebSockets with HTTP Long-Polling fallback)
+* **Async Processing:** Celery + Redis (Task queue & message broker)
+* **Schema Validation:** Pydantic (data parsing)
+* **Authentication:** PyJWT (HTTPOnly JWT authorization tokens & Blocklist tables)
 
-### 🔹 Frontend (Modern UI)
-* **Framework:** Vue 3 (Composition API + TypeScript)
+### 🔹 Frontend
+* **Core Framework:** Vue 3 (Composition API & Type-Safe TypeScript)
 * **State Management:** Pinia
-* **Styling:** Tailwind CSS 4 (Utility-first, dark mode toggles, adaptive layouts)
-* **Build Tool:** Vite
-* **Formatting:** `oxfmt`
+* **Build Engine:** Vite
+* **Styling & Theme:** Tailwind CSS 4 (Custom design tokens, Dark/Light theme toggles)
+* **Charts:** Chart.js (Visual vitals metrics tracking)
+* **Linter/Formatter:** `oxfmt`
 
 ---
 
-## 📂 Project Structure
+## 🎯 Key Features
 
-```text
-├── backend/                # Flask API Root
-│   ├── app/
-│   │   ├── api_models/    # Swagger/RESTX validation models
-│   │   ├── controllers/   # Route handler orchestration
-│   │   ├── models/        # SQLAlchemy Database models
-│   │   ├── routes/        # API Namespace controllers
-│   │   ├── services/      # Business logic implementation
-│   │   └── tasks/         # Celery background jobs
-│   └── manage.sh           # Operations control script
-└── frontend/               # Vue 3 SPA Root
-    ├── src/
-    │   ├── components/    # Reusable form inputs and layouts
-    │   ├── layouts/       # Dashboard and authentication frames
-    │   ├── stores/        # Pinia state stores (auth, alerts)
-    │   └── views/         # Role-specific portals and views
+### 1. User & Staff Management
+* **Secure Auth Gateway:** Cookie-based JWT authentication using HTTPOnly cookies to prevent XSS. Includes instant session validation, token invalidation blocklists, and password recovery.
+* **Role-Based Portals:** Custom portals for 5 user types:
+  - **Admin Portal:** Manage departments, coordinate staff registrations, approve new doctor/nurse/pharmacist applications, check analytics, and view audit logs.
+  - **Doctor Portal:** Manage patient appointments, check clinical vital trendlines, upload file-attached prescriptions, write medical records with rich text, and update consultation feedback.
+  - **Nurse Portal:** Record and update real-time patient vitals (Blood Pressure, Blood Sugar, Temperature, Pulse, Respiration), and monitor patient lists.
+  - **Pharmacist Portal:** Process pharmacy orders, check medicine inventories, manage order statuses, and dispatch medications.
+  - **Patient Portal:** Search and purchase prescription medicines, view personal appointments, download reports, view historical vitals, and update personal profiles.
+
+### 2. Clinical Excellence
+* **Real-Time Websocket Notifications:** Instantly broadcasts in-app alerts (e.g. appointment approvals, application decisions, pharmacy dispatch updates) over `Socket.IO` connected directly to user-specific rooms.
+* **HIPAA-Compliant PHI Audit Trail:** Automatic database logging of every action involving Protected Health Information (PHI) — recording the user ID, event, timestamp, client IP, and specific database change details.
+* **Secure File Uploads & Downloads:** Doctors can upload prescription and lab report files (PDF/Images) directly from their portal. Files are securely served from backend storage via a JWT-authenticated custom route.
+* **Vitals Trend Tracking:** Rich interactive **Chart.js** trendlines displaying multi-metric historical variations in blood pressure, pulse rate, respiration, body temperature, and blood sugar.
+* **Global Command Palette:** A premium glassmorphic shortcut overlay (`Ctrl+K` / `Cmd+K`) allowing users to instantly trigger global options, switch themes, navigate portals, or log out.
+* **Clinical Rich Text Editor:** Markdown formatting toolbar inside the doctor notes form, translating Markdown syntax to responsive HTML views on patient-facing layouts.
+* **Viewport-Adaptive Date-Time Picker:** A calendar and time scheduler featuring dynamic client bounding box calculations to ensure it never overflows small screen viewports.
+
+---
+
+## 📊 Database Schema
+
+```mermaid
+erDiagram
+    User ||--o| Doctor : "profile_for"
+    User ||--o| Nurse : "profile_for"
+    User ||--o| Pharmacist : "profile_for"
+    User ||--o| Patient : "profile_for"
+    User ||--o{ Appointment : "schedules/attends"
+    User ||--o{ Notification : "receives"
+    User ||--o{ AuditLog : "triggers"
+    Department ||--o{ Doctor : "belongs_to"
+    Department ||--o{ Nurse : "belongs_to"
+    Patient ||--o{ Appointment : "attends"
+    Patient ||--o{ PatientVital : "has_history"
+    Patient ||--o{ MedicalRecord : "has_records"
+    Patient ||--o{ LabReport : "has_reports"
+    MedicalRecord ||--o{ Invoice : "bills"
+    User ||--o{ PharmacyOrder : "orders"
+    PharmacyOrder ||--o{ PharmacyOrderItem : "contains"
+    Medicine ||--o{ PharmacyOrderItem : "references"
+
+    User {
+        UUID id PK
+        string email
+        string password_hash
+        string first_name
+        string last_name
+        string role "admin|doctor|nurse|pharmacist|patient"
+        datetime tokens_valid_after
+        datetime created_at
+    }
+
+    Doctor {
+        UUID id PK
+        UUID user_id FK
+        string department_id FK
+        string specialization
+        string contact_number
+        string status "active|inactive"
+    }
+
+    Nurse {
+        UUID id PK
+        UUID user_id FK
+        string department_id FK
+        string contact_number
+    }
+
+    Pharmacist {
+        UUID id PK
+        UUID user_id FK
+        string contact_number
+    }
+
+    Patient {
+        UUID id PK
+        UUID user_id FK
+        string date_of_birth
+        string gender
+        string address
+        string emergency_contact
+    }
+
+    PatientVital {
+        UUID id PK
+        UUID patient_id FK
+        UUID recorded_by FK
+        float systolic_bp
+        float diastolic_bp
+        float pulse
+        float temperature
+        float respiration
+        float blood_sugar
+        datetime recorded_at
+    }
+
+    MedicalRecord {
+        UUID id PK
+        UUID patient_id FK
+        UUID doctor_id FK
+        string diagnosis
+        string notes "Markdown text"
+        string file_name
+        string file_path
+        datetime created_at
+    }
+
+    PharmacyOrder {
+        UUID id PK
+        UUID user_id FK
+        string status "pending|processing|dispatched|cancelled"
+        float total_amount
+        datetime created_at
+    }
+
+    AuditLog {
+        UUID id PK
+        UUID user_id FK
+        string action
+        string ip_address
+        string details "JSON payload"
+        datetime timestamp
+    }
 ```
 
 ---
 
-## 🎯 Key Features Implemented
+## ⚙️ Development Workflows
 
-* 🔐 **Secure JWT Auth:** Cookie-based HTTPOnly JSON Web Token authentication with role-based access control (RBAC).
-* 👨‍⚕️ **Doctor Portal:** Consultation tracking, medical history logging, profile editing, and patient appointments.
-* 🩺 **Clinical Medical Records:** Database logging for diagnoses, treatment prescriptions, and private doctor notes.
-* 👩‍⚕️ **Nurse Portal & Vitals Tracking:** Dedicated module for nurses to record and monitor real-time patient vitals (systolic/diastolic blood pressure, blood sugar, pulse rate, temperature, and respiration).
-* 📅 **Dynamic Date-Time Picker:** Custom-built teleported calendar, time selector, and datetime-local picker with dynamic client bounding calculations that center on short viewports to prevent taskbar overflow.
-* 🕒 **Timezone Alignment:** Complete system synchronization to the `Asia/Kolkata` timezone for all appointment scheduling, vitals records, and updates.
-* 🔑 **Password Recovery Pipeline:** Secure recovery flow inside the authentication interface.
-* 📊 **Admin Dashboard:** Central panel for statistics, user management, application approvals, and department configurations.
-* 🌓 **Dynamic Themes:** Toggle support for Light, Dark, and System default modes with an emerald-themed styling.
+### 1. Onboarding Approval Loop
+1. A guest registers an account.
+2. They apply to join the staff as a **Doctor**, **Nurse**, or **Pharmacist** by filling out credentials and department details.
+3. The application triggers an instant Socket.IO broadcast alerting Administrators.
+4. The **Administrator** logs into the Admin portal, reviews the application details, and approves it.
+5. The applicant's role changes to their respective staff role, generating their profile in the database, and sending them an in-app alert.
+
+### 2. Clinical Visit Flow
+1. **Nurse Log:** A patient visits the hospital. The Nurse updates the patient's vitals (blood pressure, sugar levels, etc.) in the Nurse Portal.
+2. **Doctor Analysis:** The Doctor logs in, reviews the dynamic vital trendlines (Chart.js), diagnoses the patient, types prescriptions using the Markdown rich text editor, and attaches clinical scan PDFs.
+3. **Audit Event:** Behind the scenes, the `AuditService` logs a HIPAA event indicating the Doctor accessed the patient's PHI history.
+4. **Patient Review:** The Patient logs in, reads their medical notes, and downloads the prescription PDF.
 
 ---
 
 ## 🚀 Getting Started
 
 ### Prerequisites
-* Python 3.12+ (managed via `uv`)
-* Node.js & npm
-* Redis Server (default: `redis://localhost:6379/0`)
+* **Python 3.12+** (managed via high-performance `uv`)
+* **Node.js v20+** & **npm**
+* **Redis Server** (listening on `redis://localhost:6379/0`)
+* **PostgreSQL** (running on `localhost:5432` with a database matching your `.env` connection URL)
 
-### Backend Setup
+---
+
+### Installation & Run Steps
+
+#### Step 1: Environment Configuration
+Create a `.env` file under the `/backend` folder:
+```ini
+FLASK_APP=run.py
+FLASK_ENV=development
+
+ADMIN_EMAIL=adminsharibahmad@gmail.com
+ADMIN_PASSWORD=yourpasswordhere
+
+JWT_SECRET_KEY=yoursupersecurejwtkey
+DATABASE_URL=postgresql://username:password@localhost:5432/hospital_management_system
+
+SMTP_SERVER_HOST=localhost
+SMTP_SERVER_PORT=1025
+SMTP_USERNAME=HPS
+SENDER_PASSWORD=HPS@321
+SENDER_ADDRESS=hospital_management@donotreply.in
+```
+
+#### Step 2: Backend Setup
+Open terminal in the `/backend` folder and run:
 ```bash
-cd backend
+# Sync dependencies
 uv sync
+
+# Run database migrations
+uv run python event_and_nullable_migration.py
+
+# Start the Flask + Socket.IO server
 uv run python run.py
 ```
+*The API server will run at `http://localhost:5000` with interactive Swagger docs visible at `http://localhost:5000/`.*
 
-### Celery Worker Setup
+#### Step 3: Run Celery Worker & Beat (Optional/Async tasks)
+Ensure Redis is running, then start the worker and schedule scheduler inside `/backend`:
 ```bash
-cd backend
+# Start background worker
 uv run celery -A worker.celery worker --loglevel=info
+
+# Start Celery Beat (cron jobs scheduler)
+uv run celery -A worker.celery beat --loglevel=info
 ```
 
-### Frontend Setup
+#### Step 4: Frontend Setup
+Open terminal in the `/frontend` folder and run:
 ```bash
-cd frontend
+# Install packages
 npm install
+
+# Start development server
 npm run dev
 ```
+*The Vue application will launch at `http://localhost:5173`.*
 
 ---
 
-## ⚙️ Development Status
+## 🧪 Verification & Linting
 
-* [x] Project Architecture & RBAC System
-* [x] Database Schema & ORM Model bindings
-* [x] JWT Authentication & Cookie Security
-* [x] Advanced Application Management & Onboarding
-* [x] Timezone-Aligned Scheduler (Asia/Kolkata)
-* [x] Clinical Medical Records & Vital logs
-* [x] Nurse, Doctor, User, and Admin Portals
-* [x] Viewport-Adaptive Date-Time picker
-* [x] Password Reset Recovery
-* [ ] Billing & Invoicing (Planned)
-* [ ] Real-time Notifications (Planned)
+### Verify Backend Compilation
+Check that all Python files are syntax-free and ready for execution:
+```bash
+cd backend
+python -m compileall app
+```
+
+### Verify Frontend Type-Safety
+Run the TypeScript compiler to ensure the front-end codebase compiles without errors:
+```bash
+cd frontend
+npm run type-check
+```
 
 ---
 
-## 📄 License
-
-This project is built for educational and portfolio purposes, showcasing modern software engineering practices.
+## 🔮 Future Implementation roadmap
+* **Multi-Factor Authentication (MFA):** Add TOTP-based 2FA support using authenticator apps (Google Authenticator/Authy) for clinical staff.
+* **Email & SMS Alerts:** Connect Celery background worker tasks to real SMTP/Twilio channels to dispatch vital alerts, booking updates, and invoice PDFs directly to users' phones and inboxes.
+* **Advanced Bed & Ward Management:** Add an interactive clinical ward grid to allocate physical hospital beds to patients upon admission.
+* **Resource-Level Access Policies (ABAC):** Transition from role-based boundaries to Attribute-Based Access Control to prevent clinicians from editing records outside their department.
