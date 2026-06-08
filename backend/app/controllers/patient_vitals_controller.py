@@ -1,6 +1,8 @@
 # app/controllers/patient_vitals_controller.py
 from ..services.patient_vitals import PatientVitalsService
 from ..utils.request import validate_json
+from ..utils.response import handle_response
+from flask_jwt_extended import current_user
 
 
 class PatientVitalsController:

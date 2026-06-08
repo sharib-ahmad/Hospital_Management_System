@@ -25,6 +25,8 @@ class User(db.Model):
 
     is_active = db.Column(db.Boolean, default=True)
 
+    tokens_valid_after = db.Column(db.DateTime, nullable=True)
+
     created_at = db.Column(db.DateTime,
                            default=utc_now,
                            nullable=False)

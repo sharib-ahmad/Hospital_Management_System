@@ -27,6 +27,9 @@ class BaseConfig:
     SENDER_PASSWORD = os.getenv("SENDER_PASSWORD")
     SENDER_ADDRESS = os.getenv("SENDER_ADDRESS")
 
+    # --- Google Chat Notification ---
+    GCHAT_WEBHOOK_URL = os.getenv("GCHAT_WEBHOOK_URL", "https://chat.googleapis.com/v1/spaces/YOUR_SPACE/messages?key=YOUR_KEY&token=YOUR_TOKEN")
+
     # --- Caching Configuration ---
     CACHE_TYPE = "RedisCache"
     CACHE_REDIS_URL = os.getenv("CACHE_REDIS_URL", "redis://localhost:6379/0")

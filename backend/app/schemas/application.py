@@ -9,7 +9,7 @@ class BaseApplicationSchema(BaseModel):
     date_of_birth: date
     gender: Gender
     blood_group: BloodGroup
-    emergency_contact_number: str = Field(..., max_length=15)
+    emergency_contact_number: Optional[str] = Field(None, max_length=15)
 
 class PatientApplicationCreateSchema(BaseApplicationSchema):
     medical_history: Optional[str] = None

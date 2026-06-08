@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import DashboardLayout from '../../layouts/DashboardLayout.vue'
+import UpcomingEvents from '../../components/UpcomingEvents.vue'
 defineProps<{
   role: string
   title: string
@@ -121,38 +122,7 @@ defineProps<{
 
         <div class="space-y-10">
           <slot name="sidebar">
-            <div
-              class="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-gray-100 dark:border-slate-800 p-8 shadow-premium"
-            >
-              <h3
-                class="text-lg font-black text-gray-900 dark:text-white mb-6 uppercase tracking-widest"
-              >
-                Upcoming Events
-              </h3>
-              <div
-                class="flex items-center gap-4 p-4 rounded-2xl bg-indigo-50/50 dark:bg-indigo-900/10 border border-indigo-100/50 dark:border-indigo-500/10"
-              >
-                <div
-                  class="w-10 h-10 rounded-xl bg-indigo-600 flex flex-col items-center justify-center text-white font-bold leading-none"
-                >
-                  <span class="text-[10px]">MAY</span>
-                  <span class="text-sm">04</span>
-                </div>
-                <div>
-                  <p class="text-xs font-black text-gray-900 dark:text-white">
-                    Staff Coordination Meet
-                  </p>
-                  <p class="text-[10px] text-gray-500 font-bold uppercase tracking-tighter">
-                    10:00 AM • Main Hall
-                  </p>
-                </div>
-              </div>
-              <p
-                class="text-gray-400 dark:text-slate-600 text-[10px] font-black uppercase tracking-[0.2em] mt-8 text-center"
-              >
-                Your schedule is light today
-              </p>
-            </div>
+            <UpcomingEvents />
 
             <div
               class="bg-gradient-to-br from-indigo-600 to-violet-700 rounded-[2.5rem] p-8 text-white shadow-xl shadow-indigo-500/30"

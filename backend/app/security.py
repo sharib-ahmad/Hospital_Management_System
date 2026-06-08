@@ -26,4 +26,20 @@ def user_lookup_callback(_jwt_header, jwt_data):
 def check_if_token_revoked(jwt_header, jwt_payload):
     jti = jwt_payload["jti"]
     token = TokenBlocklist.query.filter_by(jti=jti).first()
-    return token is not None
+    if token is not None:
+        return True
+        
+    user_id = jwt_payload.get("sub")
+    if user_id:
+        user = User.query.get(uuid.UUID(user_id))
+        if user and user.tokens_valid_after:
+            iat = jwt_payload.get("iat")
+            if iat:
+                from datetime import datetime, timezone
+                token_issued_at = datetime.fromtimestamp(iat, tz=timezone.utc)
+                valid_after = user.tokens_valid_after
+                if valid_after.tzinfo is None:
+                    valid_after = valid_after.replace(tzinfo=timezone.utc)
+                if token_issued_at < valid_after:
+                    return True
+    return False

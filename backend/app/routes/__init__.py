@@ -13,11 +13,9 @@ from .invoice import invoice_ns
 from .notification import notification_ns
 from .lab_report import lab_reports_ns
 from .analytics import analytics_ns
+from .event import event_ns
 
 def register_routes(api):
-    """
-    Registers all namespaces with the RestX API object.
-    """
     api.add_namespace(auth_ns, path='/auth')
     api.add_namespace(department_ns, path='/departments')
     api.add_namespace(application_ns, path='/applications')
@@ -33,3 +31,4 @@ def register_routes(api):
     api.add_namespace(notification_ns, path='/notifications')
     api.add_namespace(lab_reports_ns, path='/lab-reports')
     api.add_namespace(analytics_ns, path='/analytics')
+    api.add_namespace(event_ns, path='/events')

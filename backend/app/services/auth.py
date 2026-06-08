@@ -23,6 +23,11 @@ class AuthService:
         try:
             db.session.add(user)
             db.session.commit()
+            
+            # Send welcome email asynchronously
+            from ..tasks.email_tasks import send_welcome_email
+            send_welcome_email.delay(user.id)
+            
         except IntegrityError:
             db.session.rollback()
             return error_response(message="Username, email or phone number already exists")

@@ -13,7 +13,7 @@ class Doctor(db.Model):
     date_of_birth = db.Column(db.Date, nullable=False)
     gender = db.Column(db.Enum(Gender, name="gender_types"), nullable=False)
     blood_group = db.Column(db.Enum(BloodGroup, name="blood_groups"), nullable=False)
-    emergency_contact_number = db.Column(db.String(15), nullable=False)
+    emergency_contact_number = db.Column(db.String(15), nullable=True)
     
     license_number = db.Column(db.String(20), unique=True, nullable=False)
     specialization = db.Column(db.String(100), nullable=False)

@@ -114,6 +114,11 @@ def process_application_approval(self, application_id, approver_id=None):
             )
             db.session.add(new_profile)
 
+        # Expire user sessions on role change (Doctor, Nurse, Pharmacist approved)
+        if application.role_applied in [UserRole.DOCTOR, UserRole.NURSE, UserRole.PHARMACIST]:
+            from datetime import datetime, timezone
+            user.tokens_valid_after = datetime.now(timezone.utc).replace(tzinfo=None)
+
         db.session.commit()
         
         # Trigger In-App Notification
@@ -125,10 +130,13 @@ def process_application_approval(self, application_id, approver_id=None):
             category="application"
         )
         
-        # Trigger Email send if it was a PATIENT application (Item 2)
+        # Trigger Email send
         if application.role_applied == UserRole.PATIENT:
             from .email_tasks import send_patient_approval_email
             send_patient_approval_email.delay(application.id)
+        elif application.role_applied in [UserRole.DOCTOR, UserRole.NURSE, UserRole.PHARMACIST]:
+            from .email_tasks import send_staff_approval_email
+            send_staff_approval_email.delay(application.id)
         
         if department_cache_invalidated:
             # Clear the department list cache to update staff counts

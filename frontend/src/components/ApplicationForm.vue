@@ -58,8 +58,6 @@ const validate = () => {
   const newErrors: Record<string, string> = {}
   if (form.value.reason.length < 5) newErrors.reason = 'Reason must be at least 5 characters'
   if (!form.value.date_of_birth) newErrors.date_of_birth = 'Date of birth is required'
-  if (!form.value.emergency_contact_number)
-    newErrors.emergency_contact_number = 'Emergency contact is required'
 
   if (props.role === 'doctor' || props.role === 'nurse' || props.role === 'pharmacist') {
     if (!form.value.license_number) newErrors.license_number = 'License number is required'
@@ -189,10 +187,9 @@ const handleSubmit = async () => {
       <FormField
         id="emergency_contact"
         v-model="form.emergency_contact_number"
-        label="Emergency Contact"
+        label="Emergency Contact (Optional)"
         placeholder="+1 (555) 000-0000"
         :error="errors.emergency_contact_number"
-        required
       />
     </div>
 

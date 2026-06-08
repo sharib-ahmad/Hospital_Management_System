@@ -11,7 +11,7 @@ class PharmacistModels:
             'date_of_birth': fields.Date(required=True),
             'gender': EnumField(Gender, required=True),
             'blood_group': EnumField(BloodGroup, required=True),
-            'emergency_contact_number': fields.String(required=True),
+            'emergency_contact_number': fields.String(required=False),
             'is_available': fields.Boolean,
             'availability': fields.Raw(description="Weekly availability configuration JSON")
         })

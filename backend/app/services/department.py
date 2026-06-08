@@ -22,6 +22,11 @@ class DepartmentService:
         )
         db.session.add(department)
         db.session.commit()
+        
+        # Trigger Google Chat notification task
+        from ..tasks.email_tasks import send_department_creation_notification
+        send_department_creation_notification.delay(department.id)
+        
         return department
 
     @staticmethod

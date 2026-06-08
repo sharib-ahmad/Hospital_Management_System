@@ -12,7 +12,7 @@ class Pharmacist(db.Model):
     date_of_birth = db.Column(db.Date, nullable=False)
     gender = db.Column(db.Enum(Gender, name="gender_types"), nullable=False)
     blood_group = db.Column(db.Enum(BloodGroup, name="blood_groups"), nullable=False)
-    emergency_contact_number = db.Column(db.String(15), nullable=False)
+    emergency_contact_number = db.Column(db.String(15), nullable=True)
     
     shift = db.Column(db.String(20), nullable=False)  # e.g., "Day", "Night", "Rotating"
     experience_years = db.Column(db.Integer, default=0)

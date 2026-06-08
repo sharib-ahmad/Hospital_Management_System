@@ -60,8 +60,13 @@ def send_patient_approval_email(application_id):
         
     # Find doctor name if assigned
     doctor_name = None
-    if application.assigned_doctor_id:
-        doc = Doctor.query.get(application.assigned_doctor_id)
+    patient = Patient.query.filter_by(
+        user_id=application.user_id,
+        relation=application.relation,
+        full_name=application.patient_full_name or user.full_name
+    ).first()
+    if patient and patient.assigned_doctor_id:
+        doc = Doctor.query.get(patient.assigned_doctor_id)
         if doc and doc.user:
             doctor_name = doc.user.full_name
             
@@ -251,3 +256,147 @@ def send_vitals_csv_email(user_id, email):
             os.remove(temp_file_path)
             
     return f"Vitals CSV email sent to {email}."
+
+@shared_task(name='app.tasks.email_tasks.send_welcome_email')
+def send_welcome_email(user_id):
+    """
+    Sends a welcome email to a newly registered user.
+    """
+    user = User.query.get(user_id)
+    if not user:
+        return f"User {user_id} not found."
+        
+    context = {
+        'user_name': user.full_name,
+        'username': user.username
+    }
+    
+    Mailer.send_email(
+        to_email=user.email,
+        subject="Welcome to MediFlow!",
+        template_name="welcome.html",
+        context=context
+    )
+    return f"Welcome email sent to {user.email}."
+
+@shared_task(name='app.tasks.email_tasks.send_staff_approval_email')
+def send_staff_approval_email(application_id):
+    """
+    Sends staff (Doctor/Nurse/Pharmacist) registration approval email.
+    """
+    application = Application.query.get(application_id)
+    if not application:
+        return f"Application {application_id} not found."
+        
+    user = User.query.get(application.user_id)
+    if not user:
+        return f"User {application.user_id} not found."
+        
+    role_display = "Doctor"
+    from ..utils.enum import UserRole
+    if application.role_applied == UserRole.NURSE:
+        role_display = "Nurse"
+    elif application.role_applied == UserRole.PHARMACIST:
+        role_display = "Pharmacist"
+        
+    context = {
+        'user_name': user.full_name,
+        'role_name': role_display
+    }
+    
+    Mailer.send_email(
+        to_email=user.email,
+        subject=f"MediFlow - Application Approved ({role_display})",
+        template_name="staff_approval.html",
+        context=context
+    )
+    return f"Staff approval email sent to {user.email} for role {role_display}."
+
+@shared_task(name='app.tasks.email_tasks.send_department_creation_notification')
+def send_department_creation_notification(department_id):
+    """
+    Sends a notification to Google Chat webhook when a department is created.
+    """
+    from ..models.department import Department
+    import urllib.request
+    import json
+    from flask import current_app
+    
+    department = Department.query.get(department_id)
+    if not department:
+        return f"Department {department_id} not found."
+        
+    webhook_url = current_app.config.get("GCHAT_WEBHOOK_URL")
+    if not webhook_url or "YOUR_SPACE" in webhook_url:
+        return "Google Chat Webhook URL not configured or has default values."
+        
+    message = (
+        f"📢 *New Department Created* 📢\n\n"
+        f"*Name:* {department.name}\n"
+        f"*Description:* {department.description or 'No description'}\n"
+        f"*Doctor Limit:* {department.doctor_limit}\n"
+        f"*Nurse Limit:* {department.nurse_limit}\n\n"
+        f"Welcome to the new department!"
+    )
+    
+    try:
+        data = json.dumps({"text": message}).encode("utf-8")
+        req = urllib.request.Request(
+            webhook_url,
+            data=data,
+            headers={"Content-Type": "application/json; charset=UTF-8"},
+            method="POST"
+        )
+        with urllib.request.urlopen(req) as response:
+            res_data = response.read()
+        return f"Department creation notification sent to Google Chat. Response: {res_data.decode('utf-8')}"
+    except Exception as e:
+        current_app.logger.error(f"Failed to send Google Chat notification: {str(e)}")
+        return f"Failed to send notification: {str(e)}"
+
+@shared_task(name='app.tasks.email_tasks.send_event_creation_notification')
+def send_event_creation_notification(event_id):
+    """
+    Sends a notification to Google Chat webhook when an event is created.
+    """
+    from ..models.event import Event
+    import urllib.request
+    import json
+    from flask import current_app
+    
+    event = Event.query.get(event_id)
+    if not event:
+        return f"Event {event_id} not found."
+        
+    webhook_url = current_app.config.get("GCHAT_WEBHOOK_URL")
+    if not webhook_url or "YOUR_SPACE" in webhook_url:
+        return "Google Chat Webhook URL not configured or has default values."
+        
+    event_date_str = event.event_date.strftime('%Y-%m-%d %H:%M')
+    
+    message = (
+        f"📅 *New Event Scheduled* 📅\n\n"
+        f"*Title:* {event.title}\n"
+        f"*Type:* {event.event_type.upper()}\n"
+        f"*Date/Time:* {event_date_str}\n"
+        f"*Location:* {event.location or 'N/A'}\n"
+        f"*Description:* {event.description or 'No description'}\n\n"
+        f"Please check your portals for details!"
+    )
+    
+    try:
+        data = json.dumps({"text": message}).encode("utf-8")
+        req = urllib.request.Request(
+            webhook_url,
+            data=data,
+            headers={"Content-Type": "application/json; charset=UTF-8"},
+            method="POST"
+        )
+        with urllib.request.urlopen(req) as response:
+            res_data = response.read()
+        return f"Event creation notification sent to Google Chat. Response: {res_data.decode('utf-8')}"
+    except Exception as e:
+        current_app.logger.error(f"Failed to send Google Chat notification: {str(e)}")
+        return f"Failed to send notification: {str(e)}"
+
+

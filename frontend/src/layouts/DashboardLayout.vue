@@ -14,6 +14,7 @@ const isSidebarOpen = ref(false)
 // Notifications state
 const notifications = ref<any[]>([])
 const isNotificationsOpen = ref(false)
+const notificationContainer = ref<HTMLElement | null>(null)
 let pollingInterval: any = null
 
 const fetchNotifications = async () => {
@@ -34,6 +35,50 @@ const toggleNotifications = () => {
   isNotificationsOpen.value = !isNotificationsOpen.value
   if (isNotificationsOpen.value) {
     fetchNotifications()
+  }
+}
+
+const handleClickOutside = (event: MouseEvent) => {
+  if (
+    isNotificationsOpen.value &&
+    notificationContainer.value &&
+    !notificationContainer.value.contains(event.target as Node)
+  ) {
+    isNotificationsOpen.value = false
+  }
+}
+
+const getCategoryIcon = (category: string) => {
+  switch (category) {
+    case 'billing':
+      return `<svg class="w-4 h-4 text-blue-600 dark:text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>`
+    case 'order':
+      return `<svg class="w-4 h-4 text-purple-600 dark:text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>`
+    case 'appointment':
+      return `<svg class="w-4 h-4 text-emerald-600 dark:text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>`
+    case 'application':
+      return `<svg class="w-4 h-4 text-amber-600 dark:text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>`
+    case 'vitals':
+      return `<svg class="w-4 h-4 text-rose-600 dark:text-rose-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>`
+    default:
+      return `<svg class="w-4 h-4 text-gray-600 dark:text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>`
+  }
+}
+
+const getCategoryBgColor = (category: string) => {
+  switch (category) {
+    case 'billing':
+      return 'bg-blue-50 dark:bg-blue-950/20 border-blue-100/50 dark:border-blue-900/10'
+    case 'order':
+      return 'bg-purple-50 dark:bg-purple-950/20 border-purple-100/50 dark:border-purple-900/10'
+    case 'appointment':
+      return 'bg-emerald-50 dark:bg-emerald-950/20 border-emerald-100/50 dark:border-emerald-900/10'
+    case 'application':
+      return 'bg-amber-50 dark:bg-amber-950/20 border-amber-100/50 dark:border-amber-900/10'
+    case 'vitals':
+      return 'bg-rose-50 dark:bg-rose-950/20 border-rose-100/50 dark:border-rose-900/10'
+    default:
+      return 'bg-gray-50 dark:bg-slate-800 border-gray-100/50 dark:border-slate-700/10'
   }
 }
 
@@ -99,6 +144,7 @@ const handleResize = () => {
 onMounted(() => {
   handleResize()
   window.addEventListener('resize', handleResize)
+  document.addEventListener('click', handleClickOutside)
   if (auth.user) {
     fetchNotifications()
     pollingInterval = setInterval(fetchNotifications, 15000)
@@ -107,6 +153,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   window.removeEventListener('resize', handleResize)
+  document.removeEventListener('click', handleClickOutside)
   if (pollingInterval) clearInterval(pollingInterval)
 })
 
@@ -373,7 +420,7 @@ const currentNav = navigation[auth.user?.role as keyof typeof navigation] || nav
 
           <div class="flex items-center gap-4 sm:gap-8">
             <!-- Notification Bell -->
-            <div class="relative">
+            <div class="relative" ref="notificationContainer">
               <button
                 @click="toggleNotifications"
                 class="p-2.5 text-gray-500 hover:text-gray-900 dark:text-slate-400 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-slate-800 rounded-xl transition-all relative"
@@ -401,13 +448,13 @@ const currentNav = navigation[auth.user?.role as keyof typeof navigation] || nav
               <!-- Dropdown -->
               <div
                 v-if="isNotificationsOpen"
-                class="absolute right-0 mt-3 w-80 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border border-gray-100 dark:border-slate-800/80 rounded-2xl shadow-premium p-4 z-50 animate-in fade-in slide-in-from-top-4"
+                class="absolute right-0 mt-3 sm:w-96 w-80 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border border-gray-100 dark:border-slate-800/80 rounded-2xl shadow-premium p-4 z-50 animate-in fade-in slide-in-from-top-4"
               >
                 <div
                   class="flex items-center justify-between border-b border-gray-100 dark:border-slate-800/80 pb-3 mb-3"
                 >
                   <h3
-                    class="text-sm font-black text-gray-900 dark:text-white uppercase tracking-wider"
+                    class="text-xs font-black text-gray-900 dark:text-white uppercase tracking-wider"
                   >
                     Notifications ({{ unreadCount }})
                   </h3>
@@ -420,11 +467,11 @@ const currentNav = navigation[auth.user?.role as keyof typeof navigation] || nav
                   </button>
                 </div>
 
-                <div class="max-h-72 overflow-y-auto space-y-2.5 pr-1">
+                <div class="max-h-80 overflow-y-auto space-y-2.5 pr-1 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-gray-100 dark:[&::-webkit-scrollbar-thumb]:bg-slate-800">
                   <div
                     v-for="n in notifications.slice(0, 15)"
                     :key="n.id"
-                    class="p-3 rounded-xl border transition-all text-left flex items-start gap-3 relative group"
+                    class="p-3 rounded-2xl border transition-all text-left flex items-start gap-3 relative group hover:bg-gray-50/50 dark:hover:bg-slate-800/20"
                     :class="
                       n.is_read
                         ? 'bg-transparent border-gray-100/50 dark:border-slate-800/30 opacity-70'
@@ -432,7 +479,8 @@ const currentNav = navigation[auth.user?.role as keyof typeof navigation] || nav
                     "
                   >
                     <div
-                      :class="`w-2 h-2 rounded-full mt-1.5 shrink-0 ${getCategoryColor(n.category)}`"
+                      :class="`w-8 h-8 rounded-xl shrink-0 flex items-center justify-center border ${getCategoryBgColor(n.category)}`"
+                      v-html="getCategoryIcon(n.category)"
                     ></div>
                     <div class="flex-1 min-w-0">
                       <h4 class="text-xs font-bold text-gray-900 dark:text-white truncate">
@@ -523,8 +571,19 @@ const currentNav = navigation[auth.user?.role as keyof typeof navigation] || nav
     transform: translateY(0);
   }
 }
+@keyframes slide-in-from-top-4 {
+  from {
+    transform: translateY(-1rem);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
 .animate-in {
-  animation-duration: 0.5s;
+  animation-duration: 0.3s;
+  animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
   animation-fill-mode: both;
 }
 .fade-in {
@@ -532,5 +591,8 @@ const currentNav = navigation[auth.user?.role as keyof typeof navigation] || nav
 }
 .slide-in-from-bottom-4 {
   animation-name: slide-in-from-bottom-4;
+}
+.slide-in-from-top-4 {
+  animation-name: slide-in-from-top-4;
 }
 </style>

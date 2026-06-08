@@ -27,7 +27,7 @@ class ApplicationModels:
             'date_of_birth': fields.Date(required=True),
             'gender': EnumField(Gender, required=True),
             'blood_group': EnumField(BloodGroup, required=True),
-            'emergency_contact_number': fields.String(required=True)
+            'emergency_contact_number': fields.String(required=False)
         }
 
         # --- INPUT MODELS ---

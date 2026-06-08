@@ -4,6 +4,7 @@ import PortalBase from './PortalBase.vue'
 import api from '../../utils/axios'
 import { useNotificationStore } from '../../stores/notification'
 import { Chart } from 'chart.js/auto'
+import UpcomingEvents from '../../components/UpcomingEvents.vue'
 
 const notification = useNotificationStore()
 
@@ -438,58 +439,6 @@ onMounted(async () => {
               >Review Applications</span
             >
           </RouterLink>
-          <RouterLink
-            to="/admin/medicines"
-            class="flex items-center gap-3 p-4 bg-gray-50 dark:bg-slate-800/50 rounded-2xl border border-gray-100 dark:border-slate-800 hover:border-indigo-500/30 hover:bg-indigo-50/30 dark:hover:bg-indigo-900/10 transition-all group"
-          >
-            <div
-              class="w-9 h-9 bg-indigo-100 dark:bg-indigo-900/30 rounded-xl flex items-center justify-center text-indigo-600 group-hover:scale-110 transition-transform"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                class="h-4 w-4"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                stroke-width="2.5"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"
-                />
-              </svg>
-            </div>
-            <span class="text-sm font-black text-gray-700 dark:text-slate-300"
-              >Medicine Inventory</span
-            >
-          </RouterLink>
-          <RouterLink
-            to="/admin/orders"
-            class="flex items-center gap-3 p-4 bg-gray-50 dark:bg-slate-800/50 rounded-2xl border border-gray-100 dark:border-slate-800 hover:border-rose-500/30 hover:bg-rose-50/30 dark:hover:bg-rose-900/10 transition-all group"
-          >
-            <div
-              class="w-9 h-9 bg-rose-100 dark:bg-rose-900/30 rounded-xl flex items-center justify-center text-rose-600 group-hover:scale-110 transition-transform"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                class="h-4 w-4"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                stroke-width="2.5"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
-                />
-              </svg>
-            </div>
-            <span class="text-sm font-black text-gray-700 dark:text-slate-300"
-              >Pharmacy Orders</span
-            >
-          </RouterLink>
         </div>
       </div>
 
@@ -540,6 +489,9 @@ onMounted(async () => {
           </div>
         </div>
       </div>
+
+      <!-- Upcoming Events -->
+      <UpcomingEvents class="mt-8" />
     </template>
   </PortalBase>
 </template>
